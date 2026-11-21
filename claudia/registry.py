@@ -49,6 +49,9 @@ CLUSTERS = {
     "prestashop_kern": ("PrestaShop-Kern, Einstellungen und abrufbare Dateien prüfen", "Nur bei PrestaShop-Seiten: Version, Support-Stand, Sicherheitsmeldungen und Originaldateien des Kerns, die Einstellungsdateien (parameters.php) und von außen abrufbare Dateien werden gelesen und bewertet."),
     "prestashop_module": ("PrestaShop-Module und Overrides prüfen", "Nur bei PrestaShop-Seiten: Jedes Modul wird inventarisiert und, soweit bei Packagist geführt, mit Sicherheitsmeldungen abgeglichen; Overrides werden aufgelistet."),
     "prestashop_daten": ("Konten, Einstellungen und Inhalte in der Datenbank prüfen", "Nur bei PrestaShop-Seiten: Mitarbeiterkonten, HTTPS- und Webservice-Einstellungen sowie Code in Seiten, Produkten und Textblöcken werden aus der Datenbank gelesen und bewertet."),
+    "shopware_kern": ("Shopware-Kern, Einstellungen und abrufbare Dateien prüfen", "Nur bei Shopware-Seiten: Version, Support-Stand, Sicherheitsmeldungen und Originaldateien des Kerns, die .env-Einstellungen und von außen abrufbare Dateien werden gelesen und bewertet."),
+    "shopware_plugins": ("Shopware-Pakete, Plugins und Apps prüfen", "Nur bei Shopware-Seiten: Pakete, Plugins und Apps werden inventarisiert und, soweit bei Packagist geführt, mit Sicherheitsmeldungen abgeglichen."),
+    "shopware_daten": ("Administratoren, Integrationen und Inhalte in der Datenbank prüfen", "Nur bei Shopware-Seiten: Administrator-Konten, Shop-Adressen, Integrationen, Webhooks und Code in Inhalten werden aus der Datenbank gelesen und bewertet."),
     "joomla_code": ("Eingeschleusten Code in Joomla-Daten prüfen", "Artikel, Module, Template-Einstellungen, Weiterleitungen und Erweiterungs-Einträge werden auf fremden Code und fremde Adressen durchsucht."),
     "konto": ("Dauerzugänge im Konto prüfen", "Cronjobs, SSH-Schlüssel, laufende Prozesse, Start-Dateien der Shell und angemeldete Sitzungen werden angesehen. Hier setzt sich ein Angreifer fest, wenn er die Seite verlassen muss."),
     "logs_spuren": ("Protokolle nach Angriffsspuren durchsuchen", "Die Protokolle des Servers werden nach Zugriffen auf Schadcode, Scans und Anmeldeversuchen durchsucht."),
@@ -63,6 +66,7 @@ CLUSTER_MEMBERS = {
     "drupal_users": "drupal_daten", "drupal_config_db": "drupal_daten", "drupal_db_code": "drupal_daten",
     "typo3_core": "typo3_kern", "typo3_settings": "typo3_kern", "typo3_exposed": "typo3_kern", "typo3_extensions": "typo3_erweiterungen", "typo3_users": "typo3_daten", "typo3_db_code": "typo3_daten",
     "contao_core": "contao_kern", "contao_settings": "contao_kern", "contao_exposed": "contao_kern", "contao_packages": "contao_erweiterungen", "contao_users": "contao_daten", "contao_db_code": "contao_daten",
+    "shopware_core": "shopware_kern", "shopware_settings": "shopware_kern", "shopware_exposed": "shopware_kern", "shopware_packages": "shopware_plugins", "shopware_users": "shopware_daten", "shopware_shop": "shopware_daten", "shopware_db_code": "shopware_daten",
     "prestashop_core": "prestashop_kern", "prestashop_settings": "prestashop_kern", "prestashop_exposed": "prestashop_kern", "prestashop_modules": "prestashop_module", "prestashop_users": "prestashop_daten", "prestashop_shop": "prestashop_daten", "prestashop_db_code": "prestashop_daten",
     "joomla_info": "umfeld", "mail_dns": "umfeld", "dns_changes": "umfeld", "mail_send": "umfeld", "plaintext_creds": "konto", "backup_age": "versteck", "js_libs": "js_inject", "tls_protocols": "besucher", "cookie_flags": "besucher", "threat_intel": "umfeld", "other_installs": "umfeld", "root_files": "umfeld", "perms": "rechte", "update_ready": "update",
     "webshells": "php_shells", "php_in_uploads": "php_shells", "suspicious_names": "php_shells", "malware_patterns": "php_shells", "hidden_structure": "versteck", "compare_runs": "versteck", "skimmer_scan": "js_inject",
@@ -168,7 +172,12 @@ GROUPS_PRESTASHOP = {
     "erweiterungen": ("Module & Overrides", "Welche Module und Overrides laufen - und gibt es Sicherheitsmeldungen zu ihren Versionen?"),
     "datenbank": ("PrestaShop-Daten in der Datenbank", "Mitarbeiterkonten, HTTPS- und Webservice-Einstellungen und eingeschleuster Code in Inhalten (mit den Zugangsdaten aus der parameters.php)."),
 }
-_OTHER_GROUPS = {"drupal": GROUPS_DRUPAL, "typo3": GROUPS_TYPO3, "contao": GROUPS_CONTAO, "prestashop": GROUPS_PRESTASHOP}
+GROUPS_SHOPWARE = {
+    "konfig": ("Konfiguration & Zugriffsregeln", "Kern, Einstellungsdateien, Schlüssel, Installer, .htaccess und PHP-Einstellungen auf Manipulation und unsichere Einstellungen prüfen."),
+    "erweiterungen": ("Pakete, Plugins & Apps", "Welche Pakete, Plugins und Apps laufen - und gibt es Sicherheitsmeldungen zu ihren Versionen?"),
+    "datenbank": ("Shopware-Daten in der Datenbank", "Administratoren, Shop-Adressen, Integrationen, Webhooks und eingeschleuster Code in Inhalten (mit den Zugangsdaten aus der .env)."),
+}
+_OTHER_GROUPS = {"drupal": GROUPS_DRUPAL, "typo3": GROUPS_TYPO3, "contao": GROUPS_CONTAO, "prestashop": GROUPS_PRESTASHOP, "shopware": GROUPS_SHOPWARE}
 
 
 def _cms_text(cms: str, text: str) -> str:

@@ -44,7 +44,14 @@ def parse_typo3_version(new_php: str, old_php: str = "") -> str:
 
 
 major = drupal.major
-version_key = drupal.version_key
+
+
+def version_key(version: str) -> Tuple[int, ...]:
+    """Sortierschlüssel mit bis zu vier Zahlen ('6.6.10.0' -> (6, 6, 10, 0, 1)); Vorabversionen (-rc1) zählen kleiner. Für Shopware und PrestaShop (vierteilige Versionen)."""
+    m = re.match(r"(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:\.(\d+))?(-[A-Za-z0-9.]+)?", norm_version(version))
+    if not m:
+        return (0, 0, 0, 0, 0)
+    return (int(m.group(1)), int(m.group(2) or 0), int(m.group(3) or 0), int(m.group(4) or 0), 0 if m.group(5) else 1)
 
 
 def _day(s: str) -> float:
@@ -422,7 +429,7 @@ def affected(version: str, constraint: str) -> bool:
     """Liegt 'version' im Bereich 'constraint' (Composer-Schreibweise: ODER mit '|' oder '||', UND mit ',' oder Leerzeichen, z. B. '>=12.0.0,<12.4.8|>=13.0.0,<13.1.1')?
     Entwicklungs- und Vorabversionen (dev-main, -rc1) ergeben False: ihr Stand ist nicht beurteilbar."""
     v = norm_version(version)
-    if not re.match(r"^\d+(\.\d+){0,2}$", v):
+    if not re.match(r"^\d+(\.\d+){0,3}$", v):
         return False
     for alt in re.split(r"\s*\|\|?\s*", constraint or ""):
         parts = [p for p in re.split(r"\s*,\s*|\s+(?=[<>=!])", alt.strip()) if p]

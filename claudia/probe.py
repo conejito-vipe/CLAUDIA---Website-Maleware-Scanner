@@ -10,7 +10,7 @@ import re
 import time
 from typing import Any, Callable, Dict, Optional
 
-from . import contao, drupal, joomla, phppick, prestashop, typo3, wordpress
+from . import contao, drupal, joomla, phppick, prestashop, shopware, typo3, wordpress
 from .runner import Runner, RunnerError
 from .util import lines_of, split_sections
 
@@ -104,7 +104,7 @@ def probe(runner: Runner, site_dir: str, progress: Optional[Callable[[str, str],
     """Liefert ein Dict mit allen Angaben. 'progress(step_id, text)' meldet den jeweils laufenden Schritt."""
     info: Dict[str, Any] = {"site_dir": site_dir, "site_found": False, "joomla": "", "php": "", "php_source": "",
                             "php_note": "", "php_hint": "", "php_candidates": [], "mysql": False, "mysql_path": "",
-                            "config": False, "cms": "joomla", "wordpress": "", "drupal": "", "drupal_config": False, "typo3": "", "typo3_config": False, "typo3_mode": "", "contao": "", "contao_config": False, "prestashop": "", "prestashop_config": False, "wp_config": False, "who": "", "pwd": "", "folders": [], "warnings": []}
+                            "config": False, "cms": "joomla", "wordpress": "", "drupal": "", "drupal_config": False, "typo3": "", "typo3_config": False, "typo3_mode": "", "contao": "", "contao_config": False, "prestashop": "", "prestashop_config": False, "shopware": "", "shopware_config": False, "wp_config": False, "who": "", "pwd": "", "folders": [], "warnings": []}
 
     def step(sid: str, text: str) -> None:
         if progress:
@@ -120,7 +120,7 @@ def probe(runner: Runner, site_dir: str, progress: Optional[Callable[[str, str],
         home = runner.run("ls -1Ap 2>/dev/null | grep '/$' | head -60", left(10))
         info["folders"] = [x.rstrip("/") for x in lines_of(home.out)]
 
-        step("joomla", "Joomla, WordPress, Drupal, TYPO3, Contao oder PrestaShop erkennen ...")
+        step("joomla", "Joomla, WordPress, Drupal, TYPO3, Contao, PrestaShop oder Shopware erkennen ...")
         res = runner.sh(site_dir, r"""
 echo '@@VERSION'; head -c 8000 libraries/src/Version.php 2>/dev/null
 echo '@@MANIFEST'; head -c 4000 administrator/manifests/files/joomla.xml 2>/dev/null
@@ -139,6 +139,8 @@ echo '@@CONTAOVER'; for f in composer.lock ../composer.lock; do if [ -f "$f" ]; 
 echo '@@CONTAOLEG'; head -c 6000 system/modules/core/config/config.php 2>/dev/null
 echo '@@PSCONF'; if [ -d classes ] && { [ -f app/config/parameters.php ] || [ -f config/settings.inc.php ]; }; then echo ja; fi
 echo '@@PSVER'; for f in app/AppKernel.php config/settings.inc.php install/install_version.php; do if [ -f "$f" ]; then head -c 6000 "$f"; echo; fi; done
+echo '@@SWCONF'; R=.; if [ ! -d vendor/shopware ] && [ -d ../vendor/shopware ]; then R=..; fi; if [ -d "$R/vendor/shopware/core" ]; then echo ja; fi
+echo '@@SWVER'; R=.; if [ ! -d vendor/shopware ] && [ -d ../vendor/shopware ]; then R=..; fi; if [ -f "$R/composer.lock" ]; then head -c 6000000 "$R/composer.lock"; fi
 echo '@@WHO'; whoami; pwd
 """ % (" ".join(typo3.VERSION_FILES), typo3.OLD_VERSION_FILE, " ".join(typo3.CONFIG_FILES)), left(12))
         if res.rc == 97:
@@ -161,6 +163,8 @@ echo '@@WHO'; whoami; pwd
             info["typo3_mode"] = (sec.get("TYPO3MODE", "").split() or [""])[0] if (tv or info["typo3_config"]) else ""
             info["contao_config"] = "ja" in sec.get("CONTAOCONF", "")
             info["contao"] = contao.parse_core_version(sec.get("CONTAOVER", ""), "", sec.get("CONTAOLEG", ""))
+            info["shopware_config"] = "ja" in sec.get("SWCONF", "")
+            info["shopware"] = shopware.parse_core_version(sec.get("SWVER", "")) if info["shopware_config"] else ""
             info["prestashop_config"] = "ja" in sec.get("PSCONF", "")
             info["prestashop"] = prestashop.parse_core_version(sec.get("PSVER", "")) if info["prestashop_config"] else ""
             if info["joomla"]:
@@ -173,6 +177,8 @@ echo '@@WHO'; whoami; pwd
                 info["cms"] = "typo3"
             elif info["contao"] or info["contao_config"]:
                 info["cms"] = "contao"
+            elif info["shopware"] or info["shopware_config"]:
+                info["cms"] = "shopware"
             elif info["prestashop"] or info["prestashop_config"]:
                 info["cms"] = "prestashop"
             else:

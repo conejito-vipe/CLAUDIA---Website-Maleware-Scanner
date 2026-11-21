@@ -21,7 +21,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
-from . import cms as cmsmod, contao, drupal, prestashop, typo3, APP_NAME, __version__, actionplan, actions, baseline, hoster, joomla, logsave, phpdetect, probe as probe_mod, report, snippets, uninstall, wordpress
+from . import cms as cmsmod, contao, drupal, prestashop, shopware, typo3, APP_NAME, __version__, actionplan, actions, baseline, hoster, joomla, logsave, phpdetect, probe as probe_mod, report, snippets, uninstall, wordpress
 from .db import DbError
 from .engine import Ctx, Engine, Settings
 from . import helpdocs, i18n
@@ -867,6 +867,17 @@ class App:
                             "prefix": "", "has_password": bool(v.get("password"))}
         if not r.out.strip() and not (wp and wp.out.strip()):
             try:
+                sr = self.runner.sh(site, shopware.read_config_sh(), 30)
+            except RunnerError as e:
+                raise ApiError(str(e), 502)
+            sp = shopware.split_config_output(sr.out)["env"]
+            if any((t or "").strip() for _, t in sp):
+                v = shopware.parse_settings(sp).get("vars", {})
+                if v.get("db"):
+                    host, port, sock = joomla.split_db_host(str(v.get("host", "")))
+                    return {"found": True, "host": host + (":" + sock if sock else ""), "port": str(port or ""), "user": str(v.get("user", "")), "name": str(v.get("db", "")),
+                            "prefix": "", "has_password": bool(v.get("password"))}
+            try:
                 pr = self.runner.sh(site, prestashop.read_config_sh(), 30)
             except RunnerError as e:
                 raise ApiError(str(e), 502)
@@ -973,6 +984,8 @@ class App:
             return {"status": "kein_original", "note": "Für Drupal gibt es noch keinen Abgleich einzelner Zeilen mit dem Original. Der Dateivergleich des Kerns steht in der Prüfung 'Drupal-Kern: Version und Originaldateien'."}
         if self.cms() == "contao":
             return {"status": "kein_original", "note": "Für Contao gibt es noch keinen Abgleich einzelner Zeilen mit dem Original. Der Dateivergleich der Kern-Pakete steht in der Prüfung 'Contao-Kern: Version, Sicherheitsmeldungen und Originaldateien'."}
+        if self.cms() == "shopware":
+            return {"status": "kein_original", "note": "Für Shopware gibt es noch keinen Abgleich einzelner Zeilen mit dem Original. Der Dateivergleich des Kerns steht in der Prüfung 'Shopware-Kern: Version, Sicherheitsmeldungen und Originaldateien'."}
         if self.cms() == "prestashop":
             return {"status": "kein_original", "note": "Für PrestaShop gibt es noch keinen Abgleich einzelner Zeilen mit dem Original. Der Dateivergleich des Kerns steht in der Prüfung 'PrestaShop-Kern: Version, Sicherheitsmeldungen und Originaldateien'."}
         if self.cms() == "typo3":

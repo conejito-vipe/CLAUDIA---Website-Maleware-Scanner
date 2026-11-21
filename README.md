@@ -2,7 +2,7 @@
 
 <p align="center"><img src="claudia/assets/claudia_logo.png" width="180" alt="CLAUDIA"></p>
 
-CLAUDIA is a free Windows tool (Python, standard library + paramiko) that checks a **Joomla**, **WordPress** (including WooCommerce shops), **Drupal** (8 and newer), **TYPO3** (11 and newer), **Contao** (4.13 and newer) or **PrestaShop** (1.7 and newer) site over an encrypted SSH connection for traces of a hack and for typical vulnerabilities.
+CLAUDIA is a free Windows tool (Python, standard library + paramiko) that checks a **Joomla**, **WordPress** (including WooCommerce shops), **Drupal** (8 and newer), **TYPO3** (11 and newer), **Contao** (4.13 and newer), **PrestaShop** (1.7 and newer) or **Shopware** (6.5 and newer) site over an encrypted SSH connection for traces of a hack and for typical vulnerabilities.
 It runs a local web interface on `127.0.0.1` in your browser. German and English (switch with the flags), documentation built in.
 
 > Deutsche Fassung: [README.de.md](README.de.md)

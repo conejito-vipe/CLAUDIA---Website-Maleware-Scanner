@@ -7,7 +7,7 @@ import traceback
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
-from . import cms as cmsmod, contao, drupal, joomla, phppick, prestashop, typo3, wordpress
+from . import cms as cmsmod, contao, drupal, joomla, phppick, prestashop, shopware, typo3, wordpress
 from .model import Cancelled, CheckResult, CheckSkipped
 from .registry import REGISTRY, load_all
 from .runner import Runner, RunnerError, ShResult
@@ -27,7 +27,7 @@ class Settings:
     opts: Dict[str, Dict[str, Any]] = field(default_factory=dict)   # {check_id: {option_key: value}}
     php_web: Dict[str, str] = field(default_factory=dict)            # erkannte PHP-Version der Webseite (aus dem Verbindungstest)
     db: Dict[str, str] = field(default_factory=dict)                 # optionale eigene Datenbank-Zugangsdaten (Bereich 'Datenbank')
-    cms: str = "joomla"                                              # joomla | wordpress | drupal | typo3 | contao | prestashop (erkannt beim Verbinden)
+    cms: str = "joomla"                                              # joomla | wordpress | drupal | typo3 | contao | prestashop | shopware (erkannt beim Verbinden)
     php_cands: List[Dict[str, Any]] = field(default_factory=list)    # gefundene PHP-Programme (aus dem Verbindungstest)
     baseline_dir: str = ""                                           # Ordner für Vergleichsbasen (B9); leer = Vergleich nicht verfügbar
     baseline_key: str = ""                                           # Kennung der Verbindung (Server, Benutzer, Seitenordner)
@@ -150,6 +150,18 @@ class Ctx:
                 cfg = contao.parse_settings(parts["env"], parts["yaml"], parts["local"])
                 cfg["text"] = res.out
                 cfg["path"] = (parts["env"] or parts["yaml"] or parts["local"])[0][0]
+                cfg["missing"] = False
+                self.shared["config"] = cfg
+        if "config" not in self.shared and self.cms == "shopware":
+            res = self.sh(shopware.read_config_sh(), timeout=30)
+            parts = shopware.split_config_output(res.out)
+            if not any((t or "").strip() for _, t in parts["env"]):
+                self.shared["config"] = {"vars": {}, "shopware": {}, "prefix": "", "unexpected": [], "parsed": False, "size": 0, "lines": 0, "missing": True, "text": "", "path": "", "files": [], "jwt": parts["jwt"]}
+            else:
+                cfg = shopware.parse_settings(parts["env"])
+                cfg["text"] = res.out
+                cfg["path"] = cfg["files"][0] if cfg["files"] else ""
+                cfg["jwt"] = parts["jwt"]
                 cfg["missing"] = False
                 self.shared["config"] = cfg
         if "config" not in self.shared and self.cms == "prestashop":

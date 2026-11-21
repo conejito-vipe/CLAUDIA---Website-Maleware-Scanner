@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Tuple
 
 from . import drupal
 from .contao import parse_release_list  # gleiche Packagist-Antwort (Liste stabiler x.y.z-Versionen)
-from .typo3 import DANGEROUS, advisories_for, affected, norm_version, parse_advisories, parse_php_array, strip_comments, Expr
+from .typo3 import DANGEROUS, advisories_for, affected, norm_version, parse_advisories, parse_php_array, strip_comments, version_key, Expr
 
 __all__ = ["advisories_for", "affected", "parse_advisories", "norm_version", "parse_release_list"]
 
@@ -27,7 +27,6 @@ LIFECYCLE: Dict[str, str] = {"9.1": "supported", "9.0": "security", "8.2": "secu
 LIFECYCLE_ASOF = "2026-11"
 
 major = drupal.major
-version_key = drupal.version_key
 
 
 def cycle(version: str) -> Tuple[int, int]:

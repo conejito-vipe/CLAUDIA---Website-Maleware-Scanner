@@ -28,7 +28,7 @@ class Content(unittest.TestCase):
         cls.p = techdoc.payload("de")
 
     def test_every_check_has_code(self):
-        ids = {c.id for cms in ("joomla", "wordpress", "drupal", "typo3", "contao", "prestashop") for c in ordered(cms)}
+        ids = {c.id for cms in ("joomla", "wordpress", "drupal", "typo3", "contao", "prestashop", "shopware") for c in ordered(cms)}
         got = {c["id"]: c for c in self.p["checks"]}
         self.assertEqual(ids, set(got))
         for cid, c in got.items():

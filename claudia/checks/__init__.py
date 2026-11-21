@@ -32,6 +32,7 @@ _MODULES = [
     "typo3_checks",
     "contao_checks",
     "prestashop_checks",
+    "shopware_checks",
     "umgebung_pruefungen",
 ]
 

@@ -238,7 +238,44 @@ PRESTASHOP: Dict[str, Any] = {
     "common_checks": DRUPAL["common_checks"],
 }
 
-PROFILES = {"joomla": JOOMLA, "wordpress": WORDPRESS, "drupal": DRUPAL, "typo3": TYPO3, "contao": CONTAO, "prestashop": PRESTASHOP}
+# ---- Shopware 6 (seit 2.13.0): Composer-Installation ab 6.5 (Ordner config, custom, files, public, src, var, vendor).
+SHOPWARE: Dict[str, Any] = {
+    "id": "shopware", "name": "Shopware",
+    "config_file": ".env",
+    "upload_dirs": "public/media public/thumbnail public/sitemap files custom/plugins",
+    "cache_dirs": "var/cache var/log public/theme public/bundles",
+    "prune_find": "-path ./node_modules -o -path '*/vendor' -o -path ./var/cache",
+    "recent_skip": "-not -path './var/cache/*' -not -path './var/log/*' -not -path './public/theme/*' -not -path './public/bundles/*' -not -path './public/thumbnail/*' -not -path './public/media/*' -not -path './node_modules/*'",
+    "lib_exclude": r"^\./(vendor/|.*/vendor/|var/|public/theme/|public/bundles/|public/thumbnail/)",
+    "lib_exclude2": r"^\./(vendor/|.*/vendor/)",
+    "ext_root_re": r"^(\./(?:custom/plugins|custom/apps|vendor/shopware)/[^/]+)(?:/|$)",
+    "manifest_find": "find custom/plugins custom/apps -maxdepth 2 \\( -name composer.json -o -name manifest.xml \\) -type f -printf 'MF\\t%T@\\t%h\\n' 2>/dev/null | head -5000",
+    "code_dir_re": r"^\./(config|custom|src|templates|public/bundles|migration)/",
+    "root_ok": ("./index.php", "./public/index.php", "./.htaccess", "./.user.ini", "./_.htaccess", "./bin/console"),
+    "ext_dir_re": r"^\./(vendor|config|custom|src|public/bundles|public/theme|templates)/",
+    "installer_sql_re": r"^\./(vendor|custom)/.+\.sql$",
+    "core_dirs": {"bin", "config", "custom", "files", "public", "src", "templates", "var", "vendor", "migration", "docs", "tests", ".well-known", "cgi-bin", "app", "web"},
+    "core_dir_re": r"^$",
+    "core_files": {"index.php", ".htaccess", "_.htaccess", "robots.txt", "favicon.ico", "sitemap.xml", "composer.json", "composer.lock", "README.md", "LICENSE", "LICENSE.txt", "symfony.lock",
+                   ".gitignore", ".user.ini", "php.ini", ".env", ".env.local", ".env.dist", "docker-compose.yml", "phpunit.xml.dist", "shopware-installer.phar.php"},
+    "ext_word": "Plugin", "ext_words": "Plugins",
+    "upload_word": "public/media, public/thumbnail",
+    "admin_url": "/admin",
+    "version_key": "shopware",
+    "admin_word": "Verwaltung",
+    "enable_hint": "In der Verwaltung unter Erweiterungen > Meine Erweiterungen installieren und aktivieren.",
+    "sec_base": "custom/plugins", "sec_depth": 1,
+    "no_sec_title": "Kein Sicherheits-Plugin gefunden", "install_hint": "Ein Sicherheits-Plugin installieren",
+    "outside_dir": "files",
+    "spool": "var",
+    "root_find": "-name index.php -o -name composer.json",
+    "need_mods": ["json", "xml", "mbstring", "pdo", "gd", "intl", "zip", "curl"], "zip_note": "",
+    "root_text": "Shopware legt hier nur die Ordner bin, config, custom, files, public, src, var und vendor ab. ",
+    "store": "none", "update_cli": False, "vel": False,
+    "common_checks": DRUPAL["common_checks"],
+}
+
+PROFILES = {"joomla": JOOMLA, "wordpress": WORDPRESS, "drupal": DRUPAL, "typo3": TYPO3, "contao": CONTAO, "prestashop": PRESTASHOP, "shopware": SHOPWARE}
 DEFAULT = "joomla"
 
 
@@ -248,7 +285,7 @@ def known(cms: str) -> str:
 
 
 def runs_common(cms: str, check_id: str) -> bool:
-    """Läuft die gemeinsame Prüfung (cms='both') bei diesem System? Joomla und WordPress: alle; Drupal, TYPO3, Contao und PrestaShop: nur die geprüfte Auswahl 'common_checks'."""
+    """Läuft die gemeinsame Prüfung (cms='both') bei diesem System? Joomla und WordPress: alle; Drupal, TYPO3, Contao, PrestaShop und Shopware: nur die geprüfte Auswahl 'common_checks'."""
     allow = profile(cms).get("common_checks")
     return allow is None or check_id in allow
 

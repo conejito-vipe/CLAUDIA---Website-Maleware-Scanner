@@ -2,7 +2,7 @@
 
 <p align="center"><img src="claudia/assets/claudia_logo.png" width="180" alt="CLAUDIA"></p>
 
-CLAUDIA ist ein kostenloses Windows-Programm (Python, Standardbibliothek + paramiko), das eine **Joomla**-, **WordPress**- (auch mit WooCommerce-Shop), **Drupal**- (ab Version 8), **TYPO3**- (ab Version 11), **Contao**- (ab Version 4.13) oder **PrestaShop**-Seite (ab Version 1.7) über eine verschlüsselte SSH-Verbindung auf Spuren eines Hacks und auf typische Schwachstellen prüft.
+CLAUDIA ist ein kostenloses Windows-Programm (Python, Standardbibliothek + paramiko), das eine **Joomla**-, **WordPress**- (auch mit WooCommerce-Shop), **Drupal**- (ab Version 8), **TYPO3**- (ab Version 11), **Contao**- (ab Version 4.13), **PrestaShop**- (ab Version 1.7) oder **Shopware**-Seite (ab Version 6.5) über eine verschlüsselte SSH-Verbindung auf Spuren eines Hacks und auf typische Schwachstellen prüft.
 Die Oberfläche läuft lokal auf `127.0.0.1` im Browser, auf Deutsch und Englisch (Flaggen), mit eingebauter Dokumentation.
 
 ## Grundsätze
@@ -71,21 +71,19 @@ Das kannst du tun:
 
 ## Geplant
 
-Die Reihenfolge ist Absicht: erst alle Systeme, dann Installer, Härtung und Komfort. Zugesagt ist nur, was schon unter „Änderungen“ im Handbuch steht; alles hier ist Planung und kann sich ändern.
+Alle geplanten Systeme sind eingebaut (Joomla, WordPress mit WooCommerce, Drupal, TYPO3, Contao, PrestaShop, Shopware). Die Reihenfolge ist Absicht: erst Installer, dann Härtung und Komfort. Zugesagt ist nur, was schon unter „Änderungen“ im Handbuch steht; alles hier ist Planung und kann sich ändern.
 
-1. **Weiteres System:** Shopware (Joomla, WordPress mit WooCommerce, Drupal, TYPO3, Contao und PrestaShop sind da). Jedes bekommt die gleichen lesenden Prüfungen: Kern und Originaldateien, Einstellungen, abrufbare Dateien, Erweiterungen mit Sicherheitsmeldungen, Konten und Code in Inhalten. Lösungen auf Knopfdruck für diese Systeme gibt es nur nach ausdrücklicher Freigabe.
+1. **Installer** für Windows und Mac, danach auch eine einzelne `.exe` bzw. Mac-App. Der Installer prüft, ob CLAUDIA schon installiert ist, und schlägt ein Update vor, wenn die vorhandene Versionsnummer niedriger ist.
 
-2. **Installer** für Windows und Mac, danach auch eine einzelne `.exe` bzw. Mac-App. Der Installer prüft, ob CLAUDIA schon installiert ist, und schlägt ein Update vor, wenn die vorhandene Versionsnummer niedriger ist.
+2. **Code-Prüfung und Härtung:** Der gesamte Code wird auf Schwachstellen und Doppelungen durchgesehen; Missbrauch soll so schwer wie möglich werden.
 
-3. **Code-Prüfung und Härtung:** Der gesamte Code wird auf Schwachstellen und Doppelungen durchgesehen; Missbrauch soll so schwer wie möglich werden.
+3. **Englische Übersetzung vervollständigen** (danach, damit sich die Texte nicht mehr ändern).
 
-4. **Englische Übersetzung vervollständigen** (danach, damit sich die Texte nicht mehr ändern).
+4. **Update-Prozess:** CLAUDIA meldet neue Versionen und prüft vor dem Austausch die Prüfsumme (mit Sicherung und Weg zurück).
 
-5. **Update-Prozess:** CLAUDIA meldet neue Versionen und prüft vor dem Austausch die Prüfsumme (mit Sicherung und Weg zurück).
+5. **Dashboard:** Übersicht über mehrere Seiten und den Verlauf der Befunde.
 
-6. **Dashboard:** Übersicht über mehrere Seiten und den Verlauf der Befunde.
-
-7. **Praxistests** auf echten Windows- und Mac-Rechnern mit echten Seiten.
+6. **Praxistests** auf echten Windows- und Mac-Rechnern mit echten Seiten.
 
 Wünsche und Fehler bitte als Issue melden (Vorschläge zum Code als Pull Request, siehe CONTRIBUTING.md).
 

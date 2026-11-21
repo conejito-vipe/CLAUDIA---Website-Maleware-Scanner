@@ -684,7 +684,7 @@ def available(results: List[Dict[str, Any]], info: Dict[str, Any], manual: str =
     update = update or {}
     scan = scan or {}
     cms = str((info or {}).get("cms") or "joomla")
-    if cms in ("drupal", "typo3", "contao", "prestashop"):      # 2.8.0/2.10.0/2.11.0: Für Drupal, TYPO3 und Contao gibt es nur Prüfungen, keine Lösungen auf Knopfdruck (jede Aktion braucht eigene Tests und Freigabe)
+    if cms in ("drupal", "typo3", "contao", "prestashop", "shopware"):      # 2.8.0/2.10.0/2.11.0: Für Drupal, TYPO3 und Contao gibt es nur Prüfungen, keine Lösungen auf Knopfdruck (jede Aktion braucht eigene Tests und Freigabe)
         return []
     res = []
     wp_flags = {"update": False, "core": False, "salts": False, "edit": False, "reg": False}
