@@ -2,12 +2,24 @@
 
 Erzeugt aus `claudia/docs/aenderungen.de.txt` (nicht von Hand ändern).
 
+## 2.11.0 (2026-11-21) - Contao
+
+### Contao-Seiten werden erkannt und geprüft
+- **Was:** CLAUDIA erkennt jetzt Contao (ab Version 4.13, Composer-Installation; ältere Versionen werden erkannt und als nicht mehr unterstützt gemeldet) und zeigt eigene Prüfungen: Kern (Version, Support-Ende nach einer eingebauten Tabelle, Sicherheitsmeldungen von Packagist, Vergleich der Kern-Pakete contao/core-bundle, manager-bundle und installation-bundle mit dem Original von GitHub), Einstellungen (.env, config/parameters.yaml, ältere localconfig.php: auffällige Befehle, Entwicklungsmodus, APP_DEBUG, APP_SECRET, TRUSTED_HOSTS, erlaubte Upload-Dateitypen und HTML-Tags, Mindest-Passwortlänge, Dateirechte), frei abrufbare Dateien, Install-Tool, Contao Manager und Entwicklungs-Eingang, Pakete aus composer.lock (Sicherheitsmeldungen von Packagist, Entwicklungs-Pakete auf dem Live-Server, eigene Pakete), Backend-Administratoren (auch ohne Zwei-Faktor-Anmeldung) und Code in Inhaltselementen, Modulen und Seitenlayouts. Dazu laufen die allgemeinen Prüfungen, die nichts Systemspezifisches lesen.
+- **Warum:** Contao-Seiten werden genauso angegriffen wie die anderen Systeme, meist über veraltete Erweiterungen. Typische Spuren sind ein neues Administrator-Konto, ein Skript in einem Inhaltselement und eine liegengebliebene .env oder ein erreichbarer Contao Manager.
+- **Wie:** Alles ist rein lesend. Die Einstellungsdateien werden nur als Text gelesen und nie ausgeführt; Datenbank-Zugangsdaten, APP_SECRET und Mail-Zugangsdaten werden nie angezeigt oder gespeichert (vom APP_SECRET nur die Länge). Für Contao gibt es noch keine Lösungen auf Knopfdruck. Grenzen: Die Original-Pakete von GitHub haben keine veröffentlichte Prüfsumme (nur die https-Quelle); Antwortformate von Packagist und GitHub sowie Tabellen- und Feldnamen von Contao sind noch nicht gegen einen echten Server geprüft; fehlt etwas, meldet die Prüfung 'nicht prüfbar'. Die Support-Tabelle stammt von endoflife.date (Stand 2026-11), weil contao.org nicht abrufbar war. Ein Contao-Logo wird nicht angezeigt, weil keine freigegebene Quelle vorliegt.
+
+### Intern
+- **Was:** Die Contao-Prüfungen wurden mit einer nachgebauten Contao-Testwelt (Composer, SQLite-Datenbank mit tl_user, tl_content, tl_module, tl_layout) abgesichert. Eine Prüfung fehlte bisher in der Technik-Doku-Liste (TYPO3), das ist behoben.
+- **Warum:** Ohne Test hätten Tippfehler in Abfragen oder Abschnittsmarken erst beim Praxistest auffallen können.
+- **Wie:** Reine Korrektur und Test; am Verhalten der übrigen Prüfungen ändert sich nichts.
+
 ## 2.10.1 (2026-11-20) - Lizenz
 
 ### Lizenz neu gefasst
 - **Was:** Die Lizenz (LICENSE, LIZENZ.txt, Abschnitt in den READMEs) ist neu: kostenlos nur für Privatpersonen und gemeinnützige Organisationen, keine kommerzielle Nutzung, keine Änderung und keine Weitergabe ohne Zustimmung des Urhebers. Parteien und Gruppen, die vom Verfassungsschutz als rechtsextremistische Bestrebung eingestuft oder verboten sind, sind ausgeschlossen. Die Fußzeile heißt jetzt "vibecoded" und nennt conejito-vipe.
 - **Warum:** Die bisherige Freeware-Lizenz erlaubte berufliche Nutzung, Änderung und Weitergabe. Das ist nicht mehr gewollt. Die Anknüpfung an den Verfassungsschutz macht den Ausschluss nachprüfbar.
-- **Wie:** Reine Text-Änderung; am Programm und an den Prüfungen ändert sich nichts. Grenze: Das ist keine Rechtsberatung.
+- **Wie:** Reine Text-Änderung; am Programm und an den Prüfungen ändert sich nichts.
 
 ## 2.10.0 (2026-11-19) - TYPO3
 

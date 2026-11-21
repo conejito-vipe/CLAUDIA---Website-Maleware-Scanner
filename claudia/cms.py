@@ -163,7 +163,44 @@ TYPO3: Dict[str, Any] = {
     "common_checks": DRUPAL["common_checks"],
 }
 
-PROFILES = {"joomla": JOOMLA, "wordpress": WORDPRESS, "drupal": DRUPAL, "typo3": TYPO3}
+# ---- Contao (seit 2.11.0): Composer-Installation ab Contao 4.13 (Ordner config, vendor, public, files, templates, var, contao).
+CONTAO: Dict[str, Any] = {
+    "id": "contao", "name": "Contao",
+    "config_file": ".env",                                 # dazu config/parameters.yaml, config/config.yaml und (ältere Versionen) system/config/localconfig.php
+    "upload_dirs": "files public/files assets public/assets",
+    "cache_dirs": "var/cache var/logs var/log public/assets public/share",
+    "prune_find": "-path ./node_modules -o -path '*/vendor' -o -path ./var/cache",
+    "recent_skip": "-not -path './var/cache/*' -not -path './var/logs/*' -not -path './var/log/*' -not -path './public/assets/*' -not -path './assets/*' -not -path './node_modules/*'",
+    "lib_exclude": r"^\./(vendor/|.*/vendor/|var/|public/assets/|assets/)",
+    "lib_exclude2": r"^\./(vendor/|.*/vendor/)",
+    "ext_root_re": r"^(\./(?:vendor/[^/]+|contao|system/modules)/[^/]+)(?:/|$)",
+    "manifest_find": "find vendor/contao system/modules -maxdepth 2 -name composer.json -type f -printf 'MF\\t%T@\\t%h\\n' 2>/dev/null | head -5000",
+    "code_dir_re": r"^\./(contao|config|src|templates|system/modules|public/bundles)/",
+    "root_ok": ("./index.php", "./public/index.php", "./.htaccess", "./.user.ini", "./_.htaccess", "./console", "./bin/console"),
+    "ext_dir_re": r"^\./(vendor|config|src|contao|system/modules|public/bundles|public/assets|assets|templates)/",
+    "installer_sql_re": r"^\./(vendor|contao|system/modules)/.+\.sql$",
+    "core_dirs": {"contao", "config", "vendor", "public", "files", "assets", "templates", "var", "system", "src", "bin", "web", "app", ".well-known", "cgi-bin"},
+    "core_dir_re": r"^$",
+    "core_files": {"index.php", ".htaccess", "_.htaccess", "robots.txt", "favicon.ico", "sitemap.xml", "composer.json", "composer.lock", "README.md", "LICENSE", "LICENSE.txt",
+                   ".gitignore", ".user.ini", "php.ini", ".env", ".env.local", "symfony.lock", "console", "contao-manager.phar.php"},
+    "ext_word": "Erweiterung", "ext_words": "Erweiterungen",
+    "upload_word": "files, assets",
+    "admin_url": "/contao",
+    "version_key": "contao",
+    "admin_word": "Backend",
+    "enable_hint": "Im Contao Manager oder mit composer require installieren und aktivieren.",
+    "sec_base": "vendor/contao", "sec_depth": 1,
+    "no_sec_title": "Keine Sicherheits-Erweiterung gefunden", "install_hint": "Eine Sicherheits-Erweiterung installieren",
+    "outside_dir": "files",
+    "spool": "var",
+    "root_find": "-name index.php -o -name composer.json",
+    "need_mods": ["json", "xml", "mbstring", "pdo", "intl"], "zip_note": "",
+    "root_text": "Contao legt hier nur index.php, die Ordner config, contao, files, public, templates, var und vendor ab. ",
+    "store": "none", "update_cli": False, "vel": False,
+    "common_checks": DRUPAL["common_checks"],
+}
+
+PROFILES = {"joomla": JOOMLA, "wordpress": WORDPRESS, "drupal": DRUPAL, "typo3": TYPO3, "contao": CONTAO}
 DEFAULT = "joomla"
 
 
@@ -173,7 +210,7 @@ def known(cms: str) -> str:
 
 
 def runs_common(cms: str, check_id: str) -> bool:
-    """Läuft die gemeinsame Prüfung (cms='both') bei diesem System? Joomla und WordPress: alle; Drupal und TYPO3: nur die geprüfte Auswahl 'common_checks'."""
+    """Läuft die gemeinsame Prüfung (cms='both') bei diesem System? Joomla und WordPress: alle; Drupal, TYPO3 und Contao: nur die geprüfte Auswahl 'common_checks'."""
     allow = profile(cms).get("common_checks")
     return allow is None or check_id in allow
 

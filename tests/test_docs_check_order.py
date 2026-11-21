@@ -39,7 +39,7 @@ class Order(unittest.TestCase):
             groups = pg.evaluate(JS)
             b.close()
         checks = [g for g in groups if g["t"].startswith("Prüfungen für")]
-        self.assertEqual(len(checks), 5)      # Joomla, WordPress, Drupal, TYPO3, mehrere Systeme (seit 2.10.0)
+        self.assertEqual(len(checks), 6)      # Joomla, WordPress, Drupal, TYPO3, Contao, mehrere Systeme (seit 2.11.0)
         for g in checks:
             self.assertGreater(g["n"], 5)
             self.assertTrue(g["sorted"], g["t"])

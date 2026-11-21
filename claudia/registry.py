@@ -43,6 +43,9 @@ CLUSTERS = {
     "typo3_kern": ("TYPO3-Kern, Einstellungen und abrufbare Dateien prüfen", "Nur bei TYPO3-Seiten: Version, Sicherheitsmeldungen und Originaldateien des Kerns, die Einstellungsdatei samt Install-Tool und von außen abrufbare Dateien werden gelesen und bewertet."),
     "typo3_erweiterungen": ("TYPO3-Erweiterungen prüfen", "Nur bei TYPO3-Seiten: Jede Erweiterung und Systemerweiterung wird inventarisiert und mit den Sicherheitsmeldungen des TYPO3-Teams (Packagist) abgeglichen."),
     "typo3_daten": ("Konten und Inhalte in der Datenbank prüfen", "Nur bei TYPO3-Seiten: Backend-Administratoren und Code in Inhaltselementen, TypoScript und Nachrichten werden aus der Datenbank gelesen und bewertet."),
+    "contao_kern": ("Contao-Kern, Einstellungen und abrufbare Dateien prüfen", "Nur bei Contao-Seiten: Version, Sicherheitsmeldungen und Originaldateien der Kern-Pakete, die Einstellungsdateien (.env, parameters.yaml) und von außen abrufbare Dateien und Verwaltungswerkzeuge werden gelesen und bewertet."),
+    "contao_erweiterungen": ("Contao-Pakete und Erweiterungen prüfen", "Nur bei Contao-Seiten: Jedes Paket aus composer.lock wird inventarisiert und mit den Sicherheitsmeldungen von Packagist abgeglichen."),
+    "contao_daten": ("Konten und Inhalte in der Datenbank prüfen", "Nur bei Contao-Seiten: Backend-Administratoren (mit Zwei-Faktor-Status) und Code in Inhaltselementen, Modulen und Layouts werden aus der Datenbank gelesen und bewertet."),
     "joomla_code": ("Eingeschleusten Code in Joomla-Daten prüfen", "Artikel, Module, Template-Einstellungen, Weiterleitungen und Erweiterungs-Einträge werden auf fremden Code und fremde Adressen durchsucht."),
     "konto": ("Dauerzugänge im Konto prüfen", "Cronjobs, SSH-Schlüssel, laufende Prozesse, Start-Dateien der Shell und angemeldete Sitzungen werden angesehen. Hier setzt sich ein Angreifer fest, wenn er die Seite verlassen muss."),
     "logs_spuren": ("Protokolle nach Angriffsspuren durchsuchen", "Die Protokolle des Servers werden nach Zugriffen auf Schadcode, Scans und Anmeldeversuchen durchsucht."),
@@ -56,6 +59,7 @@ CLUSTER_MEMBERS = {
     "drupal_core": "drupal_kern", "drupal_settings": "drupal_kern", "drupal_exposed": "drupal_kern", "drupal_modules": "drupal_module",
     "drupal_users": "drupal_daten", "drupal_config_db": "drupal_daten", "drupal_db_code": "drupal_daten",
     "typo3_core": "typo3_kern", "typo3_settings": "typo3_kern", "typo3_exposed": "typo3_kern", "typo3_extensions": "typo3_erweiterungen", "typo3_users": "typo3_daten", "typo3_db_code": "typo3_daten",
+    "contao_core": "contao_kern", "contao_settings": "contao_kern", "contao_exposed": "contao_kern", "contao_packages": "contao_erweiterungen", "contao_users": "contao_daten", "contao_db_code": "contao_daten",
     "joomla_info": "umfeld", "mail_dns": "umfeld", "dns_changes": "umfeld", "mail_send": "umfeld", "plaintext_creds": "konto", "backup_age": "versteck", "js_libs": "js_inject", "tls_protocols": "besucher", "cookie_flags": "besucher", "threat_intel": "umfeld", "other_installs": "umfeld", "root_files": "umfeld", "perms": "rechte", "update_ready": "update",
     "webshells": "php_shells", "php_in_uploads": "php_shells", "suspicious_names": "php_shells", "malware_patterns": "php_shells", "hidden_structure": "versteck", "compare_runs": "versteck", "skimmer_scan": "js_inject",
     "js_scan": "js_inject",
@@ -150,7 +154,12 @@ GROUPS_TYPO3 = {
     "erweiterungen": ("Erweiterungen", "Welche Erweiterungen laufen - und gibt es Sicherheitsmeldungen zu ihren Versionen?"),
     "datenbank": ("TYPO3-Daten in der Datenbank", "Backend-Benutzer und eingeschleuster Code in Inhalten (mit den Zugangsdaten aus der Einstellungsdatei)."),
 }
-_OTHER_GROUPS = {"drupal": GROUPS_DRUPAL, "typo3": GROUPS_TYPO3}
+GROUPS_CONTAO = {
+    "konfig": ("Konfiguration & Zugriffsregeln", "Kern, Einstellungsdateien, Install-Tool, .htaccess und PHP-Einstellungen auf Manipulation und unsichere Einstellungen prüfen."),
+    "erweiterungen": ("Pakete & Erweiterungen", "Welche Pakete und Erweiterungen laufen - und gibt es Sicherheitsmeldungen zu ihren Versionen?"),
+    "datenbank": ("Contao-Daten in der Datenbank", "Backend-Benutzer und eingeschleuster Code in Inhalten (mit den Zugangsdaten aus der .env bzw. parameters.yaml)."),
+}
+_OTHER_GROUPS = {"drupal": GROUPS_DRUPAL, "typo3": GROUPS_TYPO3, "contao": GROUPS_CONTAO}
 
 
 def _cms_text(cms: str, text: str) -> str:

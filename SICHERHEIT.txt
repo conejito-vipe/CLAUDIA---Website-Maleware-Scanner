@@ -24,8 +24,8 @@ Was das Programm tut
   Quellen ab; übertragen werden nur Versionsnummern, Erweiterungsnamen oder Dateipfade in der Adresse, keine Zugangsdaten und keine Berichte:
   extensions.joomla.org (Liste verwundbarer Erweiterungen, Verzeichnis), update.joomla.org und github.com / raw.githubusercontent.com
   (Original-Dateien und Prüfsummen von Joomla), api.wordpress.org (Prüfsummen, Versionen), updates.drupal.org und ftp.drupal.org (Drupal: Versionen,
-  Original-Paket), get.typo3.org (TYPO3: Versionen, Original-Paket, Prüfsumme) und packagist.org (TYPO3: Sicherheitsmeldungen zu Paketnamen und
-  Versionen), services.nvd.nist.gov (CVE-Einträge) und
+  Original-Paket), get.typo3.org (TYPO3: Versionen, Original-Paket, Prüfsumme) und packagist.org und repo.packagist.org (TYPO3 und Contao: Sicherheitsmeldungen und Versionen zu Paketnamen), github.com (Contao: Original-Pakete
+  der Kern-Bundles), services.nvd.nist.gov (CVE-Einträge) und
   nur wenn du einen eigenen Schlüssel einträgst: safebrowsing.googleapis.com (Google Safe Browsing). Ohne Internet bleibt der eingebaute Stand aktiv.
 - Speichert Passwörter nie. Profile enthalten keine Passwörter. Berichte enthalten keine Passwörter, IP-Adressen sind gekürzt.
 - Sendet nichts an den Hersteller, keine Statistik, nichts an Anthropic. Der Knopf "An Claude übergeben" öffnet nur

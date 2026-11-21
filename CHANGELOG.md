@@ -2,12 +2,24 @@
 
 Generated from `claudia/docs/aenderungen.en.txt` (do not edit by hand).
 
+## 2.11.0 (2026-11-21) - Contao
+
+### Contao sites are detected and checked
+- **What:** CLAUDIA now detects Contao (version 4.13 and newer, Composer installation; older versions are detected and reported as no longer supported) and shows its own checks: core (version, end of support from a built-in table, security advisories from Packagist, comparison of the core packages contao/core-bundle, manager-bundle and installation-bundle with the original from GitHub), settings (.env, config/parameters.yaml, older localconfig.php: suspicious commands, development mode, APP_DEBUG, APP_SECRET, TRUSTED_HOSTS, allowed upload file types and HTML tags, minimum password length, file permissions), publicly reachable files, Install Tool, Contao Manager and development entry point, packages from composer.lock (security advisories from Packagist, development packages on the live server, own packages), backend administrators (also without two-factor authentication) and code in content elements, modules and page layouts. The general checks that read nothing system-specific run as well.
+- **Why:** Contao sites are attacked just like the other systems, mostly through outdated extensions. Typical traces are a new administrator account, a script in a content element and a leftover .env or a reachable Contao Manager.
+- **How:** Everything is strictly read-only. The settings files are only read as text and never executed; database credentials, APP_SECRET and mail credentials are never shown or stored (of APP_SECRET only the length). There are no one-click solutions for Contao yet. Limits: the original packages from GitHub have no published checksum (only the https source); the response formats of Packagist and GitHub as well as Contao table and field names have not yet been checked against a real server; if something is missing, the check reports 'not checkable'. The support table comes from endoflife.date (as of 2026-11) because contao.org was not reachable. No Contao logo is shown because there is no approved source.
+
+### Internal
+- **What:** The Contao checks were secured with a rebuilt Contao test world (Composer, SQLite database with tl_user, tl_content, tl_module, tl_layout). A check was missing from the Tech Docs list (TYPO3); this is fixed.
+- **Why:** Without a test, typos in queries or section markers could only have shown up in the practical test.
+- **How:** Pure fix and test; the behavior of the other checks does not change.
+
 ## 2.10.1 (2026-11-20) - License
 
 ### License rewritten
 - **What:** The license (LICENSE, LIZENZ.txt, section in the READMEs) is new: free only for individuals and non-profit organizations, no commercial use, no modification and no redistribution without the author's consent. Parties and groups that are classified as a right-wing extremist effort by the Office for the Protection of the Constitution or that are banned are excluded. The footer now says "vibecoded" and names conejito-vipe.
 - **Why:** The previous freeware license allowed professional use, modification and redistribution. That is no longer wanted. Tying the exclusion to the Office for the Protection of the Constitution makes it verifiable.
-- **How:** Text change only; the program and the checks do not change. Limit: this is not legal advice.
+- **How:** Text change only; the program and the checks do not change.
 
 ## 2.10.0 (2026-11-19) - TYPO3
 

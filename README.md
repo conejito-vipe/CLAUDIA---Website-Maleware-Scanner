@@ -2,7 +2,7 @@
 
 <p align="center"><img src="claudia/assets/claudia_logo.png" width="180" alt="CLAUDIA"></p>
 
-CLAUDIA is a free Windows tool (Python, standard library + paramiko) that checks a **Joomla**, **WordPress** (including WooCommerce shops) or **Drupal** (8 and newer) site over an encrypted SSH connection for traces of a hack and for typical vulnerabilities.
+CLAUDIA is a free Windows tool (Python, standard library + paramiko) that checks a **Joomla**, **WordPress** (including WooCommerce shops), **Drupal** (8 and newer), **TYPO3** (11 and newer) or **Contao** (4.13 and newer) site over an encrypted SSH connection for traces of a hack and for typical vulnerabilities.
 It runs a local web interface on `127.0.0.1` in your browser. German and English (switch with the flags), documentation built in.
 
 > Deutsche Fassung: [README.de.md](README.de.md)
@@ -72,5 +72,3 @@ CLAUDIA is made publicly available for testing and ongoing development. See the 
 - **Exclusions:** political parties, as well as associations or groups that are classified as a right-wing extremist effort by the Office for the Protection of the Constitution (federal or state) or that are banned, are excluded from using this software (details in the [LICENSE](LICENSE)).
 
 Without any warranty or guarantee of success. Changes to servers are at your own risk. vibecoded with Claude (Anthropic) by conejito-vipe with love ❤️.
-
-*(Note: This is not legal advice.)*

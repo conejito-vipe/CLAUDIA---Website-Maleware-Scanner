@@ -10,7 +10,7 @@ import re
 import time
 from typing import Any, Callable, Dict, Optional
 
-from . import drupal, joomla, phppick, typo3, wordpress
+from . import contao, drupal, joomla, phppick, typo3, wordpress
 from .runner import Runner, RunnerError
 from .util import lines_of, split_sections
 
@@ -104,7 +104,7 @@ def probe(runner: Runner, site_dir: str, progress: Optional[Callable[[str, str],
     """Liefert ein Dict mit allen Angaben. 'progress(step_id, text)' meldet den jeweils laufenden Schritt."""
     info: Dict[str, Any] = {"site_dir": site_dir, "site_found": False, "joomla": "", "php": "", "php_source": "",
                             "php_note": "", "php_hint": "", "php_candidates": [], "mysql": False, "mysql_path": "",
-                            "config": False, "cms": "joomla", "wordpress": "", "drupal": "", "drupal_config": False, "typo3": "", "typo3_config": False, "typo3_mode": "", "wp_config": False, "who": "", "pwd": "", "folders": [], "warnings": []}
+                            "config": False, "cms": "joomla", "wordpress": "", "drupal": "", "drupal_config": False, "typo3": "", "typo3_config": False, "typo3_mode": "", "contao": "", "contao_config": False, "wp_config": False, "who": "", "pwd": "", "folders": [], "warnings": []}
 
     def step(sid: str, text: str) -> None:
         if progress:
@@ -120,7 +120,7 @@ def probe(runner: Runner, site_dir: str, progress: Optional[Callable[[str, str],
         home = runner.run("ls -1Ap 2>/dev/null | grep '/$' | head -60", left(10))
         info["folders"] = [x.rstrip("/") for x in lines_of(home.out)]
 
-        step("joomla", "Joomla, WordPress, Drupal oder TYPO3 erkennen ...")
+        step("joomla", "Joomla, WordPress, Drupal, TYPO3 oder Contao erkennen ...")
         res = runner.sh(site_dir, r"""
 echo '@@VERSION'; head -c 8000 libraries/src/Version.php 2>/dev/null
 echo '@@MANIFEST'; head -c 4000 administrator/manifests/files/joomla.xml 2>/dev/null
@@ -134,6 +134,9 @@ echo '@@TYPO3VER'; for f in %s; do if [ -f "$f" ]; then head -c 6000 "$f"; break
 echo '@@TYPO3OLD'; grep -hm1 "TYPO3_version'" %s 2>/dev/null
 echo '@@TYPO3CONF'; for f in %s; do if [ -f "$f" ]; then echo ja; break; fi; done
 echo '@@TYPO3MODE'; if [ -d vendor/typo3 ] || [ -d ../vendor/typo3 ]; then echo composer; else echo classic; fi
+echo '@@CONTAOCONF'; if [ -d vendor/contao/core-bundle ] || [ -d ../vendor/contao/core-bundle ]; then echo ja; fi
+echo '@@CONTAOVER'; for f in composer.lock ../composer.lock; do if [ -f "$f" ]; then grep -m1 -A12 '"name": "contao/core-bundle"' "$f"; break; fi; done
+echo '@@CONTAOLEG'; head -c 6000 system/modules/core/config/config.php 2>/dev/null
 echo '@@WHO'; whoami; pwd
 """ % (" ".join(typo3.VERSION_FILES), typo3.OLD_VERSION_FILE, " ".join(typo3.CONFIG_FILES)), left(12))
         if res.rc == 97:
@@ -154,6 +157,8 @@ echo '@@WHO'; whoami; pwd
             info["typo3"] = tv
             info["typo3_config"] = "ja" in sec.get("TYPO3CONF", "")
             info["typo3_mode"] = (sec.get("TYPO3MODE", "").split() or [""])[0] if (tv or info["typo3_config"]) else ""
+            info["contao_config"] = "ja" in sec.get("CONTAOCONF", "")
+            info["contao"] = contao.parse_core_version(sec.get("CONTAOVER", ""), "", sec.get("CONTAOLEG", ""))
             if info["joomla"]:
                 info["cms"] = "joomla"
             elif wpv["version"] or wpconf:
@@ -162,6 +167,8 @@ echo '@@WHO'; whoami; pwd
                 info["cms"] = "drupal"
             elif tv or info["typo3_config"]:
                 info["cms"] = "typo3"
+            elif info["contao"] or info["contao_config"]:
+                info["cms"] = "contao"
             else:
                 info["cms"] = "joomla"    # unbekannt: Standardbereich anzeigen
             who = lines_of(sec.get("WHO", ""))

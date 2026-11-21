@@ -30,6 +30,7 @@ _MODULES = [
     "woocommerce",
     "drupal_checks",
     "typo3_checks",
+    "contao_checks",
     "umgebung_pruefungen",
 ]
 
