@@ -200,7 +200,45 @@ CONTAO: Dict[str, Any] = {
     "common_checks": DRUPAL["common_checks"],
 }
 
-PROFILES = {"joomla": JOOMLA, "wordpress": WORDPRESS, "drupal": DRUPAL, "typo3": TYPO3, "contao": CONTAO}
+# ---- PrestaShop (seit 2.12.0): 1.7, 8, 9 (Symfony, app/config/parameters.php) und 1.6 (config/settings.inc.php).
+PRESTASHOP: Dict[str, Any] = {
+    "id": "prestashop", "name": "PrestaShop",
+    "config_file": "app/config/parameters.php",
+    "upload_dirs": "img upload download modules",
+    "cache_dirs": "var/cache var/logs cache",
+    "prune_find": "-path ./node_modules -o -path ./var/cache -o -path ./cache",
+    "recent_skip": "-not -path './var/cache/*' -not -path './var/logs/*' -not -path './cache/*' -not -path './node_modules/*' -not -path './img/*'",
+    "lib_exclude": r"^\./(vendor/|.*/vendor/|var/|cache/|img/)",
+    "lib_exclude2": r"^\./(vendor/|.*/vendor/)",
+    "ext_root_re": r"^(\./(?:modules|themes|override)/[^/]+)(?:/|$)",
+    "manifest_find": "find modules -maxdepth 2 -name config.xml -type f -printf 'MF\\t%T@\\t%h\\n' 2>/dev/null | head -5000",
+    "code_dir_re": r"^\./(classes|controllers|src|override|modules|themes|app|config)/",
+    "root_ok": ("./index.php", "./.htaccess", "./robots.txt", "./_.htaccess", "./.user.ini"),
+    "ext_dir_re": r"^\./(modules|themes|override|vendor)/",
+    "installer_sql_re": r"^\./(modules|install|install-dev)/.+\.sql$",
+    "core_dirs": {"app", "bin", "cache", "classes", "config", "controllers", "docs", "download", "img", "js", "localization", "mails", "modules", "override", "pdf", "src", "themes",
+                  "tools", "translations", "upload", "var", "vendor", "webservice", "admin", "admin-dev", "install", "install-dev", "web", "css", "Adapter", "Core", ".well-known", "cgi-bin"},
+    "core_dir_re": r"^admin[0-9A-Za-z_\-]*$",
+    "core_files": {"index.php", ".htaccess", "robots.txt", "favicon.ico", "composer.json", "composer.lock", "README.md", "LICENSE.md", "INSTALL.txt", "Install_PrestaShop.html",
+                   ".gitignore", ".user.ini", "php.ini", "init.php", "error500.html", "maintenance.html", "sitemap.xml", "_.htaccess", "docker_updt_ps_domains.php", "ps_shop_domains.php", "CHANGELOG.txt"},
+    "ext_word": "Modul", "ext_words": "Module",
+    "upload_word": "img, upload, download",
+    "admin_url": "/admin",
+    "version_key": "prestashop",
+    "admin_word": "Verwaltung",
+    "enable_hint": "Im Verwaltungsbereich unter Module installieren und aktivieren.",
+    "sec_base": "modules", "sec_depth": 1,
+    "no_sec_title": "Kein Sicherheits-Modul gefunden", "install_hint": "Ein Sicherheits-Modul installieren",
+    "outside_dir": "upload",
+    "spool": "var",
+    "root_find": "-name index.php -o -name composer.json",
+    "need_mods": ["json", "xml", "mbstring", "pdo", "gd", "intl"], "zip_note": "",
+    "root_text": "PrestaShop legt hier nur index.php, die Ordner app, classes, config, controllers, img, modules, override, src, themes, var, vendor und den Verwaltungsordner ab. ",
+    "store": "none", "update_cli": False, "vel": False,
+    "common_checks": DRUPAL["common_checks"],
+}
+
+PROFILES = {"joomla": JOOMLA, "wordpress": WORDPRESS, "drupal": DRUPAL, "typo3": TYPO3, "contao": CONTAO, "prestashop": PRESTASHOP}
 DEFAULT = "joomla"
 
 
@@ -210,7 +248,7 @@ def known(cms: str) -> str:
 
 
 def runs_common(cms: str, check_id: str) -> bool:
-    """Läuft die gemeinsame Prüfung (cms='both') bei diesem System? Joomla und WordPress: alle; Drupal, TYPO3 und Contao: nur die geprüfte Auswahl 'common_checks'."""
+    """Läuft die gemeinsame Prüfung (cms='both') bei diesem System? Joomla und WordPress: alle; Drupal, TYPO3, Contao und PrestaShop: nur die geprüfte Auswahl 'common_checks'."""
     allow = profile(cms).get("common_checks")
     return allow is None or check_id in allow
 

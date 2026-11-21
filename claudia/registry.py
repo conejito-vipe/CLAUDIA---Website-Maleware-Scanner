@@ -46,6 +46,9 @@ CLUSTERS = {
     "contao_kern": ("Contao-Kern, Einstellungen und abrufbare Dateien prüfen", "Nur bei Contao-Seiten: Version, Sicherheitsmeldungen und Originaldateien der Kern-Pakete, die Einstellungsdateien (.env, parameters.yaml) und von außen abrufbare Dateien und Verwaltungswerkzeuge werden gelesen und bewertet."),
     "contao_erweiterungen": ("Contao-Pakete und Erweiterungen prüfen", "Nur bei Contao-Seiten: Jedes Paket aus composer.lock wird inventarisiert und mit den Sicherheitsmeldungen von Packagist abgeglichen."),
     "contao_daten": ("Konten und Inhalte in der Datenbank prüfen", "Nur bei Contao-Seiten: Backend-Administratoren (mit Zwei-Faktor-Status) und Code in Inhaltselementen, Modulen und Layouts werden aus der Datenbank gelesen und bewertet."),
+    "prestashop_kern": ("PrestaShop-Kern, Einstellungen und abrufbare Dateien prüfen", "Nur bei PrestaShop-Seiten: Version, Support-Stand, Sicherheitsmeldungen und Originaldateien des Kerns, die Einstellungsdateien (parameters.php) und von außen abrufbare Dateien werden gelesen und bewertet."),
+    "prestashop_module": ("PrestaShop-Module und Overrides prüfen", "Nur bei PrestaShop-Seiten: Jedes Modul wird inventarisiert und, soweit bei Packagist geführt, mit Sicherheitsmeldungen abgeglichen; Overrides werden aufgelistet."),
+    "prestashop_daten": ("Konten, Einstellungen und Inhalte in der Datenbank prüfen", "Nur bei PrestaShop-Seiten: Mitarbeiterkonten, HTTPS- und Webservice-Einstellungen sowie Code in Seiten, Produkten und Textblöcken werden aus der Datenbank gelesen und bewertet."),
     "joomla_code": ("Eingeschleusten Code in Joomla-Daten prüfen", "Artikel, Module, Template-Einstellungen, Weiterleitungen und Erweiterungs-Einträge werden auf fremden Code und fremde Adressen durchsucht."),
     "konto": ("Dauerzugänge im Konto prüfen", "Cronjobs, SSH-Schlüssel, laufende Prozesse, Start-Dateien der Shell und angemeldete Sitzungen werden angesehen. Hier setzt sich ein Angreifer fest, wenn er die Seite verlassen muss."),
     "logs_spuren": ("Protokolle nach Angriffsspuren durchsuchen", "Die Protokolle des Servers werden nach Zugriffen auf Schadcode, Scans und Anmeldeversuchen durchsucht."),
@@ -60,6 +63,7 @@ CLUSTER_MEMBERS = {
     "drupal_users": "drupal_daten", "drupal_config_db": "drupal_daten", "drupal_db_code": "drupal_daten",
     "typo3_core": "typo3_kern", "typo3_settings": "typo3_kern", "typo3_exposed": "typo3_kern", "typo3_extensions": "typo3_erweiterungen", "typo3_users": "typo3_daten", "typo3_db_code": "typo3_daten",
     "contao_core": "contao_kern", "contao_settings": "contao_kern", "contao_exposed": "contao_kern", "contao_packages": "contao_erweiterungen", "contao_users": "contao_daten", "contao_db_code": "contao_daten",
+    "prestashop_core": "prestashop_kern", "prestashop_settings": "prestashop_kern", "prestashop_exposed": "prestashop_kern", "prestashop_modules": "prestashop_module", "prestashop_users": "prestashop_daten", "prestashop_shop": "prestashop_daten", "prestashop_db_code": "prestashop_daten",
     "joomla_info": "umfeld", "mail_dns": "umfeld", "dns_changes": "umfeld", "mail_send": "umfeld", "plaintext_creds": "konto", "backup_age": "versteck", "js_libs": "js_inject", "tls_protocols": "besucher", "cookie_flags": "besucher", "threat_intel": "umfeld", "other_installs": "umfeld", "root_files": "umfeld", "perms": "rechte", "update_ready": "update",
     "webshells": "php_shells", "php_in_uploads": "php_shells", "suspicious_names": "php_shells", "malware_patterns": "php_shells", "hidden_structure": "versteck", "compare_runs": "versteck", "skimmer_scan": "js_inject",
     "js_scan": "js_inject",
@@ -159,7 +163,12 @@ GROUPS_CONTAO = {
     "erweiterungen": ("Pakete & Erweiterungen", "Welche Pakete und Erweiterungen laufen - und gibt es Sicherheitsmeldungen zu ihren Versionen?"),
     "datenbank": ("Contao-Daten in der Datenbank", "Backend-Benutzer und eingeschleuster Code in Inhalten (mit den Zugangsdaten aus der .env bzw. parameters.yaml)."),
 }
-_OTHER_GROUPS = {"drupal": GROUPS_DRUPAL, "typo3": GROUPS_TYPO3, "contao": GROUPS_CONTAO}
+GROUPS_PRESTASHOP = {
+    "konfig": ("Konfiguration & Zugriffsregeln", "Kern, Einstellungsdateien, Installations- und Verwaltungsordner, .htaccess und PHP-Einstellungen auf Manipulation und unsichere Einstellungen prüfen."),
+    "erweiterungen": ("Module & Overrides", "Welche Module und Overrides laufen - und gibt es Sicherheitsmeldungen zu ihren Versionen?"),
+    "datenbank": ("PrestaShop-Daten in der Datenbank", "Mitarbeiterkonten, HTTPS- und Webservice-Einstellungen und eingeschleuster Code in Inhalten (mit den Zugangsdaten aus der parameters.php)."),
+}
+_OTHER_GROUPS = {"drupal": GROUPS_DRUPAL, "typo3": GROUPS_TYPO3, "contao": GROUPS_CONTAO, "prestashop": GROUPS_PRESTASHOP}
 
 
 def _cms_text(cms: str, text: str) -> str:

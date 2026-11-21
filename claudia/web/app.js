@@ -20,10 +20,10 @@ const S = {
 /* Erkanntes System: nach dem Verbindungstest "joomla" oder "wordpress". Layout bleibt gleich, nur die Texte wechseln. */
 const cmsId = () => ((S.conn && S.conn.cms) || (S.init && S.init.cms) || "joomla");
 const isWP = () => cmsId() === "wordpress";
-const cmsName = () => ({ wordpress: "WordPress", drupal: "Drupal", typo3: "TYPO3", contao: "Contao" }[cmsId()] || "Joomla");
-const cmsConfig = () => ({ wordpress: "wp-config.php", drupal: "settings.php", typo3: "settings.php", contao: ".env" }[cmsId()] || "configuration.php");
+const cmsName = () => ({ wordpress: "WordPress", drupal: "Drupal", typo3: "TYPO3", contao: "Contao", prestashop: "PrestaShop" }[cmsId()] || "Joomla");
+const cmsConfig = () => ({ wordpress: "wp-config.php", drupal: "settings.php", typo3: "settings.php", contao: ".env", prestashop: "parameters.php" }[cmsId()] || "configuration.php");
 const cmsVersion = i => (i && i[cmsId()]) || "";
-const cmsHasConfig = i => (cmsId() === "wordpress" ? i.wp_config : cmsId() === "drupal" ? i.drupal_config : cmsId() === "typo3" ? i.typo3_config : cmsId() === "contao" ? i.contao_config : i.config);
+const cmsHasConfig = i => (cmsId() === "wordpress" ? i.wp_config : cmsId() === "drupal" ? i.drupal_config : cmsId() === "typo3" ? i.typo3_config : cmsId() === "contao" ? i.contao_config : cmsId() === "prestashop" ? i.prestashop_config : i.config);
 function h(tag, props, ...kids) {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(props || {})) {
@@ -441,7 +441,7 @@ function viewConnect() {
   }
 
   const dl = h("datalist", { id: "folders" }, ((S.conn && S.conn.folders) || []).map(x => h("option", { value: x })));
-  card.append(field("Verzeichnis der Webseite auf dem Server (Joomla, WordPress, Drupal, TYPO3 oder Contao)", h("div", {}, bind(h("input", { type: "text", id: "f-dir", value: f.site_dir, list: "folders", autocomplete: "off", spellcheck: "false", placeholder: "z. B. html oder htdocs/meineseite" }), "site_dir"), dl),
+  card.append(field("Verzeichnis der Webseite auf dem Server (Joomla, WordPress, Drupal, TYPO3, Contao oder PrestaShop)", h("div", {}, bind(h("input", { type: "text", id: "f-dir", value: f.site_dir, list: "folders", autocomplete: "off", spellcheck: "false", placeholder: "z. B. html oder htdocs/meineseite" }), "site_dir"), dl),
     "Der Ordner mit configuration.php (Joomla), wp-config.php (WordPress), sites/default/settings.php (Drupal), config/system/settings.php bzw. typo3conf (TYPO3) oder .env bzw. config/parameters.yaml (Contao), relativ zum Login-Ordner. Nach dem ersten Verbindungstest schlägt das Programm vorhandene Ordner vor.", "f-dir"));
   card.append(field("Adresse der Webseite (optional)", bind(h("input", { type: "text", id: "f-url", value: f.url, placeholder: "https://www.google.de" }), "url"),
     "Für die Prüfung aus Besuchersicht (Weiterleitungen, fremder Code, offene Ordner). Das Programm ruft Webseiten nur verschlüsselt (https) ab; eine Adresse mit http:// wird automatisch auf https umgestellt.", "f-url"));
@@ -499,7 +499,7 @@ function connectionCard() {
   const card = h("div", { class: "card" });
   if (!i.site_found) {
     card.append(h("h2", { text: "Verbunden, aber Ordner nicht gefunden" }),
-      h("p", { class: "sub", text: i.error || "Im angegebenen Ordner wurde weder Joomla, WordPress, Drupal, TYPO3 noch Contao erkannt." }));
+      h("p", { class: "sub", text: i.error || "Im angegebenen Ordner wurde weder Joomla, WordPress, Drupal, TYPO3, Contao noch PrestaShop erkannt." }));
     if (i.folders && i.folders.length) {
       card.append(h("p", { class: "small", text: "Ordner im Login-Verzeichnis (zum Übernehmen anklicken):" }),
         h("div", { class: "tags", style: "justify-content:flex-start" }, i.folders.slice(0, 30).map(x =>
@@ -524,6 +524,7 @@ function connectionCard() {
   if (cmsId() === "drupal") card.append(h("div", { class: "notice info" }, h("div", {}, h("strong", { text: "Drupal erkannt" }), "Das Programm zeigt jetzt die Drupal-Prüfungen (Drupal 8 und neuer). Lösungen auf Knopfdruck gibt es für Drupal noch nicht; die Prüfungen sind rein lesend.")));
   if (cmsId() === "typo3") card.append(h("div", { class: "notice info" }, h("div", {}, h("strong", { text: "TYPO3 erkannt" }), "Das Programm zeigt jetzt die TYPO3-Prüfungen (TYPO3 11 und neuer). Lösungen auf Knopfdruck gibt es für TYPO3 noch nicht; die Prüfungen sind rein lesend.")));
   if (cmsId() === "contao") card.append(h("div", { class: "notice info" }, h("div", {}, h("strong", { text: "Contao erkannt" }), "Das Programm zeigt jetzt die Contao-Prüfungen (Contao 4.13 und neuer). Lösungen auf Knopfdruck gibt es für Contao noch nicht; die Prüfungen sind rein lesend.")));
+  if (cmsId() === "prestashop") card.append(h("div", { class: "notice info" }, h("div", {}, h("strong", { text: "PrestaShop erkannt" }), "Das Programm zeigt jetzt die PrestaShop-Prüfungen (PrestaShop 1.7, 8 und 9). Lösungen auf Knopfdruck gibt es für PrestaShop noch nicht; die Prüfungen sind rein lesend.")));
   if (isWP()) card.append(h("div", { class: "notice info" }, h("div", {}, h("strong", { text: "WordPress erkannt" }), "Das Programm zeigt jetzt die WordPress-Prüfungen und -Lösungen. Aufbau und Ablauf sind wie bei Joomla.")));
   card.append(h("div", { class: "actions", style: "margin-top:16px" }, h("button", { class: "btn primary", type: "button", onclick: () => goTests() }, "Weiter zur Testauswahl")));
   return card;
@@ -550,7 +551,7 @@ function formData() {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function connectProgress() {
-  const first = ["Mit dem Server verbinden", "Ordner auflisten", "Joomla, WordPress, Drupal, TYPO3 oder Contao erkennen", "Datenbank-Programm suchen", "PHP-Version ermitteln"]
+  const first = ["Mit dem Server verbinden", "Ordner auflisten", "Joomla, WordPress, Drupal, TYPO3, Contao oder PrestaShop erkennen", "Datenbank-Programm suchen", "PHP-Version ermitteln"]
     .map((label, i) => ({ label, state: i === 0 ? "run" : "todo" }));
   const j = S.connJob || { limit: 45, remaining: 45, steps: first, msg: "Verbinde mit dem Server ..." };
   const pct = Math.max(0, Math.min(100, 100 * j.remaining / j.limit));

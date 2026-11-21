@@ -78,11 +78,12 @@ _WP_WORDS = (("configuration.php", "wp-config.php"), ("Joomla-", "WordPress-"), 
 _DRUPAL_WORDS = (("configuration.php", "settings.php"), ("Joomla-", "Drupal-"), ("Joomla", "Drupal"))
 _TYPO3_WORDS = (("configuration.php", "settings.php"), ("Joomla-", "TYPO3-"), ("Joomla", "TYPO3"))
 _CONTAO_WORDS = (("configuration.php", ".env"), ("Joomla-", "Contao-"), ("Joomla", "Contao"))
+_PRESTASHOP_WORDS = (("configuration.php", "parameters.php"), ("Joomla-", "PrestaShop-"), ("Joomla", "PrestaShop"))
 
 
 def _wp_words(text: str, cms: str = "wordpress") -> str:
     """Allgemeine Texte gemeinsamer Tests für ein anderes System: Joomla-Begriffe durch dessen Begriffe ersetzen."""
-    for a, b in (_DRUPAL_WORDS if cms == "drupal" else _TYPO3_WORDS if cms == "typo3" else _CONTAO_WORDS if cms == "contao" else _WP_WORDS):
+    for a, b in (_DRUPAL_WORDS if cms == "drupal" else _TYPO3_WORDS if cms == "typo3" else _CONTAO_WORDS if cms == "contao" else _PRESTASHOP_WORDS if cms == "prestashop" else _WP_WORDS):
         text = text.replace(a, b)
     return text
 
@@ -113,7 +114,7 @@ class CheckDef:
     def view(self, cms: str = "joomla") -> Dict[str, Any]:
         """Anzeigewerte für das jeweilige System (Titel und Erklärungen sind bei WordPress zugeschnitten)."""
         t = {"title": self.title, "summary": self.summary, "what": self.what, "why": self.why, "reads": self.reads}
-        if cms in ("wordpress", "drupal", "typo3", "contao"):
+        if cms in ("wordpress", "drupal", "typo3", "contao", "prestashop"):
             if self.id != "other_installs" and (cms == "wordpress" or self.cms == "both"):      # dieser Test nennt andere Systeme absichtlich; eigene Drupal- und TYPO3-Tests brauchen keine Ersetzung
                 t = {k: _wp_words(v, cms) for k, v in t.items()}
             if cms == "wordpress":

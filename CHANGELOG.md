@@ -2,6 +2,18 @@
 
 Generated from `claudia/docs/aenderungen.en.txt` (do not edit by hand).
 
+## 2.12.0 (2026-11-21) - PrestaShop
+
+### PrestaShop sites are detected and checked
+- **What:** CLAUDIA now detects PrestaShop (versions 1.7, 8 and 9; 1.6 with limits) and shows its own checks: core (version from app/AppKernel.php, support phase from a built-in table, security advisories from Packagist, comparison of the classes, controllers and src folders with the original from GitHub), settings (parameters.php, dev mode, cookie_key, install and admin folders, file permissions), publicly reachable files and pages, modules and overrides (security advisories where a module is listed on Packagist), employee accounts and super administrators, HTTPS and webservice settings, and code in pages, products, categories and text blocks.
+- **Why:** PrestaShop shops are attacked just like the other systems, mostly through third-party modules. Typical traces are a new super administrator account, a script in a text block (payment skimmer), a leftover install folder and a reachable settings file.
+- **How:** Everything is strictly read-only. The settings files are only read as text and never executed; database credentials, cookie_key, secret and webservice keys are never shown or stored (of the cookie_key only the length). There are no one-click solutions for PrestaShop yet. Important: so far the checks were only tried against a rebuilt test world, not a real PrestaShop server; response formats of Packagist and GitHub as well as table and field names may differ. If something is missing, the checks report 'not checkable' instead of guessing. Feedback from real use is welcome (test data ticket on GitHub).
+
+### Internal
+- **What:** The PrestaShop checks were secured with a rebuilt PrestaShop test world (SQLite database with ps_employee, ps_configuration, ps_webservice_*, ps_cms_lang and others).
+- **Why:** Without a test, typos in queries or section markers would only have shown up in practical tests.
+- **How:** New tests only; nothing changes for the other checks.
+
 ## 2.11.0 (2026-11-21) - Contao
 
 ### Contao sites are detected and checked

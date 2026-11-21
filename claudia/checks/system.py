@@ -291,7 +291,7 @@ echo '@@GROUP'; find . -xdev \( -type f -o -type d \) -perm -0020 ! -perm -0002 
 @check(
     "other_installs", G, "Weitere Webseiten auf demselben Webspace",
     "Laufen im selben Hosting-Konto noch andere Joomla- oder WordPress-Seiten?",
-    what="Sucht im gesamten Home-Verzeichnis nach weiteren Installationen (Joomla, WordPress, Drupal, TYPO3, Contao) und liest bei Joomla die Version.",
+    what="Sucht im gesamten Home-Verzeichnis nach weiteren Installationen (Joomla, WordPress, Drupal, TYPO3, Contao, PrestaShop) und liest bei Joomla die Version.",
     why="Liegen mehrere Seiten im selben Konto, kann ein Angreifer von einer gehackten Seite auf die anderen überspringen. "
         "Alle müssen geprüft werden - sonst kehrt der Schadcode zurück.",
     reads="Nur Dateinamen und die Versionsdatei von Joomla. Das Programm durchsucht keine Inhalte anderer Seiten. "
@@ -318,6 +318,10 @@ done
 find "$HOME" -maxdepth 7 \( -name node_modules -o -name cache -o -name .git -o -name tmp \) -prune -o -type f -path '*/vendor/contao/core-bundle/composer.json' -print 2>/dev/null | head -20 | while IFS= read -r f; do
   echo "CONTAO|${f%/vendor/contao/core-bundle/composer.json}|"
 done
+find "$HOME" -maxdepth 7 \( -name node_modules -o -name cache -o -name .git -o -name tmp -o -name vendor \) -prune -o -type f \( -path '*/app/AppKernel.php' -o -path '*/config/settings.inc.php' \) -print 2>/dev/null | head -40 | while IFS= read -r f; do
+  d=${f%/app/AppKernel.php}; [ "$d" = "$f" ] && d=${f%/config/settings.inc.php}
+  [ -d "$d/classes" ] && echo "PRESTASHOP|$d|"
+done
 echo "@@HOME"; echo "$HOME"; pwd
 """, timeout=90, raw="fundliste").out
     sec = split_sections(out)
@@ -334,7 +338,7 @@ echo "@@HOME"; echo "$HOME"; pwd
             continue
         kind, path, ver = p[0], p[1], p[2]
         rel = path[len(home) + 1:] if home and path.startswith(home + "/") else path
-        label = "%s: %s%s" % ({"JOOMLA": "Joomla", "WORDPRESS": "WordPress", "DRUPAL": "Drupal", "TYPO3": "TYPO3", "CONTAO": "Contao"}.get(kind, kind), rel, (" (Version %s)" % ver) if ver else "")
+        label = "%s: %s%s" % ({"JOOMLA": "Joomla", "WORDPRESS": "WordPress", "DRUPAL": "Drupal", "TYPO3": "TYPO3", "CONTAO": "Contao", "PRESTASHOP": "PrestaShop"}.get(kind, kind), rel, (" (Version %s)" % ver) if ver else "")
         if here and path.rstrip("/") == here.rstrip("/"):
             same.append(label)
             continue
@@ -358,7 +362,7 @@ echo "@@HOME"; echo "$HOME"; pwd
 
 
 # ----------------------------------------------------------------------------- A12: Schnellscan weiterer Installationen
-QS_UP = {"JOOMLA": "images media tmp", "WORDPRESS": "wp-content/uploads", "DRUPAL": "sites/default/files", "TYPO3": "fileadmin public/fileadmin uploads", "CONTAO": "files public/files"}
+QS_UP = {"JOOMLA": "images media tmp", "WORDPRESS": "wp-content/uploads", "DRUPAL": "sites/default/files", "TYPO3": "fileadmin public/fileadmin uploads", "CONTAO": "files public/files", "PRESTASHOP": "img upload download"}
 QS_MAX = 10
 
 
@@ -393,7 +397,7 @@ def quick_scan(ctx, res, head: str, home: str, here: str) -> None:
     skipped = todo[QS_MAX:]
     for kind, path, rel, ver in todo[:QS_MAX]:
         ctx.progress("Schnellscan: %s" % rel[:50])
-        name = {"JOOMLA": "Joomla", "WORDPRESS": "WordPress", "DRUPAL": "Drupal", "TYPO3": "TYPO3", "CONTAO": "Contao"}.get(kind, kind)
+        name = {"JOOMLA": "Joomla", "WORDPRESS": "WordPress", "DRUPAL": "Drupal", "TYPO3": "TYPO3", "CONTAO": "Contao", "PRESTASHOP": "PrestaShop"}.get(kind, kind)
         try:
             out = ctx.sh(qs_script(path, kind), timeout=minutes * 60).out
         except CheckSkipped:

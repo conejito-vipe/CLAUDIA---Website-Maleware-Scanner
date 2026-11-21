@@ -3,7 +3,7 @@ CLAUDIA - Anleitung
 
 Was ist das?
 ------------
-Ein Programm für deinen Windows-PC, das eine Joomla-, WordPress-, Drupal-, TYPO3- oder Contao-Seite über SSH auf Spuren eines Hacks und auf
+Ein Programm für deinen Windows-PC, das eine Joomla-, WordPress-, Drupal-, TYPO3-, Contao- oder PrestaShop-Seite über SSH auf Spuren eines Hacks und auf
 typische Schwachstellen prüft. Es liest nur. Es ändert, löscht oder installiert nichts auf dem Server.
 Es lässt sich für beliebig viele Seiten verwenden: Zugangsdaten werden jedes Mal von Hand eingegeben.
 

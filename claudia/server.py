@@ -21,7 +21,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
-from . import cms as cmsmod, contao, drupal, typo3, APP_NAME, __version__, actionplan, actions, baseline, hoster, joomla, logsave, phpdetect, probe as probe_mod, report, snippets, uninstall, wordpress
+from . import cms as cmsmod, contao, drupal, prestashop, typo3, APP_NAME, __version__, actionplan, actions, baseline, hoster, joomla, logsave, phpdetect, probe as probe_mod, report, snippets, uninstall, wordpress
 from .db import DbError
 from .engine import Ctx, Engine, Settings
 from . import helpdocs, i18n
@@ -866,6 +866,19 @@ class App:
                     return {"found": True, "host": host + (":" + sock if sock else ""), "port": str(port or ""), "user": str(v.get("user", "")), "name": str(v.get("db", "")),
                             "prefix": "", "has_password": bool(v.get("password"))}
         if not r.out.strip() and not (wp and wp.out.strip()):
+            try:
+                pr = self.runner.sh(site, prestashop.read_config_sh(), 30)
+            except RunnerError as e:
+                raise ApiError(str(e), 502)
+            pf = prestashop.split_config_output(pr.out)["files"]
+            if (pf.get(prestashop.PARAMS_FILE) or "").strip() or (pf.get(prestashop.SETTINGS16_FILE) or "").strip():
+                pc = prestashop.parse_settings(pf.get(prestashop.PARAMS_FILE, ""), "", pf.get(prestashop.SETTINGS16_FILE, ""))
+                v = pc.get("vars", {})
+                if v.get("db"):
+                    host, port, sock = joomla.split_db_host(str(v.get("host", "")))
+                    return {"found": True, "host": host + (":" + sock if sock else ""), "port": str(port or ""), "user": str(v.get("user", "")), "name": str(v.get("db", "")),
+                            "prefix": str(pc.get("prefix") or ""), "has_password": bool(v.get("password"))}
+        if not r.out.strip() and not (wp and wp.out.strip()):
             return {"found": False}
         v = joomla.parse_config(r.out).get("vars", {}) if r.out.strip() else wordpress.parse_wp_config(wp.out).get("vars", {})
         host, port, sock = joomla.split_db_host(str(v.get("host", "")))
@@ -960,6 +973,8 @@ class App:
             return {"status": "kein_original", "note": "Für Drupal gibt es noch keinen Abgleich einzelner Zeilen mit dem Original. Der Dateivergleich des Kerns steht in der Prüfung 'Drupal-Kern: Version und Originaldateien'."}
         if self.cms() == "contao":
             return {"status": "kein_original", "note": "Für Contao gibt es noch keinen Abgleich einzelner Zeilen mit dem Original. Der Dateivergleich der Kern-Pakete steht in der Prüfung 'Contao-Kern: Version, Sicherheitsmeldungen und Originaldateien'."}
+        if self.cms() == "prestashop":
+            return {"status": "kein_original", "note": "Für PrestaShop gibt es noch keinen Abgleich einzelner Zeilen mit dem Original. Der Dateivergleich des Kerns steht in der Prüfung 'PrestaShop-Kern: Version, Sicherheitsmeldungen und Originaldateien'."}
         if self.cms() == "typo3":
             return {"status": "kein_original", "note": "Für TYPO3 gibt es noch keinen Abgleich einzelner Zeilen mit dem Original. Der Dateivergleich der Systemerweiterungen steht in der Prüfung 'TYPO3-Kern: Version, Sicherheitsmeldungen und Originaldateien'."}
         if not (snippets.core_candidate_wp(file) if wp else snippets.core_candidate(file)):

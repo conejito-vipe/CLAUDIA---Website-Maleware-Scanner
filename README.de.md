@@ -2,7 +2,7 @@
 
 <p align="center"><img src="claudia/assets/claudia_logo.png" width="180" alt="CLAUDIA"></p>
 
-CLAUDIA ist ein kostenloses Windows-Programm (Python, Standardbibliothek + paramiko), das eine **Joomla**-, **WordPress**- (auch mit WooCommerce-Shop), **Drupal**- (ab Version 8), **TYPO3**- (ab Version 11) oder **Contao**-Seite (ab Version 4.13) über eine verschlüsselte SSH-Verbindung auf Spuren eines Hacks und auf typische Schwachstellen prüft.
+CLAUDIA ist ein kostenloses Windows-Programm (Python, Standardbibliothek + paramiko), das eine **Joomla**-, **WordPress**- (auch mit WooCommerce-Shop), **Drupal**- (ab Version 8), **TYPO3**- (ab Version 11), **Contao**- (ab Version 4.13) oder **PrestaShop**-Seite (ab Version 1.7) über eine verschlüsselte SSH-Verbindung auf Spuren eines Hacks und auf typische Schwachstellen prüft.
 Die Oberfläche läuft lokal auf `127.0.0.1` im Browser, auf Deutsch und Englisch (Flaggen), mit eingebauter Dokumentation.
 
 ## Grundsätze
@@ -15,15 +15,13 @@ Die Oberfläche läuft lokal auf `127.0.0.1` im Browser, auf Deutsch und Englisc
 
 ## So sieht es aus
 
-Alle Bilder zeigen ein **Beispiel mit erfundenen Testdaten** (nachgebauter Server, keine echte Seite).
-
-<p align="center"><img src="docs/images/ablauf.gif" width="760" alt="Ablauf: verbinden, Prüfungen wählen, prüfen, Befunde ansehen (Beispiel mit Testdaten)"></p>
+Alle Bilder zeigen ein Beispiel mit erfundenen Testdaten.
 
 | Verbinden | Prüfungen wählen |
 |---|---|
-| ![Verbinden](docs/images/01-verbinden.png) | ![Prüfungen wählen](docs/images/03-auswahl.png) |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/01-verbinden-dark.png"><img src="docs/images/01-verbinden-light.png" width="540" alt="Verbinden"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/02-auswahl-dark.png"><img src="docs/images/02-auswahl-light.png" width="540" alt="Prüfungen wählen"></picture> |
 | **Prüfung läuft** | **Befunde, kritische zuerst** |
-| ![Prüfung läuft](docs/images/04-laeuft.png) | ![Befunde](docs/images/06-befund.png) |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/03-laeuft-dark.png"><img src="docs/images/03-laeuft-light.png" width="540" alt="Prüfung läuft"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/05-befund-dark.png"><img src="docs/images/05-befund-light.png" width="540" alt="Befunde"></picture> |
 
 Jeder Befund nennt, was gefunden wurde, die betroffenen Dateien oder Einträge und eine Empfehlung. Kritische Befunde sind rot markiert und stehen oben.
 
@@ -31,11 +29,22 @@ Jeder Befund nennt, was gefunden wurde, die betroffenen Dateien oder Einträge u
 
 Du brauchst weder PowerShell noch die Eingabeaufforderung:
 
-1. Auf der Seite **Releases** dieses Repositorys (rechts auf der Startseite) die neueste Version öffnen und die Datei `Claudia_v….zip` herunterladen. Dort steht auch die SHA-256-Prüfsumme; sie lässt sich mit `PRUEFSUMMEN.txt` vergleichen.
+1. Auf der Seite [Releases](https://github.com/conejito-vipe/CLAUDIA---Website-Maleware-Scanner/releases) die neueste Version öffnen und die Datei `Claudia_v….zip` herunterladen. Dort steht auch die SHA-256-Prüfsumme; sie lässt sich mit `PRUEFSUMMEN.txt` vergleichen.
 2. ZIP in einen normalen Ordner entpacken.
 3. **Windows:** `start.bat` doppelklicken. **Mac:** `start.command` doppelklicken. Mehr ist nicht nötig; fehlt Python, richtet die Startdatei es selbst ein.
 
-Eine einzelne `.exe` bzw. Mac-App gibt es bewusst noch nicht: Ohne Code-Signatur würden Windows und macOS stärker warnen als bei der Startdatei. Sie kommt zusammen mit dem Installer (siehe "Geplant"), erst dann lohnt sich eine Signatur.
+Eine einzelne `.exe` bzw. Mac-App kommt zusammen mit dem Installer (siehe „Geplant“).
+
+### Windows zeigt eine Warnung (SmartScreen)
+
+CLAUDIA ist kostenlos und nicht von Microsoft zertifiziert. Deshalb kann Windows beim ersten Start von `start.bat` ein blaues Fenster „Der Computer wurde durch Windows geschützt“ mit dem Text „Von Windows SmartScreen wurde der Start einer unbekannten App verhindert“ zeigen. So geht es weiter:
+
+1. Im Fenster auf **Weitere Informationen** klicken.
+2. Darunter erscheint der Name der Datei (`start.bat`) und der Herausgeber („Unbekannter Herausgeber“). Auf **Trotzdem ausführen** klicken.
+
+Zeigt der Browser schon beim Herunterladen eine Warnung („wird nicht häufig heruntergeladen“), im Download-Menü **Behalten** bzw. **Trotzdem behalten** wählen. Vergleiche vorher die Prüfsumme der ZIP mit der auf der Releases-Seite.
+
+Auf dem Mac meldet macOS bei `start.command` unter Umständen, dass die Datei nicht geöffnet werden kann: Mit der rechten Maustaste auf die Datei klicken, **Öffnen** wählen und noch einmal **Öffnen** bestätigen (bei neueren macOS-Versionen: Systemeinstellungen > Datenschutz & Sicherheit > **Trotzdem öffnen**).
 
 ## Schnellstart (Windows)
 
@@ -62,16 +71,21 @@ Das kannst du tun:
 
 ## Geplant
 
-Die Reihenfolge ist Absicht: erst alle Systeme, dann Härtung, dann Komfort. Zugesagt ist nur, was schon unter "Änderungen" im Handbuch steht; alles hier ist Planung und kann sich ändern.
+Die Reihenfolge ist Absicht: erst alle Systeme, dann Installer, Härtung und Komfort. Zugesagt ist nur, was schon unter „Änderungen“ im Handbuch steht; alles hier ist Planung und kann sich ändern.
 
-1. **Weitere Systeme, je ein Release:** PrestaShop, danach Shopware (Joomla, WordPress mit WooCommerce, Drupal, TYPO3 und Contao sind da). Jedes bekommt die gleichen lesenden Prüfungen: Kern und Originaldateien, Einstellungen, abrufbare Dateien, Erweiterungen mit Sicherheitsmeldungen, Konten und Code in Inhalten. Lösungen auf Knopfdruck für diese Systeme gibt es nur nach ausdrücklicher Freigabe.
-2. **Code-Prüfung und Härtung:** Der gesamte Code wird auf Schwachstellen und Doppelungen durchgesehen; Missbrauch soll so schwer wie möglich werden.
-3. **Englische Übersetzung vervollständigen** (danach, damit sich die Texte nicht mehr ändern).
-4. **Update-Prozess:** CLAUDIA meldet neue Versionen und prüft vor dem Austausch die Prüfsumme (mit Sicherung und Weg zurück).
-5. **Dashboard:** Übersicht über mehrere Seiten und den Verlauf der Befunde.
-6. **Lizenzschlüssel:** ein Schlüssel, der Funktionen freischaltet (das Konzept wird vorher abgestimmt).
-7. **Installer** für Windows und Mac (mit Code-Signatur, danach auch eine einzelne `.exe` bzw. Mac-App).
-8. **Praxistests** auf echten Windows- und Mac-Rechnern mit echten Seiten.
+1. **Weiteres System:** Shopware (Joomla, WordPress mit WooCommerce, Drupal, TYPO3, Contao und PrestaShop sind da). Jedes bekommt die gleichen lesenden Prüfungen: Kern und Originaldateien, Einstellungen, abrufbare Dateien, Erweiterungen mit Sicherheitsmeldungen, Konten und Code in Inhalten. Lösungen auf Knopfdruck für diese Systeme gibt es nur nach ausdrücklicher Freigabe.
+
+2. **Installer** für Windows und Mac, danach auch eine einzelne `.exe` bzw. Mac-App. Der Installer prüft, ob CLAUDIA schon installiert ist, und schlägt ein Update vor, wenn die vorhandene Versionsnummer niedriger ist.
+
+3. **Code-Prüfung und Härtung:** Der gesamte Code wird auf Schwachstellen und Doppelungen durchgesehen; Missbrauch soll so schwer wie möglich werden.
+
+4. **Englische Übersetzung vervollständigen** (danach, damit sich die Texte nicht mehr ändern).
+
+5. **Update-Prozess:** CLAUDIA meldet neue Versionen und prüft vor dem Austausch die Prüfsumme (mit Sicherung und Weg zurück).
+
+6. **Dashboard:** Übersicht über mehrere Seiten und den Verlauf der Befunde.
+
+7. **Praxistests** auf echten Windows- und Mac-Rechnern mit echten Seiten.
 
 Wünsche und Fehler bitte als Issue melden (Vorschläge zum Code als Pull Request, siehe CONTRIBUTING.md).
 

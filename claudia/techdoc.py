@@ -247,7 +247,7 @@ def check_entries() -> List[Dict[str, Any]]:
     load_all()
     seen: Set[str] = set()
     out: List[Dict[str, Any]] = []
-    for cms in ("joomla", "wordpress", "drupal", "typo3", "contao"):
+    for cms in ("joomla", "wordpress", "drupal", "typo3", "contao", "prestashop"):
         for c in ordered(cms):
             if c.id in seen:
                 continue

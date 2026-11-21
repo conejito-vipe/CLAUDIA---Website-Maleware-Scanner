@@ -21,7 +21,7 @@ class Profiles(unittest.TestCase):
             self.assertEqual(sorted(REQUIRED - set(p)), [], key)
 
     def test_known_falls_back_to_joomla(self):
-        for bad in (None, "", "prestashop", 5):
+        for bad in (None, "", "shopware", 5):
             self.assertEqual(cms.known(bad), "joomla")
         self.assertEqual(cms.known("wordpress"), "wordpress")
         self.assertEqual(cms.profile("gibt-es-nicht")["id"], "joomla")

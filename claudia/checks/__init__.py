@@ -31,6 +31,7 @@ _MODULES = [
     "drupal_checks",
     "typo3_checks",
     "contao_checks",
+    "prestashop_checks",
     "umgebung_pruefungen",
 ]
 
