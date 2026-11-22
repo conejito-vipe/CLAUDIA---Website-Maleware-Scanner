@@ -13,7 +13,7 @@ Voraussetzungen
 - Ein SSH-Zugang zum Webspace. Bei vielen Hostern muss er im Kundenmenü erst aktiviert werden.
   Du brauchst: Servername, Benutzername, Passwort (oder Schlüsseldatei) und den Ordner, in dem Joomla liegt.
 - Python 3.9 oder neuer. Fehlt es, lädt start.bat es selbst von python.org herunter, prüft die digitale Signatur und installiert es nur für dein Benutzerkonto
-  (kein Administrator nötig, kein Neustart und kein zweiter Doppelklick). Protokoll: %APPDATA%\Claudia\start.log.
+  (kein Administrator nötig, kein Neustart und kein zweiter Doppelklick). Protokoll: %APPDATA%\CLAUDIA\start.log.
 
 Warnung von Windows oder Virenscanner (zu erwarten)
 ---------------------------------------------------
@@ -40,7 +40,7 @@ Starten
 3. Danach öffnet sich der Browser mit der Oberfläche. Das kleine Startfenster bleibt offen und darf klein bleiben.
    Beenden: das X oben rechts im Programmfenster oder "Beenden" im Startfenster. Das Fenster öffnet mittig und lässt sich an Rändern und Ecken in der Größe ändern.
    Bei einem Fehler zeigt das Startfenster die Meldung und die Datei launcher.log (im Ordner
-   %APPDATA%\Claudia) enthält das Protokoll.
+   %APPDATA%\CLAUDIA) enthält das Protokoll.
 
 Mac (ab 2.9.0; noch nicht auf einem echten Mac getestet)
 --------------------------------------------------------
@@ -93,7 +93,7 @@ Im Ergebnis gibt es zwei Knöpfe:
 - "ZIP für die Auswertung herunterladen": ein ZIP mit bericht.txt, ergebnisse.json, den Rohdaten und
   einer kurzen LIES_MICH.txt. Dieses ZIP kannst du in den Chat hochladen.
 - "Alle Berichte als Dateien speichern": legt einen Ordner an unter
-  Dokumente\Claudia\Berichte\<server>_<datum>\ mit zusätzlich bericht.html (schön lesbar,
+  Dokumente\CLAUDIA\Berichte\<server>_<datum>\ mit zusätzlich bericht.html (schön lesbar,
   druckbar) und fuer_claude.zip.
 Kein Bericht enthält Passwörter. Zugangsdaten aus der configuration.php sind unkenntlich gemacht,
 IP-Adressen sind standardmäßig gekürzt (abschaltbar unter "Weitere Einstellungen").
@@ -109,9 +109,9 @@ schickst mir das Ergebnis als CSV oder Screenshot.
 
 Gespeichert wird
 ----------------
-- Profile (ohne Passwort):        %APPDATA%\Claudia\profile.json
-- Bestätigte Server-Fingerabdrücke: %APPDATA%\Claudia\bekannte_server.json
-- Berichte (nur wenn du speicherst): Dokumente\Claudia\Berichte
+- Profile (ohne Passwort):        %APPDATA%\CLAUDIA\profile.json
+- Bestätigte Server-Fingerabdrücke: %APPDATA%\CLAUDIA\bekannte_server.json
+- Berichte (nur wenn du speicherst): Dokumente\CLAUDIA\Berichte
 Zum Aufräumen genügt es, diese Ordner zu löschen.
 
 Wenn etwas nicht klappt
@@ -181,7 +181,7 @@ Neu in Version 1.3
   * Jede Datei wird auf die Byte-Größe geprüft; ihre SHA-256-Prüfsumme steht in SICHERUNG_PRUEFSUMMEN.txt.
   * Beim nächsten Mal werden nur neue oder geänderte Dateien kopiert. Eine geänderte Datei überschreibt die alte nicht,
     sie wird mit Zeitstempel im Namen zusätzlich abgelegt.
-  * Speicherort: Dokumente\Claudia\Protokolle\<servername>\  (Knopf "Ordner öffnen").
+  * Speicherort: Dokumente\CLAUDIA\Protokolle\<servername>\  (Knopf "Ordner öffnen").
   * Auswerten: Test "Zugriffsprotokoll von diesem PC auswerten" wählen und diesen Ordner als Pfad eintragen.
   * Datenschutz: Zugriffsprotokolle enthalten IP-Adressen. Der Ordner bleibt auf deinem PC und kommt NICHT in die ZIP für Claude.
     Bewahre ihn nur so lange auf, wie du ihn brauchst.
@@ -287,7 +287,7 @@ Neu in Version 1.5.1
 
 Neu in Version 2.0.0 (CLAUDIA)
 ------------------------------
-Ausführlich mit "Was / Warum / Wie": Knopf "Hilfe" oben rechts im Programm oder die Datei Claudia_Dokumentation.html (mit Suche, Deutsch/Englisch).
+Ausführlich mit "Was / Warum / Wie": Knopf "Hilfe" oben rechts im Programm oder die Datei CLAUDIA_Dokumentation.html (mit Suche, Deutsch/Englisch).
 - Neuer Name CLAUDIA mit Logo und Claim; technische Symbole statt Emoticons in Oberfläche und Berichten.
 - WordPress-Bereich (eigene Erkennung, Prüfungen und Aktionen).
 - Deutsch und Englisch (Flaggen oben rechts); Sprachdateien in claudia\lang, weitere Sprachen leicht ergänzbar (tools\i18n.py).

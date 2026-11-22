@@ -175,7 +175,7 @@ def extract() -> List[str]:
 
 
 _KEEP_WORDS = {"unbekannt", "abgebrochen"}
-_SAME = {"Claudia/2.0 (Sicherheitspruefung; https://github.com/)", "detail detail-in", "FS_METHOD = %s:", "CLAUDIA", "Joomla", "WordPress", "Server", "System", "Test", "Tests", "Updates", "Version", "Original", "Port", "Details", "Min.",
+_SAME = {"CLAUDIA/2.0 (Sicherheitspruefung; https://github.com/)", "detail detail-in", "FS_METHOD = %s:", "CLAUDIA", "Joomla", "WordPress", "Server", "System", "Test", "Tests", "Updates", "Version", "Original", "Port", "Details", "Min.",
          "Content-Type", "Sprache / Language"}
 
 

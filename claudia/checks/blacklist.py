@@ -32,7 +32,7 @@ def post_json(url: str, payload: Dict[str, Any], key: str, timeout: float = 20.0
     if not secure.is_secure_url(url):
         return 0, "Unverschlüsselte Adresse wird nicht benutzt."
     req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), method="POST",
-                                 headers={"Content-Type": "application/json", "X-Goog-Api-Key": key, "User-Agent": "Claudia/2.0"})
+                                 headers={"Content-Type": "application/json", "X-Goog-Api-Key": key, "User-Agent": "CLAUDIA/2.0"})
     try:
         with urllib.request.urlopen(req, timeout=timeout, context=ssl.create_default_context()) as r:
             return r.status, r.read(500_000).decode("utf-8", "replace")

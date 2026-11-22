@@ -29,7 +29,7 @@ Jeder Befund nennt, was gefunden wurde, die betroffenen Dateien oder Einträge u
 
 Du brauchst weder PowerShell noch die Eingabeaufforderung:
 
-1. Auf der Seite [Releases](https://github.com/conejito-vipe/CLAUDIA---Website-Maleware-Scanner/releases) die neueste Version öffnen und die Datei `Claudia_v….zip` herunterladen. Dort steht auch die SHA-256-Prüfsumme; sie lässt sich mit `PRUEFSUMMEN.txt` vergleichen.
+1. Auf der Seite [Releases](https://github.com/conejito-vipe/CLAUDIA---Website-Maleware-Scanner/releases) die neueste Version öffnen und die Datei `CLAUDIA_v….zip` herunterladen. Dort steht auch die SHA-256-Prüfsumme; sie lässt sich mit `PRUEFSUMMEN.txt` vergleichen.
 2. ZIP in einen normalen Ordner entpacken.
 3. **Windows:** `start.bat` doppelklicken. **Mac:** `start.command` doppelklicken. Mehr ist nicht nötig; fehlt Python, richtet die Startdatei es selbst ein.
 
@@ -52,7 +52,7 @@ Auf dem Mac meldet macOS bei `start.command` unter Umständen, dass die Datei ni
 2. `start.bat` doppelklicken (einzige Startdatei, richtet sich beim ersten Start selbst ein). Fehlt Python, lädt und installiert start.bat es automatisch (python.org, Signatur geprüft, nur für dein Benutzerkonto, kein Neustart nötig). Beim ersten Start entsteht die Verknüpfung `CLAUDIA.lnk` mit dem Eichhörnchen-Symbol.
 3. SSH-Zugangsdaten des Hosters eintragen, Prüfungen wählen, starten.
 
-Entwicklung, Tests und Dokumentation: siehe [README.md](README.md) und das Handbuch im Programm (Knopf "Hilfe") bzw. `Claudia_Dokumentation.html`.
+Entwicklung, Tests und Dokumentation: siehe [README.md](README.md) und das Handbuch im Programm (Knopf "Hilfe") bzw. `CLAUDIA_Dokumentation.html`.
 
 ## Schnellstart (Mac, ab 2.9.0, noch nicht auf einem echten Mac getestet)
 

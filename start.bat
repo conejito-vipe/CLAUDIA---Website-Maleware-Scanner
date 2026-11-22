@@ -4,11 +4,11 @@ title CLAUDIA
 cd /d "%~dp0"
 
 rem  EINZIGE Startdatei. Sie richtet alles selbst ein (Python, Bausteine, Startbildschirm) und startet CLAUDIA.
-rem  Es muss nichts von Hand installiert werden. Protokoll: %APPDATA%\Claudia\start.log
+rem  Es muss nichts von Hand installiert werden. Protokoll: %APPDATA%\CLAUDIA\start.log
 rem  Hinweis: Eine .bat-Datei kann kein eigenes Symbol tragen. Beim ersten Start legt sie deshalb
 rem  die Verknuepfung CLAUDIA.lnk mit dem Eichhoernchen-Symbol an; ab dann bitte diese benutzen.
 
-set "LOGDIR=%APPDATA%\Claudia"
+set "LOGDIR=%APPDATA%\CLAUDIA"
 set "LOG=%LOGDIR%\start.log"
 if not exist "%LOGDIR%" mkdir "%LOGDIR%" >nul 2>&1
 
@@ -68,7 +68,7 @@ rem --- Notfall: ohne pyw/pythonw laeuft der Startbildschirm mit sichtbarem schw
 %PY% -m claudia.launcher
 if errorlevel 1 (
     echo.
-    echo  Das Programm wurde mit einem Fehler beendet. Protokoll: %%APPDATA%%\Claudia\launcher.log
+    echo  Das Programm wurde mit einem Fehler beendet. Protokoll: %%APPDATA%%\CLAUDIA\launcher.log
     pause
 )
 exit /b 0

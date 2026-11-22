@@ -75,7 +75,7 @@ CLUSTER_MEMBERS = {
     "htaccess": "zugriffsregeln", "htaccess_structure": "zugriffsregeln", "php_ini": "zugriffsregeln", "php_settings": "zugriffsregeln",
     "configuration": "einstieg", "entry_points": "einstieg", "joomla_core": "einstieg", "config_integrity": "einstieg",
     "extensions_fs": "ext_pruefen", "security_ext": "ext_schutz", "backup_tool": "ext_sicherung", "vel_feed": "ext_pruefen", "jed_listing": "ext_pruefen", "ext_integrity": "ext_pruefen",
-    "db_access": "joomla_zugang",
+    "db_access": "joomla_zugang", "joomla_known_exploits": "ext_pruefen", "seo_spam_files": "versteck", "locked_files": "versteck",
     "db_users": "joomla_konten", "db_jce": "joomla_konten", "db_actionlog": "joomla_konten", "db_mfa": "joomla_konten", "db_registration": "joomla_konten", "db_admin_logins": "joomla_konten",
     "db_textfilter": "joomla_einst", "db_upload_ext": "joomla_einst", "db_ext_age": "joomla_einst",
     "db_content": "joomla_code", "db_redirects": "joomla_code", "db_extensions": "joomla_code",
@@ -112,13 +112,14 @@ CLUSTER_MEMBERS_WP = {
     "db_access": "joomla_zugang", "wp_db_users": "joomla_konten", "wp_2fa": "joomla_konten", "wp_db_options": "joomla_code", "wp_db_content": "joomla_code",
     "woo_overview": "shop_woo", "woo_api_keys": "shop_woo", "woo_webhooks": "shop_woo", "woo_gateways": "shop_woo", "woo_managers": "shop_woo", "woo_exposed": "shop_woo",
     "wp_cron": "konto", "wp_db_incidents": "dbx_lage", "wp_logs": "logs_spuren", "wp_exposure": "besucher",
+    "wp_hidden_code": "einstieg", "wp_db_hidden_options": "joomla_code", "seo_spam_files": "versteck", "locked_files": "versteck",
 }
 
 
 # Tests, die für beide Systeme laufen (Pfade und Bezeichnungen kommen aus dem Profil in cms.py)
 BOTH = {"backup_tool", "crontab", "authorized_keys", "processes", "shell_startup", "sessions", "root_files", "perms", "other_installs", "node_modules", "js_scan", "php_in_uploads", "webshells", "suspicious_names",
         "recent_changes", "backups_in_webroot", "htaccess", "php_ini", "access_logs", "local_logs", "web_source", "web_headers", "web_csp", "db_access", "mail_dns", "dns_changes", "mail_send", "plaintext_creds", "backup_age", "js_libs", "tls_protocols", "cookie_flags",
-        "dbx_server", "dbx_codescan", "dbx_anomalies", "update_ready", "security_ext", "php_settings", "safe_browsing", "threat_intel", "malware_patterns", "hidden_structure", "htaccess_structure", "compare_runs", "skimmer_scan"}
+        "dbx_server", "dbx_codescan", "dbx_anomalies", "update_ready", "security_ext", "php_settings", "safe_browsing", "threat_intel", "malware_patterns", "hidden_structure", "htaccess_structure", "compare_runs", "skimmer_scan", "seo_spam_files", "locked_files"}
 
 # Texte für den WordPress-Bereich der gemeinsamen Tests (Titel, Beschreibung, Vorgehen, Begründung)
 WP_TEXTS = {

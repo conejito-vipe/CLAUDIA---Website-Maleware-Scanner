@@ -6,8 +6,8 @@ __pycache__/
 dist/
 build/
 *.egg-info/
-Claudia_v*.zip
-Claudia_Dokumentation.html
+CLAUDIA_v*.zip
+CLAUDIA_Dokumentation.html
 # local data / reports (never commit)
 berichte/
 protokolle/

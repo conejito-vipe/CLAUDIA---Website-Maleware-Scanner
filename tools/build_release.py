@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Baut das Release: CHANGELOG.md und RELEASE_NOTES.md aus claudia/docs/aenderungen.*.txt, PRUEFSUMMEN.txt, Claudia_Dokumentation.html
-und die ZIP-Datei Claudia_v<Version>.zip (ohne Tests-Zwischendateien).
+"""Baut das Release: CHANGELOG.md und RELEASE_NOTES.md aus claudia/docs/aenderungen.*.txt, PRUEFSUMMEN.txt, CLAUDIA_Dokumentation.html
+und die ZIP-Datei CLAUDIA_v<Version>.zip (ohne Tests-Zwischendateien).
 
   python tools/build_release.py [Zielordner]        Standard: Ordner über dem Projekt
   python tools/build_release.py --check             nur prüfen (Version, CHANGELOG.md aktuell), nichts schreiben"""
@@ -46,7 +46,7 @@ def files() -> List[str]:
     for d, dirs, fs in os.walk(ROOT):
         dirs[:] = [x for x in dirs if x not in SKIP_DIRS]
         for f in fs:
-            if f.endswith(".pyc") or f in SKIP_FILES or f.startswith("Claudia_v"):
+            if f.endswith(".pyc") or f in SKIP_FILES or f.startswith("CLAUDIA_v"):
                 continue
             out.append(os.path.relpath(os.path.join(d, f), ROOT).replace(os.sep, "/"))
     return sorted(out)
@@ -79,18 +79,18 @@ def main(argv: List[str]) -> int:
     write("CHANGELOG.de.md", changelog_md("de"))
     write("RELEASE_NOTES.md", release_notes("en"))
     import build_docs
-    build_docs.build(os.path.join(ROOT, "Claudia_Dokumentation.html"))
+    build_docs.build(os.path.join(ROOT, "CLAUDIA_Dokumentation.html"))
     names = files()
     lines = ["# SHA-256-Pruefsummen aller Dateien (pruefen.bat vergleicht sie). Erstellt zusammen mit dem Paket."]
     for n in names:
         lines.append("%s  %s" % (hashlib.sha256(open(os.path.join(ROOT, n), "rb").read()).hexdigest(), n))
     write("PRUEFSUMMEN.txt", "\n".join(lines) + "\n")
-    out = os.path.join(target, "Claudia_v%s.zip" % __version__)
+    out = os.path.join(target, "CLAUDIA_v%s.zip" % __version__)
     if os.path.exists(out):
         os.remove(out)
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for n in names + ["PRUEFSUMMEN.txt"]:
-            add_file(z, os.path.join(ROOT, n), "Claudia/" + n)
+            add_file(z, os.path.join(ROOT, n), "CLAUDIA/" + n)
     print(out)
     print(hashlib.sha256(open(out, "rb").read()).hexdigest())
     return 0

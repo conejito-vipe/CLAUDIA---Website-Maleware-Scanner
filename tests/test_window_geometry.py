@@ -86,9 +86,9 @@ class Page(unittest.TestCase):
     def test_handles_and_ui_wiring(self):
         html = open(os.path.join(ROOT, "claudia", "web", "index.html"), encoding="utf-8").read()
         js = open(os.path.join(ROOT, "claudia", "web", "app.js"), encoding="utf-8").read()
-        for rid in ("rz-r", "rz-b", "rz-br"):
+        for rid in ("rz-l", "rz-bl", "rz-r", "rz-b", "rz-br"):
             self.assertIn('id="%s"' % rid, html)
-        self.assertIn("api.set_size(", js)
+        self.assertIn("api.resize_by(", js)
         self.assertNotIn('id="quit"', html)                              # "Programm beenden" entfällt, das X der Titelleiste übernimmt
         self.assertNotIn('$("#quit")', js)
         self.assertIn('id="tb-ver"', html)                               # Versionsnummer neben dem festen CLAUDIA oben
@@ -98,7 +98,7 @@ class Page(unittest.TestCase):
         self.assertIn('class: "uni-slot"', js)
         docs = open(os.path.join(ROOT, "claudia", "web", "docs.js"), encoding="utf-8").read()
         self.assertIn('class: "docs-x"', docs)
-        self.assertIn("api.get_size()", js)
+        self.assertIn("api.get_rect()", js)
 
 
 if __name__ == "__main__":

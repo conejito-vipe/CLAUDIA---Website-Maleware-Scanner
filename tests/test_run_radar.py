@@ -75,8 +75,8 @@ class RadarDrawing(unittest.TestCase):
                 self.assertTrue(r > 190 and 110 < g < 235 and b < 140, "kritisch muss bernsteinfarben sein: %s" % col["d_crit"])
                 self.assertEqual(pg.evaluate(RED_JS), 0, "es darf kein rot gezeichnet werden")
                 ok, crit = col["a_ok"], col["d_crit"]
-                self.assertGreater(ok[1], ok[0], "In Ordnung ist gruenlich")
-                self.assertLess(sum(ok), sum(crit), "In Ordnung ist gedaempfter als kritisch")
+                self.assertLess(sum(ok), 200, "In Ordnung wird nicht als Punkt gezeigt (nur Funde)")
+                self.assertLess(sum(col["e_skip"]), 200, "Uebersprungen wird nicht als Punkt gezeigt")
                 info = col["b_info"]
                 self.assertGreater(info[2], info[0], "Hinweis ist bläulich")
                 warn = col["c_warn"]
@@ -104,11 +104,11 @@ class RadarDrawing(unittest.TestCase):
 
     def test_theme_switch_rereads_variables(self):
         pg = self.page(reduced=True, theme="")
-        before = self.colors(pg)["a_ok"]
+        before = self.colors(pg)["d_crit"]
         pg.evaluate("document.documentElement.setAttribute('data-theme','dark')")
         pg.wait_for_timeout(200)
         pos = pg.evaluate("window.__r.positions()")
-        p = [x for x in pos if x["id"] == "a_ok"][0]
+        p = [x for x in pos if x["id"] == "d_crit"][0]
         self.assertNotEqual(before, pg.evaluate(PIX_JS, [p["x"], p["y"]]), "Farben folgen dem Wechsel hell/dunkel")
 
     def test_bad_input_does_not_crash(self):

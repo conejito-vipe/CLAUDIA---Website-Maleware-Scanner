@@ -34,6 +34,7 @@ _MODULES = [
     "prestashop_checks",
     "shopware_checks",
     "umgebung_pruefungen",
+    "zusatz",
 ]
 
 for _m in _MODULES:

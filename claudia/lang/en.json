@@ -626,7 +626,7 @@
 "Bitte das Programm über start.bat bzw. start.command starten (installiert es automatisch) oder 'pip install paramiko' ausführen.": "Please start the program via start.bat or start.command (it installs it automatically) or run 'pip install paramiko'.",
 "Bitte das Verzeichnis prüfen (es muss den Ordner 'administrator' und die Datei 'configuration.php' enthalten).": "Please check the directory (it must contain the folder 'administrator' and the file 'configuration.php').",
 "Bitte das Verzeichnis prüfen (es muss die Ordner 'wp-admin', 'wp-content', 'wp-includes' und die Datei 'wp-config.php' enthalten).": "Please check the directory (it must contain the folders 'wp-admin', 'wp-content', 'wp-includes' and the file 'wp-config.php').",
-"Bitte den Ordner an einen normalen Ort verschieben, z. B. auf den Desktop oder nach C:\\Claudia, und erneut starten.": "Please move the folder to a normal location, e.g. the desktop or C:\\Claudia, and start again.",
+"Bitte den Ordner an einen normalen Ort verschieben, z. B. auf den Desktop oder nach C:\\CLAUDIA, und erneut starten.": "Please move the folder to a normal location, e.g. the desktop or C:\\CLAUDIA, and start again.",
 "Bitte den Pfad zur Schlüsseldatei angeben.": "Please enter the path to the key file.",
 "Bitte die Warnung bestätigen.": "Please confirm the warning.",
 "Bitte die ZIP-Datei vollständig entpacken.": "Please extract the ZIP file completely.",

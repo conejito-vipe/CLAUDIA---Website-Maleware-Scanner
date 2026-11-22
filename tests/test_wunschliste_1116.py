@@ -1,5 +1,6 @@
 """Wunschliste 2.5.0 (16.11.): Hoster-Liste, Funktions-Scan, fehlende Paketdateien, Preisgruppen, Ordner-Übernahme, Oberfläche."""
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -198,8 +199,9 @@ class Statics(unittest.TestCase):
         return open(os.path.join(ROOT, *p), encoding="utf-8").read()
 
     def test_footer_text_everywhere(self):
-        text = "vibecoded with Claude (Anthropic) by conejito-vipe with love"
-        self.assertIn(text, self.read("claudia", "web", "index.html"))
+        html = re.sub(r"<a [^>]*>(conejito-vipe)</a>", r"\1", self.read("claudia", "web", "index.html"))   # seit 2.15.0 ist der Name ein Link zum GitHub-Profil
+        self.assertIn("vibecoded with Claude (Anthropic) by conejito-vipe with love", html)
+        self.assertIn('href="https://github.com/conejito-vipe"', self.read("claudia", "web", "index.html"))
 
     def test_uninstall_dialog_uses_fixed_head_and_foot(self):
         js = self.read("claudia", "web", "app.js")

@@ -14,7 +14,7 @@ from claudia import uninstall  # noqa: E402
 
 def world():
     base = os.path.realpath(tempfile.mkdtemp(prefix="claudia_un_"))
-    root, data = os.path.join(base, "Claudia"), os.path.join(base, "appdata", "Claudia")
+    root, data = os.path.join(base, "CLAUDIA"), os.path.join(base, "appdata", "CLAUDIA")
     os.makedirs(os.path.join(root, ".venv", "Lib"))
     os.makedirs(os.path.join(root, "claudia"))
     open(os.path.join(root, "start.bat"), "w").write("x")
@@ -23,7 +23,7 @@ def world():
     open(os.path.join(data, "cache", "joomla.json"), "w").write("{}")
     open(os.path.join(data, "launcher.log"), "w").write("log")
     open(os.path.join(data, "profile.json"), "w").write("{}")
-    reports = os.path.join(base, "Dokumente", "Claudia", "Berichte")
+    reports = os.path.join(base, "Dokumente", "CLAUDIA", "Berichte")
     os.makedirs(reports)
     open(os.path.join(reports, "bericht.txt"), "w").write("r")
     return base, root, data, reports

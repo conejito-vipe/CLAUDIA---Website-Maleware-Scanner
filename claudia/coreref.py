@@ -26,7 +26,7 @@ GITHUB_API = "https://api.github.com/repos/joomla/joomla-cms/releases/tags/%s"
 GITHUB_DL = "https://github.com/joomla/joomla-cms/releases/download/%s/%s"
 UPDATE_LIST = "https://update.joomla.org/core/list.xml"
 MAX_ZIP = 120 * 1024 * 1024
-UA = "Claudia/2.0 (Sicherheitspruefung; https://github.com/)"
+UA = "CLAUDIA/2.0 (Sicherheitspruefung; https://github.com/)"
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 # Pfade, die nie aus einem Paket zurückgespielt werden und beim Vergleich ausgenommen sind (Inhalt gehört der Seite, nicht dem Kern)
 SKIP_PREFIXES = ("installation/", "images/", "tmp/", "cache/", "logs/", "administrator/cache/", "administrator/logs/")

@@ -32,11 +32,11 @@ Was das Programm tut
   die Claude-Webseite in deinem Browser und legt Text in die Zwischenablage; hochgeladen wird die Datei von DIR.
 - Startfenster: start.bat startet das Programm mit einem Startfenster statt eines schwarzen Fensters. Dabei wird nur ausgeführt, was im
   Startfenster als Schritt steht (venv anlegen, "pip install -r requirements.txt" von pypi.org beim ersten Start, Selbsttest,
-  lokaler Server auf 127.0.0.1). Das Protokoll steht in %APPDATA%\Claudia\launcher.log.
+  lokaler Server auf 127.0.0.1). Das Protokoll steht in %APPDATA%\CLAUDIA\launcher.log.
 - Mac (ab 2.9.0): start.command arbeitet genauso: Es lädt Python nur von www.python.org/ftp/python, prüft mit pkgutil die Signatur (Python Software Foundation) und installiert es erst nach deiner Passworteingabe in macOS. Es ist eine Textdatei und lässt sich vorher lesen.
 - Python: Fehlt Python, lädt start.bat einmalig den offiziellen Installer von python.org (www.python.org/ftp/python), prüft seine digitale Signatur
   (Herausgeber muss die Python Software Foundation sein; sonst wird nichts ausgeführt) und installiert Python nur für dein Benutzerkonto.
-  Die Skripte claudia\python_setup.ps1 und claudia\make_shortcut.ps1 sind Textdateien, du kannst sie vorher lesen. Protokoll: %APPDATA%\Claudia\start.log.
+  Die Skripte claudia\python_setup.ps1 und claudia\make_shortcut.ps1 sind Textdateien, du kannst sie vorher lesen. Protokoll: %APPDATA%\CLAUDIA\start.log.
 - API-Schlüssel (Google Safe Browsing): bleibt nur im Arbeitsspeicher, wird nie gespeichert und in Berichten maskiert.
 - Datenbank-Passwort (Bereich "Datenbank"): bleibt nur im Arbeitsspeicher, wird dem mysql-Programm auf dem Server über die
   Standardeingabe übergeben (nicht in der Befehlszeile), nie gespeichert und aus allen Berichten entfernt.

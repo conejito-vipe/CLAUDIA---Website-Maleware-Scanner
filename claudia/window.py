@@ -64,6 +64,29 @@ def _mac_dock_icon() -> None:
         pass
 
 
+def _win_app_id() -> None:
+    """Windows: eigene Programm-Kennung, damit die Taskleiste CLAUDIA statt Python zeigt und das Symbol nicht mit anderen Python-Programmen gruppiert wird."""
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("conejito-vipe.CLAUDIA")
+    except Exception:
+        pass
+
+
+def _win_icon(win: Any) -> None:
+    """Windows: CLAUDIA-Symbol als Fenstersymbol (Taskleiste, Alt+Tab). Nur ein Versuch, Fehler sind unkritisch."""
+    if os.name != "nt":
+        return
+    try:
+        from System.Drawing import Icon                    # type: ignore  # kommt mit pywebview (pythonnet)
+        ico = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "claudia.ico")
+        win.native.Icon = Icon(ico)
+    except Exception:
+        pass
+
+
 def start_geometry(screens: Any) -> dict:
     """Größe und Position des Programmfensters: so groß wie möglich bis WIDTH x HEIGHT, aber nie größer als der Hauptbildschirm, mittig darauf.
     screens: Liste der Bildschirme von pywebview (Hauptbildschirm zuerst) oder None. Ohne Angaben bleibt es bei der Grundgröße und pywebview zentriert selbst."""
@@ -108,6 +131,7 @@ class WindowApi:
     def close(self) -> None:
         w = self._owner._win
         if w is not None and self._owner._on_closing():                    # gleiche Nachfrage wie beim normalen Schließen
+            self._owner._confirmed = True                                  # destroy() löst das Schließen-Ereignis aus: nicht ein zweites Mal fragen
             w.destroy()
 
     def get_size(self) -> list:
@@ -117,6 +141,40 @@ class WindowApi:
             return [int(w.width), int(w.height)]
         except Exception:
             return [WIDTH, HEIGHT]
+
+    def get_rect(self) -> list:
+        """Position und Größe des Fensters [x, y, Breite, Höhe] (Start eines Ziehvorgangs am Rand)."""
+        w = self._owner._win
+        try:
+            return [int(w.x), int(w.y), int(w.width), int(w.height)]
+        except Exception:
+            return [0, 0, WIDTH, HEIGHT]
+
+    def resize_by(self, x0: Any, y0: Any, w0: Any, h0: Any, dx: Any, dy: Any, edges: Any) -> bool:
+        """Fenster am Rand ziehen: Ausgangslage (x0, y0, w0, h0) plus Mausweg (dx, dy). 'l', 'r', 'b' in edges wählen die Ränder; beim linken Rand bleibt die rechte Kante stehen."""
+        w = self._owner._win
+        if w is None or self._owner._maximized:
+            return False
+        try:
+            x0, y0, w0, h0, dx, dy = (int(float(v)) for v in (x0, y0, w0, h0, dx, dy))
+            edges = str(edges)
+        except (TypeError, ValueError):
+            return False
+        nw, nh = w0, h0
+        if "r" in edges:
+            nw = w0 + dx
+        if "l" in edges:
+            nw = w0 - dx
+        if "b" in edges:
+            nh = h0 + dy
+        nw, nh = max(MIN_W, min(nw, MAX_SIZE)), max(MIN_H, min(nh, MAX_SIZE))
+        try:
+            w.resize(nw, nh)
+            if "l" in edges:
+                w.move(x0 + (w0 - nw), y0)
+        except Exception:
+            return False
+        return True
 
     def set_size(self, width: Any, height: Any) -> bool:
         """Fenstergröße ändern (nur mit eigener Titelleiste, nicht im maximierten Zustand); begrenzt auf sinnvolle Werte. Die linke obere Ecke bleibt stehen."""
@@ -151,6 +209,7 @@ class Window:
         self._proc: Any = None
         self._stopping = threading.Event()
         self._maximized = False
+        self._confirmed = False
         srv.on_stop.append(self.close)
 
     # ------------------------------------------------------------------ gemeinsam
@@ -206,6 +265,11 @@ class Window:
                 win = wv.create_window(self.title(), self.srv.entry_url(), min_size=(MIN_W, MIN_H), text_select=True, **geo)
             self._win = win
             _mac_dock_icon()
+            _win_app_id()
+            try:
+                win.events.shown += lambda: _win_icon(win)
+            except Exception:
+                pass
             try:
                 win.events.closing += self._on_closing
             except Exception:
@@ -222,7 +286,7 @@ class Window:
     def _on_closing(self) -> bool:
         """Beim Schließen während einer Prüfung nachfragen. False = nicht schließen."""
         app = self.srv.app
-        if self._stopping.is_set() or not (getattr(app, "running", False) or getattr(app, "job", None)):
+        if self._confirmed or self._stopping.is_set() or not (getattr(app, "running", False) or getattr(app, "job", None)):
             return True
         try:
             lang = getattr(app, "lang", i18n.SOURCE)

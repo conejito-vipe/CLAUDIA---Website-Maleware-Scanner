@@ -35,7 +35,7 @@ Each field in the strip stands for one check and changes color when its result i
 
 ## report | 4. Reports and sharing
 - "Download ZIP": bericht.txt, ergebnisse.json, raw data and LIES_MICH.txt, without passwords.
-- "Save all reports as files": folder Documents\Claudia\Berichte\<server>_<date> with additionally bericht.html (printable, with icons) and fuer_claude.zip.
+- "Save all reports as files": folder Documents\CLAUDIA\Berichte\<server>_<date> with additionally bericht.html (printable, with icons) and fuer_claude.zip.
 - "Hand over to Claude": saves the reports, opens the folder and Claude in the browser and puts a ready-made text on the clipboard. The program uploads nothing itself.
 - Credentials from the configuration file are masked, IP addresses are shortened on request. Reports still contain file names and paths of your site: share them only with people you would tell this anyway.
 - The report is created in the language currently selected.
@@ -103,6 +103,7 @@ Limit: the list of known plugin vulnerabilities is a small selection. The online
 - Comparison with saved baseline (since 2.4): On request saves paths and checksums of your code files only on your computer and later reports new, changed and deleted files. Save the baseline again after updates. Since 2.4.1 the selection page reminds you when it opens: "Last comparison X days ago"; from 14 days on a notice appears. There is no background service; the display appears only when you open the program. Only the time of the last comparison is recorded, on your computer.
 - Plugin files against the original (since 2.4, WordPress): Compares installed plugins with the checksums from wordpress.org. Premium plugins are "cannot be checked".
 - Skimmer search (since 2.4): Looks for code that reads card data and sends it to foreign addresses. A match is a hint, not proof.
+- Additional checks after research (since 2.15): WordPress: hidden code (user hiding via pre_user_query, the db.php drop-in, hidden PHP files, placeholder plugins, file names from known attacks) and hidden options (Base64 code in the database, WebSocket scripts in plugin settings). Joomla: known attacks (Helix3 below 3.1.2, JCE below 2.9.99.5, cox.json, defacement scripts in template parameters). All systems: undeletable files and folders (immutable flag, foreign owner; only the host can remove them), spam sitemaps, foreign robots.txt entries and a changed ads.txt. The skimmer search also detects WebSocket connections and code that checks for an admin bar; the process check shows shared-memory segments. All read-only.
 - Joomla API without login (since 2.4): A single request, only for Joomla 4.0.0 to 4.2.7 or an unknown version; the response is never shown.
 - Other installations with quick scan (since 2.4): On request a short, read-only examination of at most 10 further installations.
 - More precise file checks (since 2.4): PHP code in image and text files, evaluation of the status change time (ctime), access to backups of other tools from outside, and an allow list of known extensions against false alarms.
@@ -138,9 +139,9 @@ German and English; switch with the flags at the top right (not during a run). A
 - "PHP selector": Some hosts have a "php" that only asks for the version. The program then looks for a real PHP (php8.3 etc.). If it finds none, it does not rate PHP values instead of warning wrongly.
 
 ## files | 12. What is stored
-- Profiles without password and confirmed fingerprints: %APPDATA%\Claudia
+- Profiles without password and confirmed fingerprints: %APPDATA%\CLAUDIA
 - Settings (language): einstellungen.json in the same folder
-- Reports (only if you save them): Documents\Claudia\Berichte
-- Saved logs: Documents\Claudia\Protokolle
+- Reports (only if you save them): Documents\CLAUDIA\Berichte
+- Saved logs: Documents\CLAUDIA\Protokolle
 - To clean up, simply delete these folders.
 - Uninstall: "Uninstall" button at the top of the program or in the start window. The list shows what the program created (Python environment .venv, cache, start log; optionally connections, reports, program folder and a Python installed by start.bat). Only checked entries are deleted, after confirmation and after the program has closed; the deletion window shows every step. Connections, reports and the program folder are never preselected.

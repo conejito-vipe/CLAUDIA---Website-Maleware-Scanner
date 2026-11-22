@@ -67,7 +67,7 @@ echo '@@PHP'
 fi
 echo '@@NET'
 if command -v curl >/dev/null 2>&1; then
-  c=$(curl -s -m 10 -o /dev/null -w '%{http_code}' -A 'Claudia-Check' @URL@ 2>/dev/null); echo "${c:-000}"
+  c=$(curl -s -m 10 -o /dev/null -w '%{http_code}' -A 'CLAUDIA-Check' @URL@ 2>/dev/null); echo "${c:-000}"
 else echo 'KEIN_CURL'; fi
 echo '@@END'
 """

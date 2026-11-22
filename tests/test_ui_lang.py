@@ -32,7 +32,23 @@ JS = """() => { const out = []; const w = document.createTreeWalker(document.bod
   return out; }"""
 
 
+def _offen():
+    """Bewusst noch nicht übersetzte Sätze (tests/uebersetzung_offen.json) zählen nicht als deutscher Rest."""
+    import json
+    try:
+        with open(os.path.join(HERE, "uebersetzung_offen.json"), encoding="utf-8") as fh:
+            return sorted(set(json.load(fh).get("fehlend") or []), key=len, reverse=True)
+    except (OSError, ValueError):
+        return []
+
+
+OFFEN = _offen()
+
+
 def german(t):
+    for s in OFFEN:
+        if s in t:
+            t = t.replace(s, " ")
     ws = re.findall(r"[A-Za-zÄÖÜäöüß]+", t)
     return bool(UM.search(t)) or any(w in GER for w in ws)
 

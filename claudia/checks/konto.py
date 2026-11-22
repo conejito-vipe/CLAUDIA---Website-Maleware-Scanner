@@ -233,6 +233,8 @@ for p in $(ps -u "$ME" -o pid= 2>/dev/null | head -400); do
   e=$(readlink "/proc/$p/exe" 2>/dev/null)
   case "$e" in *"(deleted)"*) echo "$p $e";; esac
 done
+echo '@@SHM'
+ipcs -m 2>/dev/null | awk -v me="$ME" 'NR>3 && $3==me {printf "%s %s %s\n", $1, $5, $6}' | head -n 50
 echo '@@END'
 """
 MINERS = re.compile(r"(?i)\b(?:xmrig|minerd|cpuminer|kdevtmpfsi|kinsing|kthreaddi|ld-linux-x86|stratum\+tcp|cryptonight)\b")
@@ -262,7 +264,12 @@ def parse_procs(out: str) -> Dict[str, object]:
         m = re.match(r"^(\d+)\s+(.*)$", ln.strip())
         if m:
             deleted[int(m.group(1))] = m.group(2)
-    return {"procs": procs, "deleted": deleted, "ok": "PS" in sec}
+    shm = []
+    for ln in lines_of(sec.get("SHM", "")):
+        p = ln.split()
+        if len(p) >= 3 and p[1].isdigit():
+            shm.append({"key": p[0], "bytes": int(p[1]), "attached": p[2]})
+    return {"procs": procs, "deleted": deleted, "ok": "PS" in sec, "shm": shm}
 
 
 @check(
@@ -313,7 +320,14 @@ def processes_check(ctx, res):
     if warn:
         res.add("warn", "%d lang laufende(r) Skript-Prozess(e)" % len(warn), "PHP, Perl oder Python laufen sonst nur kurz. Ein Dauerläufer kann ein Hintergrund-Skript sein, das du nicht kennst.", warn,
                 "Prüfen, ob du das Skript kennst. Sonst beenden und die Datei suchen.")
-    if not (crit or warn):
+    shm = info.get("shm") or []
+    if shm:
+        res.add("warn", "%d Shared-Memory-Segment(e) des Kontos" % len(shm),
+                "Selbstheilende WordPress-Schadsoftware (2026) legt ihren Code in einem System-V-Shared-Memory-Segment ab, damit er nach dem Löschen aller Dateien weiterlebt. "
+                "PHP-Anwendungen nutzen diese Segmente normalerweise nicht.",
+                ["Schlüssel %s, %d Byte, %s Anbindung(en)" % (s["key"], s["bytes"], s["attached"]) for s in shm[:20]],
+                "Mit 'ipcs -m' ansehen. Gehört das Segment zu keiner Anwendung, die du kennst, vom Hoster entfernen lassen (ipcrm) und die Quelle suchen.")
+    if not (crit or warn or shm):
         res.add("ok", "Keine verdächtigen Prozesse", "%d Prozess(e) des Kontos geprüft (ohne die eigene Verbindung)." % len(procs))
     else:
         res.add("info", "%d Prozess(e) des Kontos insgesamt" % len(procs), "Anzahl der Prozesse, die das Programm angesehen hat.")

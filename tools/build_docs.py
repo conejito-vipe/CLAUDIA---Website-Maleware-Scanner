@@ -2,7 +2,7 @@
 """Erzeugt die eigenständige Dokumentation als EINE HTML-Datei (ohne Internet nutzbar): Handbuch, Änderungsverlauf, Prüfkatalog,
 Suche und Sprachumschaltung. Gleiche Quellen und gleicher Anzeigecode wie das Hilfe-Fenster im Programm.
 
-  python tools/build_docs.py [Ausgabedatei]      Standard: Claudia_Dokumentation.html im Hauptordner"""
+  python tools/build_docs.py [Ausgabedatei]      Standard: CLAUDIA_Dokumentation.html im Hauptordner"""
 from __future__ import annotations
 
 import json
@@ -82,5 +82,5 @@ def build(out_path: str) -> str:
 
 
 if __name__ == "__main__":
-    target = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "Claudia_Dokumentation.html")
+    target = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "CLAUDIA_Dokumentation.html")
     print(build(target))

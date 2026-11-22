@@ -17,7 +17,7 @@ It runs a local web interface on `127.0.0.1` in your browser. German and English
 
 ## What it checks (selection)
 
-Web shells and backdoors, malware patterns, hidden files and `.htaccess` tricks, Joomla core against the official checksums (and reinstall), WordPress core checksums, Drupal core against the original package, WooCommerce (API keys, webhooks, payment methods), extensions/plugins against known vulnerabilities (VEL, NVD/CVE, online lists), configuration and PHP settings, database content (optional), logs, publicly reachable files, security-extension presence (with JED ratings), Google Safe Browsing (your own API key), update readiness. Full list: *Help* in the program or `Claudia_Dokumentation.html`.
+Web shells and backdoors, malware patterns, hidden files and `.htaccess` tricks, Joomla core against the official checksums (and reinstall), WordPress core checksums, Drupal core against the original package, WooCommerce (API keys, webhooks, payment methods), extensions/plugins against known vulnerabilities (VEL, NVD/CVE, online lists), configuration and PHP settings, database content (optional), logs, publicly reachable files, security-extension presence (with JED ratings), Google Safe Browsing (your own API key), update readiness. Full list: *Help* in the program or `CLAUDIA_Dokumentation.html`.
 
 ## Quick start (Windows)
 

@@ -209,7 +209,7 @@ class Launcher:
             os.remove(probe)
         except OSError:
             raise LaunchError("Der Programmordner ist schreibgeschützt",
-                              "Bitte den Ordner an einen normalen Ort verschieben, z. B. auf den Desktop oder nach C:\\Claudia, und erneut starten.")
+                              "Bitte den Ordner an einen normalen Ort verschieben, z. B. auf den Desktop oder nach C:\\CLAUDIA, und erneut starten.")
         self._end()
 
         if "venv" in [k for k, _t, _w in self._plan]:

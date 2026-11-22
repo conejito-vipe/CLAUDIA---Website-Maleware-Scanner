@@ -36,7 +36,7 @@ Jedes Feld im Streifen steht für eine Prüfung und färbt sich, wenn das Ergebn
 
 ## report | 4. Berichte und Weitergabe
 - "ZIP herunterladen": bericht.txt, ergebnisse.json, Rohdaten und LIES_MICH.txt, ohne Passwörter.
-- "Alle Berichte als Dateien speichern": Ordner Dokumente\Claudia\Berichte\<server>_<datum> mit zusätzlich bericht.html (druckbar, mit Symbolen) und fuer_claude.zip.
+- "Alle Berichte als Dateien speichern": Ordner Dokumente\CLAUDIA\Berichte\<server>_<datum> mit zusätzlich bericht.html (druckbar, mit Symbolen) und fuer_claude.zip.
 - "An Claude übergeben": speichert die Berichte, öffnet den Ordner und Claude im Browser und legt einen fertigen Text in die Zwischenablage. Das Programm lädt selbst nichts hoch.
 - Zugangsdaten aus der Konfigurationsdatei sind unkenntlich gemacht, IP-Adressen werden auf Wunsch gekürzt. Berichte enthalten trotzdem Dateinamen und Pfade deiner Seite: nur an Personen weitergeben, denen du das auch erzählen würdest.
 - Der Bericht wird in der gerade gewählten Sprache erzeugt.
@@ -105,6 +105,7 @@ Grenze: Die Liste bekannter Plugin-Schwachstellen ist eine kleine Auswahl. Aktue
 - Vergleich mit gespeicherter Basis (seit 2.4): Speichert auf Wunsch Pfade und Prüfsummen deiner Code-Dateien nur auf deinem Computer und meldet später neue, geänderte und gelöschte Dateien. Nach Updates die Basis neu speichern. Seit 2.4.1 erinnert die Auswahlseite beim Öffnen: "Letzter Vergleich vor X Tagen"; ab 14 Tagen erscheint ein Hinweis. Es gibt keinen Hintergrunddienst, die Anzeige entsteht nur, wenn du das Programm öffnest. Vermerkt wird nur der Zeitpunkt des letzten Vergleichs, auf deinem Computer.
 - Plugin-Dateien gegen das Original (seit 2.4, WordPress): Vergleicht installierte Plugins mit den Prüfsummen von wordpress.org. Premium-Plugins sind "nicht prüfbar".
 - Skimmer-Suche (seit 2.4): Sucht Code, der Kartendaten ausliest und an fremde Adressen sendet. Ein Treffer ist ein Hinweis, kein Beweis.
+- Zusatzprüfungen nach Recherche (seit 2.15): WordPress: versteckter Code (Benutzer-Tarnung über pre_user_query, Drop-in db.php, versteckte PHP-Dateien, Platzhalter-Plugins, Dateinamen aus bekannten Angriffen) und versteckte Optionen (Base64-Code in der Datenbank, WebSocket-Skripte in Plugin-Einstellungen). Joomla: bekannte Angriffe (Helix3 unter 3.1.2, JCE unter 2.9.99.5, cox.json, Defacement-Skripte in den Template-Parametern). Alle Systeme: nicht löschbare Dateien und Ordner (Schreibschutz-Merkmal, fremder Besitzer; nur der Hoster kann sie entfernen), Spam-Sitemaps, fremde robots.txt-Einträge und geänderte ads.txt. Skimmer-Suche erkennt zusätzlich WebSocket-Verbindungen und Code, der eine Administrator-Leiste prüft; die Prozess-Prüfung zeigt Shared-Memory-Segmente. Alles rein lesend.
 - Joomla-API ohne Anmeldung (seit 2.4): Ein einzelner Abruf, nur bei Joomla 4.0.0 bis 4.2.7 oder unbekannter Version; die Antwort wird nie gezeigt.
 - Weitere Installationen mit Schnellscan (seit 2.4): Auf Wunsch eine kurze, lesende Untersuchung von höchstens 10 Zweitinstallationen.
 - Genauere Dateiprüfung (seit 2.4): PHP-Code in Bild- und Textdateien, Auswertung der Statusänderung (ctime), Abruf von Sicherungen anderer Tools von außen und eine Positivliste bekannter Erweiterungen gegen Fehlalarme.
@@ -140,9 +141,9 @@ Deutsch und Englisch; umschalten mit den Flaggen oben rechts (nicht während ein
 - "PHP-Auswahlprogramm": Manche Hoster haben ein "php", das nur nach der Version fragt. Das Programm sucht dann ein echtes PHP (php8.3 usw.). Findet es keines, bewertet es PHP-Werte nicht, statt falsch zu warnen.
 
 ## files | 12. Was gespeichert wird
-- Profile ohne Passwort und bestätigte Fingerabdrücke: %APPDATA%\Claudia
+- Profile ohne Passwort und bestätigte Fingerabdrücke: %APPDATA%\CLAUDIA
 - Einstellungen (Sprache): einstellungen.json im selben Ordner
-- Berichte (nur wenn du speicherst): Dokumente\Claudia\Berichte
-- Gesicherte Protokolle: Dokumente\Claudia\Protokolle
+- Berichte (nur wenn du speicherst): Dokumente\CLAUDIA\Berichte
+- Gesicherte Protokolle: Dokumente\CLAUDIA\Protokolle
 - Zum Aufräumen genügt es, diese Ordner zu löschen.
 - Deinstallieren: Knopf "Deinstallieren" oben im Programm oder im Startfenster. Die Liste zeigt, was das Programm angelegt hat (Python-Umgebung .venv, Zwischenspeicher, Startprotokoll; optional Verbindungen, Berichte, Programmordner und ein von start.bat installiertes Python). Gelöscht wird nur Angehaktes, nach Bestätigung und nach dem Beenden des Programms; das Löschfenster zeigt jeden Schritt. Verbindungen, Berichte und Programmordner sind nie vorgewählt.

@@ -82,9 +82,10 @@ class Ui(unittest.TestCase):
         pg.close()
 
     def test_logo_sits_on_line_under_navigation(self):
+        """Seit 2.15.0: Das Logo hat unten genauso viel Abstand zur Linie wie oben zum Fensterrand (und ist etwas kleiner)."""
         pg = self.page()
         logo, top = self.box(pg, ".brand-mark"), self.box(pg, ".top")
-        self.assertAlmostEqual(logo["b"], top["b"], delta=2)
+        self.assertAlmostEqual(logo["t"] - top["t"], top["b"] - logo["b"], delta=3)
         pg.close()
 
 

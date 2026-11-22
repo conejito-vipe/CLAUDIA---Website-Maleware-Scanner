@@ -41,7 +41,7 @@ class StartFile(unittest.TestCase):
     @unittest.skipUnless(shutil.which("bash"), "bash fehlt")
     def test_dryrun_finds_python_and_logs(self):
         d = tempfile.mkdtemp(prefix="claudia_mac_")
-        prog = os.path.join(d, "Claudia")
+        prog = os.path.join(d, "CLAUDIA")
         os.makedirs(os.path.join(prog, "claudia"))
         shutil.copy(START, os.path.join(prog, "start.command"))
         open(os.path.join(prog, "claudia", "launcher.py"), "w").close()
@@ -244,13 +244,13 @@ class ZipRights(unittest.TestCase):
         d = tempfile.mkdtemp(prefix="claudia_zip_")
         out = os.path.join(d, "t.zip")
         with zipfile.ZipFile(out, "w") as z:
-            build_release.add_file(z, START, "Claudia/start.command")
-            build_release.add_file(z, os.path.join(ROOT, "README.md"), "Claudia/README.md")
+            build_release.add_file(z, START, "CLAUDIA/start.command")
+            build_release.add_file(z, os.path.join(ROOT, "README.md"), "CLAUDIA/README.md")
         with zipfile.ZipFile(out) as z:
             modes = {i.filename: (i.external_attr >> 16) & 0o777 for i in z.infolist()}
-            self.assertEqual(modes["Claudia/start.command"], 0o755)
-            self.assertEqual(modes["Claudia/README.md"], 0o644)
-            self.assertEqual(z.read("Claudia/start.command"), open(START, "rb").read())
+            self.assertEqual(modes["CLAUDIA/start.command"], 0o755)
+            self.assertEqual(modes["CLAUDIA/README.md"], 0o644)
+            self.assertEqual(z.read("CLAUDIA/start.command"), open(START, "rb").read())
 
 
 if __name__ == "__main__":

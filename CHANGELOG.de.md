@@ -2,12 +2,29 @@
 
 Erzeugt aus `claudia/docs/aenderungen.de.txt` (nicht von Hand ändern).
 
+## 2.15.0 (2026-11-22) - Weitere Einbruchswege
+
+### Neue Prüfungen nach Recherche zu aktuellen Angriffen
+- **Was:** Neu für WordPress: "Versteckter Code" (Code, der Benutzer verbirgt, unpassende db.php, versteckte PHP-Dateien, Platzhalter-Plugins, Dateinamen aus bekannten Angriffen) und "Versteckte Optionen" (Base64-Code in der Datenbank, WebSocket-Skripte in Plugin-Einstellungen). Neu für Joomla: "Bekannte Angriffe" (Helix3 unter 3.1.2, JCE unter 2.9.99.5, cox.json, Defacement-Skripte in Template-Parametern). Neu für alle Systeme: "Nicht löschbare Dateien und Ordner" (Einträge mit gesetztem Schreibschutz-Merkmal oder fremdem Besitzer, die sich auch bei richtigen Rechten nicht per FTP löschen lassen; beheben kann das nur der Hoster bzw. root) und "Spam für Suchmaschinen" (fremde Sitemaps, robots.txt, ads.txt). Erweitert: Die Skimmer-Suche meldet WebSocket-Verbindungen zu unbekannten Adressen und Code, der eine Administrator-Leiste oder ein Touch-Gerät prüft; die Prozess-Prüfung zeigt Shared-Memory-Segmente des Kontos.
+- **Warum:** 2026 wurden selbstheilende WordPress-Schadsoftware (Dateien, Datenbank und Shared Memory gleichzeitig, mit unsichtbarem Administrator), die Helix3- und JCE-Lücken bei Joomla, Skimmer mit WebSocket in WooCommerce-Shops und Spam-Sitemaps beobachtet. Diese Spuren fehlten bisher.
+- **Wie:** Alles ist rein lesend und zeigt Treffer als Hinweis, nicht als Beweis. Die Dateinamen und Versionen stammen aus öffentlichen Berichten; Angreifer ändern sie, deshalb ersetzt die Prüfung keine Bereinigung durch Fachleute.
+
+### Name überall CLAUDIA
+- **Was:** Das Release-Paket heißt jetzt CLAUDIA_v<Version>.zip und entpackt sich in den Ordner CLAUDIA; die Dokumentation heißt CLAUDIA_Dokumentation.html. Auch Anleitung, Handbuch und Installer schreiben den Namen und die Ordner Dokumente\CLAUDIA und %APPDATA%\CLAUDIA in Großbuchstaben.
+- **Warum:** Der Name soll überall gleich aussehen.
+- **Wie:** Vorhandene Daten bleiben erhalten (Windows unterscheidet Groß- und Kleinschreibung bei Ordnern nicht; unter Mac und Linux wird ein vorhandener Ordner weiter verwendet).
+
+### Intern
+- **Was:** Neue Datei claudia/checks/zusatz.py mit reinen Bewertungsfunktionen (evaluate_*), erweiterte skimmer.py und konto.py.
+- **Warum:** Die Bewertung ist mit Beispieltexten prüfbar, ohne Server.
+- **Wie:** Neuer Test test_zusatz.py; bestehende Tests wurden nur in den Prüfungszahlen angepasst (siehe Änderungsbericht).
+
 ## 2.14.0 (2026-11-22) - Installer
 
 ### Installer für Windows und Mac (ohne Administratorrechte)
 - **Was:** Für Windows gibt es einen Installer (CLAUDIA-Setup-<Version>.exe), der CLAUDIA in deinen Benutzerordner (%LOCALAPPDATA%\\Programs\\CLAUDIA) installiert, mit Eintrag im Startmenü, auf Wunsch einer Verknüpfung auf dem Desktop und einem Eintrag unter „Installierte Apps“. Für den Mac gibt es install.command (Ziel ~/Applications/CLAUDIA). Beide erkennen eine vorhandene Installation und fragen, ob aktualisiert werden soll (bei niedrigerer Version), neu installiert oder zurückgestellt werden soll.
 - **Warum:** Einfacher Einstieg ohne Entpacken und Suchen des Ordners; Update ohne Datenverlust.
-- **Wie:** Beim Update werden nur Programmcode ersetzt; deine Verbindungen, Einstellungen und Berichte (Ordner Claudia unter %APPDATA% bzw. ~/Library/Application Support) und die Python-Umgebung .venv bleiben erhalten. Der Installer braucht keine Administratorrechte, ist wie das Programm nicht code-signiert (SmartScreen-Hinweis siehe README) und wird auf GitHub (Actions, windows-latest) gebaut. Wurde CLAUDIA mit dem Installer eingerichtet, bietet „Deinstallieren“ im Programm den Programmordner nicht mehr an; der Weg ist dann Einstellungen > Apps.
+- **Wie:** Beim Update werden nur Programmcode ersetzt; deine Verbindungen, Einstellungen und Berichte (Ordner CLAUDIA unter %APPDATA% bzw. ~/Library/Application Support) und die Python-Umgebung .venv bleiben erhalten. Der Installer braucht keine Administratorrechte, ist wie das Programm nicht code-signiert (SmartScreen-Hinweis siehe README) und wird auf GitHub (Actions, windows-latest) gebaut. Wurde CLAUDIA mit dem Installer eingerichtet, bietet „Deinstallieren“ im Programm den Programmordner nicht mehr an; der Weg ist dann Einstellungen > Apps.
 
 ### Intern
 - **Was:** Neue Datei installer/claudia.iss (Inno Setup), Workflow .github/workflows/build-windows.yml (nur manuell), install.command, uninstall.installed_by_setup().
@@ -241,7 +258,7 @@ Erzeugt aus `claudia/docs/aenderungen.de.txt` (nicht von Hand ändern).
 - **Wie:** Derzeit ist nur Akeeba Backup so hinterlegt; weitere Adressen werden erst nach Prüfung aufgenommen.
 
 ### Neues Aussehen: Start-, Programm- und Deinstallationsfenster
-- **Was:** Start-, Deinstallations- und Programmfenster haben dasselbe Aussehen: rahmenlos mit abgerundeten Ecken, Schatten, orangem Namensfeld "CLAUDIA", Logo, schmalem orangem Fortschrittsbalken. Neues Logo und neues Favicon. Das Programmfenster hat eine eigene Titelleiste mit Minimieren, Maximieren und Schließen. Im Programmfenster steht der Name CLAUDIA als orange Schrift ohne Feld; Logo und Name sind auf der Seite um 40 % größer. Der Name wird überall CLAUDIA geschrieben (Oberfläche, Berichte, Dokumentation). Ordner- und Dateinamen auf dem PC (z. B. %APPDATA%\Claudia) bleiben unverändert, damit vorhandene Profile gefunden werden. Die frühere Zeile mit dem Akronym unter dem Namen entfällt.
+- **Was:** Start-, Deinstallations- und Programmfenster haben dasselbe Aussehen: rahmenlos mit abgerundeten Ecken, Schatten, orangem Namensfeld "CLAUDIA", Logo, schmalem orangem Fortschrittsbalken. Neues Logo und neues Favicon. Das Programmfenster hat eine eigene Titelleiste mit Minimieren, Maximieren und Schließen. Im Programmfenster steht der Name CLAUDIA als orange Schrift ohne Feld; Logo und Name sind auf der Seite um 40 % größer. Der Name wird überall CLAUDIA geschrieben (Oberfläche, Berichte, Dokumentation). Ordner- und Dateinamen auf dem PC (z. B. %APPDATA%\CLAUDIA) bleiben unverändert, damit vorhandene Profile gefunden werden. Die frühere Zeile mit dem Akronym unter dem Namen entfällt.
 - **Warum:** Ein einheitlicher, ruhiger Auftritt; das Startfenster zeigt den Fortschritt in Prozent.
 - **Wie:** Das Startfenster benutzt PySide6 (Paket PySide6-Essentials, etwa 80 MB, wird beim ersten Start in der Python-Umgebung eingerichtet). Beim allerersten Start läuft diese Einrichtung noch in der Konsole, weil PySide6 erst danach vorhanden ist. Schlägt die Einrichtung fehl, nutzt das Programm ein einfaches tkinter-Fenster im gleichen Farbton (ohne Schatten und runde Ecken). Beim Deinstallieren kann die laufende Python-Umgebung nicht selbst gelöscht werden; ein unsichtbarer Helfer entfernt sie, sobald das Fenster zu ist. Ehrliche Grenzen: Die Fenster sind unter Windows noch nicht von uns getestet. Mit der Umgebungsvariable CLAUDIA_NO_FRAMELESS bekommt das Programmfenster wieder den normalen Rahmen, mit CLAUDIA_NO_QT bleibt das Startfenster in tkinter.
 

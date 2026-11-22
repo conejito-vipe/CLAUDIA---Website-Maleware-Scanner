@@ -11,6 +11,7 @@ const ClaudiaRadar = (() => {
   const TAU = Math.PI * 2;
   const FALLBACK = { ok: [79, 181, 129], info: [120, 166, 230], warn: [230, 165, 38], skip: [136, 150, 163], accent: [76, 195, 212] };
   const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
+  const FIND = { crit: 1, warn: 1, info: 1 };                          // nur Funde werden als Punkt gezeigt; "in Ordnung", wartend und übersprungen bleiben unsichtbar
   const norm = a => ((a % TAU) + TAU) % TAU;
 
   function parseColor(v, fb) {
@@ -62,7 +63,7 @@ const ClaudiaRadar = (() => {
       if (dots.length !== st.plan.length || dots.some((d, i) => d.id !== st.plan[i])) build();
       dots.forEach(d => {
         const s = st.status[d.id] || "";
-        if (s && !prev[d.id] && d.shown !== s) { const p = pos(d); waves.push({ x: p[0], y: p[1], r: 3, al: 0.9 }); d.lit = 1; }
+        if (FIND[s] && !prev[d.id] && d.shown !== s) { const p = pos(d); waves.push({ x: p[0], y: p[1], r: 3, al: 0.9 }); d.lit = 1; }
         d.shown = s;
       });
       if (still.matches) draw(0, 0); else start();
@@ -95,31 +96,17 @@ const ClaudiaRadar = (() => {
       ctx.beginPath(); ctx.moveTo(cx, cx); ctx.lineTo(x, y); ctx.strokeStyle = lg; ctx.lineWidth = 2; ctx.shadowColor = "rgb(" + ac + ")"; ctx.shadowBlur = 10; ctx.stroke();
       ctx.restore();
     }
-    function drawDots(t) {
-      const ac = rgb(pal.accent);
+    function drawDots(t) {                          // Punkte erscheinen nur bei Funden, leuchten auf, wenn der Strahl sie trifft, und verblassen danach wieder
       dots.forEach(d => {
-        const p = pos(d), x = p[0], y = p[1], s = st.status[d.id] || "";
-        if (!s) {                                   // wartet oder läuft gerade
-          const now = st.current === d.id;
-          if (now) {                                // aktuelle Prüfung: ruhiger Puls (im Standbild ein fester Ring)
-            const q = still.matches ? 0.5 : (Math.sin(t * 5) + 1) / 2;
-            ctx.beginPath(); ctx.arc(x, y, 5 + q * 6, 0, TAU); ctx.strokeStyle = "rgba(" + ac + "," + (0.8 - q * 0.55) + ")"; ctx.lineWidth = 1.5; ctx.stroke();
-          }
-          ctx.beginPath(); ctx.arc(x, y, now ? 3.6 : 2.2, 0, TAU); ctx.fillStyle = now ? "rgba(180,240,250,.95)" : "rgba(" + ac + ",.30)"; ctx.fill();
-          return;
-        }
-        const c = pal[s] || pal.skipped, k = 0.5 + d.lit * 0.5;
+        const s = st.status[d.id] || "";
+        if (!FIND[s] || d.lit < 0.02) return;
+        const p = pos(d), x = p[0], y = p[1], c = pal[s] || pal.skipped, k = d.lit;
+        const rad = (s === "crit" ? 4.6 : s === "warn" ? 3.8 : 3.2) + k * 1.6;
         ctx.save();
-        if (s === "skipped") {                      // übersprungen: hohler grauer Punkt
-          ctx.beginPath(); ctx.arc(x, y, 3.6, 0, TAU); ctx.strokeStyle = "rgba(" + rgb(c) + ",.8)"; ctx.lineWidth = 1.5; ctx.stroke();
-        } else {
-          const base = s === "crit" ? 1 : s === "ok" ? 0.42 : s === "warn" ? 0.72 : 0.85;   // kritisch kräftig, ok gedämpft
-          const rad = (s === "crit" ? 4.6 : s === "ok" ? 3 : 3.6) + d.lit * 1.4;
-          ctx.beginPath(); ctx.arc(x, y, rad, 0, TAU);
-          ctx.fillStyle = "rgba(" + rgb(c) + "," + Math.min(1, base * k + (s === "crit" ? 0.15 : 0)) + ")";
-          ctx.shadowColor = "rgb(" + rgb(c) + ")"; ctx.shadowBlur = (s === "crit" ? 16 : 8) * d.lit + 2; ctx.fill();
-          if (s === "crit") { ctx.shadowBlur = 0; ctx.beginPath(); ctx.arc(x, y, rad + 4, 0, TAU); ctx.strokeStyle = "rgba(" + rgb(c) + ",.55)"; ctx.lineWidth = 1.2; ctx.stroke(); }
-        }
+        ctx.beginPath(); ctx.arc(x, y, rad, 0, TAU);
+        ctx.fillStyle = "rgba(" + rgb(c) + "," + Math.min(1, (s === "info" ? 0.8 : 1) * k) + ")";
+        ctx.shadowColor = "rgb(" + rgb(c) + ")"; ctx.shadowBlur = (s === "crit" ? 18 : 10) * k; ctx.fill();
+        if (s === "crit") { ctx.shadowBlur = 0; ctx.beginPath(); ctx.arc(x, y, rad + 4, 0, TAU); ctx.strokeStyle = "rgba(" + rgb(c) + "," + (0.6 * k) + ")"; ctx.lineWidth = 1.2; ctx.stroke(); }
         ctx.restore();
       });
     }
@@ -134,8 +121,8 @@ const ClaudiaRadar = (() => {
       ctx.clearRect(0, 0, W, W); drawDisc();
       if (!still.matches) drawSweep();
       dots.forEach(d => {                           // Treffer durch den Strahl: kurz hell, dann ruhiger
-        if (still.matches) d.lit = 0.85;
-        else if (st.status[d.id]) { let df = norm(sweep) - norm(d.a); if (df < 0) df += TAU; if (df < 0.12) d.lit = 1; else d.lit = Math.max(0, d.lit - dt * 0.35); }
+        if (still.matches) d.lit = FIND[st.status[d.id]] ? 0.85 : 0;
+        else if (FIND[st.status[d.id]]) { let df = norm(sweep) - norm(d.a); if (df < 0) df += TAU; if (df < 0.12) d.lit = 1; else d.lit = Math.max(0, d.lit - dt * 0.4); }
       });
       drawDots(t || 0); if (!still.matches) drawWaves(dt);
     }

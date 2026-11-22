@@ -944,6 +944,7 @@ function viewRun() {
       h("div", {},
         h("div", { class: "now" }, h("div", { class: "now-title", id: "now-t" }), h("div", { class: "now-msg", id: "now-m", "aria-live": "polite" })),
         h("div", { class: "meter" }, h("span", { id: "m-n" }), h("span", { id: "m-t" }), h("span", { id: "m-p" })),
+        h("div", { class: "found", id: "found", "aria-live": "polite" }),
         h("div", { class: "actions", style: "margin-top:18px" }, h("button", { class: "btn danger", type: "button", id: "cancel", onclick: cancelRun }, "Abbrechen"))))));
   root.append(h("div", { id: "live" }));
   setTimeout(updateRun, 0);
@@ -966,6 +967,14 @@ function updateRun() {
   $("#m-t").replaceChildren(h("b", { text: fmtTime(S.elapsed) }), "Laufzeit");
   const crit = S.results.filter(r => r.status === "crit").length, warn = S.results.filter(r => r.status === "warn").length;
   $("#m-p").replaceChildren(h("b", { text: crit + " / " + warn }), "kritisch / prüfen");
+  const fl = $("#found");
+  if (fl) {                                                                  // ganz kurze Liste der Funde (neueste oben), damit man nicht auf das Ergebnis warten muss
+    const hits = S.results.filter(r => r.status === "crit" || r.status === "warn").slice(-5).reverse();
+    fl.replaceChildren(...(hits.length ? hits.map(r => {
+      const f = (r.findings || []).find(x => x.sev === r.status) || (r.findings || [])[0];
+      return h("div", { class: "found-i", "data-s": r.status, title: r.title }, h("i"), h("span", { text: r.title + (f && f.title ? ": " + f.title : "") }));
+    }) : [h("div", { class: "found-none", text: "Bisher nichts Auffälliges gefunden." })]));
+  }
   radarSync();
 }
 
@@ -1484,7 +1493,7 @@ function actionBlock(a) {
       h("label", { class: "small", style: "display:block;margin:6px 0" }, h("input", { type: "checkbox", checked: st.ok, onchange: e => { st.ok = e.target.checked; render(); } }),
         st.noBackup ? " Ich weiß, dass dabei KEINE Sicherung entsteht, und möchte die Profile trotzdem löschen." : " Ich habe die Warnung gelesen und möchte das jetzt ausführen."),
       a.irreversible ? h("label", { class: "small", style: "display:block;margin:6px 0;color:#c62828;font-weight:600" }, h("input", { type: "checkbox", checked: !!st.ok2, onchange: e => { st.ok2 = e.target.checked; render(); } }),
-        " Ich habe verstanden, dass sich diese Aktion nicht vollständig rückgängig machen lässt (Browser merken sich die Vorgabe 7 Tage), und möchte sie trotzdem ausführen.") : null,
+        " Ich habe verstanden, dass sich diese Aktion nicht vollständig rückgängig machen lässt (Browser merken sich die Vorgabe 7 Tage), und möchte sie trotzdem ausführen.") : "",
       h("div", { class: "actions", style: "margin:8px 0 0" },
         h("button", { class: "btn " + (a.irreversible ? "danger" : "primary"), type: "button", disabled: !st.ok || (a.irreversible && !st.ok2) || st.running, onclick: () => runAction(a) }, "Jetzt ausführen"),
         h("button", { class: "btn ghost", type: "button", disabled: st.running, onclick: () => { st.preview = null; st.ok = false; st.ok2 = false; render(); } }, "Abbrechen")));
@@ -1555,7 +1564,7 @@ function securityOffer(a, st) {
         h("div", { class: "small", text: i.short || t.text }),
         t.howto ? h("div", { class: "small muted", text: t.howto }) : null,
         t.stand ? h("div", { class: "small muted", text: "Download-Adresse des Herstellers geprüft, Stand der Liste: " + t.stand }) : null,
-        h("div", { class: "small" }, h("a", { href: t.store_url, target: "_blank", rel: "noopener noreferrer", text: "Store-Seite öffnen" }),
+        h("div", { class: "small" }, (grp === 2 || !t.installable) ? h("a", { href: t.store_url, target: "_blank", rel: "noopener noreferrer", text: "Store-Seite öffnen" }) : null,
           i.live === false && !i.loading ? h("span", { class: "muted", text: "   (Store nicht erreichbar: eigener Text)" }) : null))));
   }
   return wrap;
@@ -1893,24 +1902,24 @@ setInterval(() => { fetch("/api/ping", { headers: { "X-Claudia": "1" } }).catch(
     document.getElementById("tb-min").addEventListener("click", () => window.pywebview.api.minimize());
     document.getElementById("tb-max").addEventListener("click", () => { document.documentElement.classList.toggle("maxed"); window.pywebview.api.toggle_maximize(); });
     document.getElementById("tb-close").addEventListener("click", () => window.pywebview.api.close());
-    /* Größe ändern: rahmenlose Fenster haben keinen eigenen Rand zum Ziehen, deshalb Griffe rechts, unten und in der Ecke */
+    /* Größe ändern: rahmenlose Fenster haben keinen eigenen Rand zum Ziehen, deshalb Griffe links, rechts, unten und in den unteren Ecken */
     for (const g of document.querySelectorAll(".rz")) {
       g.hidden = false;
       g.addEventListener("pointerdown", async ev => {
         ev.preventDefault();
         g.setPointerCapture(ev.pointerId);
         const x0 = ev.screenX, y0 = ev.screenY, dir = g.dataset.dir;
-        let size = [0, 0];
-        try { size = await window.pywebview.api.get_size(); } catch (e) { return; }
+        let rect = [0, 0, 0, 0];
+        try { rect = await window.pywebview.api.get_rect(); } catch (e) { return; }
         let busy = false, next = null;
-        const send = async (w, h) => {
-          if (busy) { next = [w, h]; return; }
+        const send = async (dx, dy) => {
+          if (busy) { next = [dx, dy]; return; }
           busy = true;
-          try { await window.pywebview.api.set_size(w, h); } catch (e) { /* Fenster zu */ }
+          try { await window.pywebview.api.resize_by(rect[0], rect[1], rect[2], rect[3], dx, dy, dir); } catch (e) { /* Fenster zu */ }
           busy = false;
           if (next) { const n = next; next = null; send(n[0], n[1]); }
         };
-        const move = e => send(dir.includes("r") ? size[0] + e.screenX - x0 : size[0], dir.includes("b") ? size[1] + e.screenY - y0 : size[1]);
+        const move = e => send(e.screenX - x0, e.screenY - y0);
         const up = () => { g.removeEventListener("pointermove", move); g.removeEventListener("pointerup", up); g.removeEventListener("pointercancel", up); };
         g.addEventListener("pointermove", move); g.addEventListener("pointerup", up); g.addEventListener("pointercancel", up);
       });

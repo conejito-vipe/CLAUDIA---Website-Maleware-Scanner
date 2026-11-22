@@ -1,13 +1,13 @@
 ; Inno-Setup-Skript für CLAUDIA: Installation nur für den aktuellen Benutzer, ohne Administratorrechte.
-; Ziel: %LOCALAPPDATA%\Programs\CLAUDIA. Gepackt wird das entpackte Release-Paket (dist\Claudia, vom Workflow erzeugt).
+; Ziel: %LOCALAPPDATA%\Programs\CLAUDIA. Gepackt wird das entpackte Release-Paket (dist\CLAUDIA, vom Workflow erzeugt).
 ; Beim ersten Start richtet start.bat Python und die Bausteine selbst ein (Ordner .venv im Programmordner).
-; Persönliche Daten (Verbindungen, Einstellungen, Berichte) liegen in %APPDATA%\Claudia und werden bei Update
+; Persönliche Daten (Verbindungen, Einstellungen, Berichte) liegen in %APPDATA%\CLAUDIA und werden bei Update
 ; und Deinstallation nie angefasst. Die Funktion "CLAUDIA deinstallieren" im Programm bleibt für die Datenbereinigung.
 ; Hinweis: SmartScreen zeigt einen Herausgeber nur bei signierten Dateien (siehe README).
 
 #define AppShortName "CLAUDIA"
 #ifndef AppVersion
-  #define AppVersion "2.14.0"
+  #define AppVersion "2.15.0"
 #endif
 #define AuthorName "conejito-vipe"
 
@@ -51,7 +51,7 @@ Type: filesandordirs; Name: "{app}\tests"
 Type: filesandordirs; Name: "{app}\tools"
 
 [Files]
-Source: "..\dist\Claudia\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\dist\CLAUDIA\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#AppShortName}"; Filename: "{app}\start.bat"; WorkingDir: "{app}"; IconFilename: "{app}\claudia\assets\claudia.ico"
