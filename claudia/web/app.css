@@ -476,6 +476,13 @@ li.rated { padding: 3px 0; }
 
 .dlg-x{flex:none;width:46px;height:40px;border:0;border-radius:0 13px 0 6px;background:transparent;color:inherit;font-size:13px;cursor:pointer;align-self:flex-start}
 .dlg-x:hover{background:#e81123;color:#fff}
+#upddlg{width:min(760px,96vw);max-height:92vh;padding:0;overflow:hidden;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink)}
+#upddlg[open]{display:flex;flex-direction:column}
+#upddlg::backdrop{background:rgba(10,20,30,.5)}
+#upd-body{display:flex;flex-direction:column;min-height:0}
+.upd-notes{max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-word;font:13px/1.5 Consolas,"Cascadia Mono",monospace;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0}
+.upd-bar{height:10px;border-radius:999px;background:var(--line);overflow:hidden;margin:12px 0 6px}.upd-bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s}
+#updbtn.has-upd{color:var(--accent);font-weight:700}
 #unidlg{width:min(860px,96vw);max-height:92vh;padding:0;overflow:hidden;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink)}
 #unidlg[open]{display:flex;flex-direction:column}
 #unidlg::backdrop{background:rgba(10,20,30,.5)}

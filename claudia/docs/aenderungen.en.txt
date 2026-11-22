@@ -1,3 +1,8 @@
+## 2.16.0 | 2026-11-22 | Program update
+### CLAUDIA looks for new versions at start
+Was: At start CLAUDIA checks in the background whether a newer version exists on GitHub. A window shows the release notes and offers "Cancel", "Skip update" and "Install update"; the "Updates" button at the top searches at any time on request.
+Warum: New checks and fixes should arrive without downloading by hand, but never without your consent.
+Wie: The package is downloaded, compared with the published checksum (SHA-256), the program folder is backed up and only then replaced. On an error the old state is restored automatically and the log update.log is written. Then CLAUDIA restarts; connections, settings and reports stay unchanged. Without a published checksum nothing is installed and the release page is shown instead.
 ## 2.15.0 | 2026-11-22 | More intrusion paths
 ### New checks after research into current attacks
 Was: New for WordPress: "Hidden code" (code that hides users, a mismatched db.php, hidden PHP files, placeholder plugins, file names from known attacks) and "Hidden options" (Base64 code in the database, WebSocket scripts in plugin settings). New for Joomla: "Known attacks" (Helix3 below 3.1.2, JCE below 2.9.99.5, cox.json, defacement scripts in template parameters). New for all systems: "Undeletable files and folders" (entries with an immutable flag or a foreign owner that cannot be deleted via FTP even with correct permissions; only the host or root can fix this) and "Spam for search engines" (foreign sitemaps, robots.txt, ads.txt). Extended: the skimmer search reports WebSocket connections to unknown addresses and code that checks for an admin bar or a touch device; the process check shows the account's shared-memory segments.

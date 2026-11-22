@@ -18,6 +18,14 @@ Actions marked "Backup first" first create a backup in the server's home directo
 - Then the archive is checked with tar tzf and the size of both files is verified (too small = abort).
 - _home_dir determines the home directory of the server account.
 The backup also contains infected files. Never copy it into a publicly reachable folder.
+## g:programmupdate | How the program updates itself
+At start CLAUDIA asks the project's release page on GitHub in the background (a single https request; without a network nothing happens). Installing only happens after you confirm in the window.
+- appupdate.check reads tag_name, release notes and the package CLAUDIA_v<version>.zip; only downloads under github.com/<project>/releases/download/ are accepted. The checksum comes from the package digest or from a line "SHA-256: ..." in the release notes. Without a checksum nothing is installed automatically.
+- appupdate.verify_package compares SHA-256, tests the ZIP file, refuses paths with .. or a drive letter and requires claudia/__init__.py to contain exactly the expected version.
+- appupdate.backup packs the program folder (without .venv) into %APPDATA%\CLAUDIA\update\sicherung_<version>.zip; earlier backups are replaced.
+- appupdate.install writes every file through a temporary file and os.replace. If anything fails, restore puts the backup back and removes newly created files; update.log contains every step.
+- start.bat, start.command and install.command are replaced only after the program has ended (finish_code in a detached process), because a running start file would otherwise change in the middle of its run. The same process then restarts CLAUDIA.
+- Manual way back: unpack the backup from %APPDATA%\CLAUDIA\update into the program folder (replace files).
 ## g:protokoll | How the status window follows along
 During an action every command runs through the wrapper Traced. It reports command and answer to the status window so you can see live what happens on the server.
 - mask replaces passwords, download keys and tokens with *** (known secrets and patterns like key=..., token=...) before anything is shown or saved in the report.

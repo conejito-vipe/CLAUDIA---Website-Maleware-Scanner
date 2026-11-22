@@ -21,7 +21,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
-from . import cms as cmsmod, contao, drupal, prestashop, shopware, typo3, APP_NAME, __version__, actionplan, actions, baseline, hoster, joomla, logsave, phpdetect, probe as probe_mod, report, snippets, uninstall, wordpress
+from . import appupdate, cms as cmsmod, contao, drupal, prestashop, shopware, typo3, APP_NAME, __version__, actionplan, actions, baseline, hoster, joomla, logsave, phpdetect, probe as probe_mod, report, snippets, uninstall, wordpress
 from .db import DbError
 from .engine import Ctx, Engine, Settings
 from . import helpdocs, i18n
@@ -394,6 +394,12 @@ class App:
         self.scan_cache: Optional[Dict[str, Any]] = None
         self.last_settings: Optional[Settings] = None
         self.auto_update = True              # Updates beim Öffnen der Lösungen automatisch suchen (Tests schalten es aus)
+        self.selfupd_fetch: Any = None       # nur für Tests: ersetzt den Abruf der Release-Seite und des Pakets
+        self.selfupd_root = ""               # nur für Tests: anderer Programmordner
+        self.selfupd_lock = threading.Lock()
+        self.selfupd: Dict[str, Any] = {"checked": False, "checking": False, "ok": None, "info": None, "error": "", "last": 0.0,
+                                        "install": {"running": False, "pct": 0, "step": "", "error": "", "done": False}}
+        self.selfupd_pending: Dict[str, Any] = {}
         self.last_export = ""
         self.settings_file = os.path.join(self.dir, "einstellungen.json")
         self.lang = self._load_lang()
@@ -708,6 +714,77 @@ class App:
                                 str((self.run_settings or {}).get("url") or ""), str((self.info or {}).get("host") or ""))
         except Exception:                                  # noqa: BLE001  (Zusatzanzeige darf den Zustand nie verhindern)
             return {"items": [], "mail": {"subject": "", "body": ""}}
+
+    # ------------------------------------------------------------ Programm-Update (siehe appupdate.py)
+    def selfupd_state(self) -> Dict[str, Any]:
+        with self.selfupd_lock:
+            u = dict(self.selfupd)
+            u["install"] = dict(u["install"])
+        info = u.get("info") or {}
+        newer = bool(info.get("newer"))
+        return {"current": __version__, "checked": u["checked"], "checking": u["checking"], "ok": u["ok"], "error": u["error"],
+                "info": info if newer else None, "newer": newer,
+                "skipped": bool(newer and appupdate.skipped(self.dir, str(info.get("version") or ""))),
+                "installable": bool(newer and info.get("url") and info.get("sha256")), "install": u["install"]}
+
+    def selfupd_check(self) -> Dict[str, Any]:
+        with self.selfupd_lock:
+            busy = self.selfupd["checking"] or self.selfupd["install"]["running"]
+            if not busy:
+                self.selfupd["checking"] = True
+        if busy:
+            return self.selfupd_state()
+        r = appupdate.check(__version__, self.selfupd_fetch)
+        with self.selfupd_lock:
+            self.selfupd.update(checking=False, checked=True, ok=bool(r.get("ok")), info=r.get("info"), error=str(r.get("error") or ""), last=time.time())
+        return self.selfupd_state()
+
+    def selfupd_check_async(self) -> None:
+        threading.Thread(target=self.selfupd_check, daemon=True).start()
+
+    def selfupd_skip(self, version: str) -> Dict[str, Any]:
+        if not re.match(r"^\d+\.\d+\.\d+$", version or ""):
+            raise ApiError("Ungültige Versionsnummer.", 400)
+        appupdate.save_state(self.dir, skip=version)
+        return self.selfupd_state()
+
+    def selfupd_install(self, version: str) -> Dict[str, Any]:
+        if self.running:
+            raise ApiError("Bitte warten, bis die Prüfung beendet ist.", 409)
+        with self.selfupd_lock:
+            info = self.selfupd.get("info") or {}
+            if not info.get("newer") or str(info.get("version")) != version:
+                raise ApiError("Diese Version wurde nicht gefunden. Bitte erneut nach Updates suchen.", 409)
+            if not (info.get("url") and info.get("sha256")):
+                raise ApiError("Für diese Version gibt es kein Paket mit veröffentlichter Prüfsumme. Bitte von der Release-Seite laden.", 409)
+            if self.selfupd["install"]["running"]:
+                raise ApiError("Das Update läuft bereits.", 409)
+            self.selfupd["install"] = {"running": True, "pct": 1, "step": "Start", "error": "", "done": False}
+        threading.Thread(target=self._selfupd_run, args=(dict(info),), daemon=True).start()
+        return self.selfupd_state()
+
+    def _selfupd_run(self, info: Dict[str, Any]) -> None:
+        def prog(p: int, t: str) -> None:
+            with self.selfupd_lock:
+                self.selfupd["install"].update(pct=p, step=t)
+        r = appupdate.install(info, self.selfupd_root or appupdate.root_dir(), self.dir, prog, self.selfupd_fetch)
+        with self.selfupd_lock:
+            if r.get("ok"):
+                self.selfupd_pending = {"staging": r.get("staging") or ""}
+                self.selfupd["install"] = {"running": False, "pct": 100, "step": "Fertig", "error": "", "done": True}
+            else:
+                self.selfupd["install"] = {"running": False, "pct": 0, "step": "", "error": str(r.get("error") or "Fehler"), "done": False, "log": r.get("log") or ""}
+
+    def selfupd_restart(self) -> Dict[str, Any]:
+        with self.selfupd_lock:
+            if not self.selfupd["install"].get("done"):
+                raise ApiError("Es liegt kein fertiges Update vor.", 409)
+            staging = str(self.selfupd_pending.get("staging") or "")
+        self.disconnect()
+        if os.environ.get("CLAUDIA_NO_RESTART"):
+            return {"ok": True, "started": False}
+        pid = appupdate.restart(self.selfupd_root or appupdate.root_dir(), staging)
+        return {"ok": True, "started": pid is not None}
 
     # ------------------------------------------------------------ Sprache
     def _load_lang(self) -> str:
@@ -1468,6 +1545,19 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(app.cms_logo(), translate=False)
             if method == "POST" and path == "/api/store-info":
                 return self._json(app.store_info(body))
+            if method == "GET" and path == "/api/app-update":
+                return self._json(app.selfupd_state())
+            if method == "POST" and path == "/api/app-update-check":
+                return self._json(app.selfupd_check())
+            if method == "POST" and path == "/api/app-update-skip":
+                return self._json(app.selfupd_skip(str(body.get("version", ""))))
+            if method == "POST" and path == "/api/app-update-install":
+                return self._json(app.selfupd_install(str(body.get("version", ""))))
+            if method == "POST" and path == "/api/app-update-restart":
+                res = app.selfupd_restart()
+                self._json(res)
+                threading.Thread(target=self.server.stop, daemon=True).start()
+                return
             if method == "POST" and path == "/api/update-check":
                 return self._json(app.update_check())
             if method == "POST" and path == "/api/action-preview":

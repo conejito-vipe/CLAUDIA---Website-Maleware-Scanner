@@ -2,6 +2,13 @@
 
 Generated from `claudia/docs/aenderungen.en.txt` (do not edit by hand).
 
+## 2.16.0 (2026-11-22) - Program update
+
+### CLAUDIA looks for new versions at start
+- **What:** At start CLAUDIA checks in the background whether a newer version exists on GitHub. A window shows the release notes and offers "Cancel", "Skip update" and "Install update"; the "Updates" button at the top searches at any time on request.
+- **Why:** New checks and fixes should arrive without downloading by hand, but never without your consent.
+- **How:** The package is downloaded, compared with the published checksum (SHA-256), the program folder is backed up and only then replaced. On an error the old state is restored automatically and the log update.log is written. Then CLAUDIA restarts; connections, settings and reports stay unchanged. Without a published checksum nothing is installed and the release page is shown instead.
+
 ## 2.15.0 (2026-11-22) - More intrusion paths
 
 ### New checks after research into current attacks

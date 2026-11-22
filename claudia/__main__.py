@@ -128,6 +128,8 @@ def main(argv=None, show: Optional[Callable[[Any], str]] = None) -> int:
         return 1
     print("%s %s" % (APP_NAME, __version__))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
+    if not os.environ.get("CLAUDIA_NO_UPDATE_CHECK"):
+        srv.app.selfupd_check_async()               # sucht im Hintergrund nach einer neuen Version; installiert wird nur nach Rückfrage im Fenster
     print("CLAUDIA_READY")                            # Stichwort für das Startfenster: der Server steht
     sys.stdout.flush()
 

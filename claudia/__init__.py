@@ -1,5 +1,5 @@
 """CLAUDIA - lesende Sicherheitsprüfung für Joomla- und WordPress-Seiten per SSH."""
-__version__ = "2.15.0"
+__version__ = "2.16.0"
 APP_NAME = "CLAUDIA"
 APP_TAGLINE = "CMS security, step by step"
 

@@ -2,6 +2,13 @@
 
 Erzeugt aus `claudia/docs/aenderungen.de.txt` (nicht von Hand ändern).
 
+## 2.16.0 (2026-11-22) - Programm-Update
+
+### CLAUDIA sucht beim Start nach neuen Versionen
+- **Was:** Beim Start prüft CLAUDIA im Hintergrund, ob auf GitHub eine neuere Version vorliegt. Ein Fenster zeigt die Release Notes und bietet "Abbrechen", "Update überspringen" und "Update installieren" an; der Knopf "Updates" oben sucht auf Wunsch jederzeit.
+- **Warum:** Neue Prüfungen und Korrekturen sollen ohne neues Herunterladen von Hand ankommen, aber nie ohne dein Einverständnis.
+- **Wie:** Das Paket wird geladen, mit der veröffentlichten Prüfsumme (SHA-256) verglichen, der Programmordner gesichert und erst dann ausgetauscht. Bei einem Fehler wird der alte Stand automatisch wiederhergestellt und das Protokoll update.log geschrieben. Danach startet CLAUDIA neu; Verbindungen, Einstellungen und Berichte bleiben unverändert. Ohne veröffentlichte Prüfsumme wird nicht installiert, sondern auf die Release-Seite verwiesen.
+
 ## 2.15.0 (2026-11-22) - Weitere Einbruchswege
 
 ### Neue Prüfungen nach Recherche zu aktuellen Angriffen

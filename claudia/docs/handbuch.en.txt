@@ -3,6 +3,7 @@ CLAUDIA checks a Joomla or WordPress site over an encrypted SSH connection for t
 - Double-click start.bat (the only start file). A small start window shows only at startup how the program sets itself up (one to two minutes the first time). As soon as the program window appears, the start window closes: from then on exactly one window is open, and the program ends when you close it.
 - Mac (since 2.9.0): double-click start.command (the first time right-click > Open; otherwise in Terminal: bash start.command). If Python is missing, start.command downloads it from python.org, checks the digital signature and installs it; macOS asks for your Mac password for that. On the Mac the program window has the normal window frame. Program data lives in ~/Library/Application Support/CLAUDIA, reports in ~/Documents/CLAUDIA/Berichte. Limit: the Mac version has not yet been tested on a real Mac.
 - Alternatively (since 2.14.0): Windows installer CLAUDIA-Setup-….exe (current user only, no administrator rights) or install.command on the Mac. Both detect an existing installation and offer an update; connections, settings and reports are kept.
+- Program updates (since 2.16.0): at start CLAUDIA looks for a new version on GitHub in the background. If there is one, a window shows the release notes and asks: "Cancel", "Skip update" (this version is no longer offered automatically) or "Install update". When installing, the package is downloaded, compared with the published checksum (SHA-256), the current program folder is backed up and only then replaced; on an error the old state is restored automatically and a log is written. Then CLAUDIA restarts. Connections, settings and reports stay unchanged. The "Updates" button at the top lets you search yourself at any time.
 - Enter your hosting provider's access data (server, user, password or key file, site folder) and click "Test connection".
 - Choose the checks: Quick check, After a hack or Complete.
 - "Start check", then read the result, save the report or hand it over to Claude.
@@ -141,6 +142,7 @@ German and English; switch with the flags at the top right (not during a run). A
 ## files | 12. What is stored
 - Profiles without password and confirmed fingerprints: %APPDATA%\CLAUDIA
 - Settings (language): einstellungen.json in the same folder
+- Program updates: update.json (skipped version) and the folder update with the last backup of the program folder and the log update.log, also in %APPDATA%\CLAUDIA
 - Reports (only if you save them): Documents\CLAUDIA\Berichte
 - Saved logs: Documents\CLAUDIA\Protokolle
 - To clean up, simply delete these folders.

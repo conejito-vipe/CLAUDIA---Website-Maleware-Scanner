@@ -18,6 +18,14 @@ Aktionen mit dem Merkmal Sicherung vorher legen zuerst eine Sicherung im Home-Ve
 - Danach wird das Archiv mit tar tzf geprüft und die Größe beider Dateien kontrolliert (zu klein = Abbruch).
 - _home_dir bestimmt das Home-Verzeichnis des Server-Kontos.
 Die Sicherung enthält auch infizierte Dateien. Sie darf nie in einen öffentlich erreichbaren Ordner kopiert werden.
+## g:programmupdate | Wie sich das Programm aktualisiert
+Beim Start fragt CLAUDIA im Hintergrund die Release-Seite des Projekts auf GitHub ab (eine einzige https-Anfrage, ohne Netz passiert nichts). Installiert wird nur nach Rückfrage im Fenster.
+- appupdate.check liest tag_name, Release Notes und das Paket CLAUDIA_v<Version>.zip; nur Downloads unter github.com/<Projekt>/releases/download/ werden akzeptiert. Die Prüfsumme kommt aus dem Digest des Pakets oder aus einer Zeile "SHA-256: ..." in den Release Notes. Ohne Prüfsumme wird nicht automatisch installiert.
+- appupdate.verify_package vergleicht SHA-256, prüft die ZIP-Datei (testzip), verbietet Pfade mit .. oder Laufwerksangabe und verlangt, dass claudia/__init__.py genau die erwartete Version enthält.
+- appupdate.backup packt den Programmordner (ohne .venv) nach %APPDATA%\CLAUDIA\update\sicherung_<Version>.zip; frühere Sicherungen werden ersetzt.
+- appupdate.install schreibt jede Datei über eine Nebendatei und os.replace. Schlägt etwas fehl, spielt restore die Sicherung zurück und entfernt neu angelegte Dateien; update.log enthält jeden Schritt.
+- start.bat, start.command und install.command werden erst nach dem Beenden ersetzt (finish_code in einem losgelösten Prozess), weil eine laufende Startdatei sonst mitten im Lauf geändert würde. Derselbe Prozess startet CLAUDIA danach neu.
+- Von Hand zurück: die Sicherung aus %APPDATA%\CLAUDIA\update in den Programmordner entpacken (Dateien ersetzen).
 ## g:protokoll | Wie das Statusfenster mitliest
 Während einer Aktion läuft jeder Befehl durch die Hülle Traced. Sie meldet Befehl und Antwort an das Statusfenster, damit du live siehst, was auf dem Server passiert.
 - mask ersetzt Passwörter, Download-Schlüssel und Tokens durch *** (bekannte Geheimnisse und Muster wie key=..., token=...), bevor etwas angezeigt oder im Bericht gespeichert wird.

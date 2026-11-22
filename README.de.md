@@ -35,6 +35,8 @@ Du brauchst weder PowerShell noch die Eingabeaufforderung:
 
 **Installer (ab 2.14.0):** Statt des ZIPs kannst du unter Windows `CLAUDIA-Setup-….exe` ausführen (Installation nur für deinen Benutzer, ohne Administratorrechte, mit Startmenü-Eintrag und auf Wunsch Desktop-Verknüpfung; erscheint unter „Installierte Apps“). Auf dem Mac: ZIP entpacken und `install.command` ausführen (Ziel `~/Applications/CLAUDIA`). Ist CLAUDIA schon installiert, fragt der Installer, ob er aktualisieren soll; deine Verbindungen, Einstellungen und Berichte bleiben erhalten. Auch der Installer ist nicht von Microsoft zertifiziert, es gilt dieselbe SmartScreen-Erklärung wie unten. Eine einzelne `.exe` bzw. Mac-App ohne Python-Einrichtung ist weiter geplant.
 
+**Updates (ab 2.16.0):** Beim Start prüft CLAUDIA im Hintergrund auf GitHub, ob es eine neuere Version gibt, und lädt sie nur nach deiner Bestätigung, vergleicht die SHA-256-Prüfsumme, sichert den Programmordner und tauscht ihn aus (bei Fehlern automatisch zurück). Du kannst eine Version überspringen oder mit dem Knopf "Updates" selbst suchen.
+
 ### Windows zeigt eine Warnung (SmartScreen)
 
 CLAUDIA ist kostenlos und nicht von Microsoft zertifiziert. Deshalb kann Windows beim ersten Start von `start.bat` ein blaues Fenster „Der Computer wurde durch Windows geschützt“ mit dem Text „Von Windows SmartScreen wurde der Start einer unbekannten App verhindert“ zeigen. So geht es weiter:
@@ -77,11 +79,9 @@ Alle geplanten Systeme sind eingebaut (Joomla, WordPress mit WooCommerce, Drupal
 
 2. **Englische Übersetzung vervollständigen** (danach, damit sich die Texte nicht mehr ändern).
 
-3. **Update-Prozess:** CLAUDIA meldet neue Versionen und prüft vor dem Austausch die Prüfsumme (mit Sicherung und Weg zurück).
+3. **Dashboard:** Übersicht über mehrere Seiten und den Verlauf der Befunde.
 
-4. **Dashboard:** Übersicht über mehrere Seiten und den Verlauf der Befunde.
-
-5. **Praxistests** auf echten Windows- und Mac-Rechnern mit echten Seiten.
+4. **Praxistests** auf echten Windows- und Mac-Rechnern mit echten Seiten.
 
 Wünsche und Fehler bitte als Issue melden (Vorschläge zum Code als Pull Request, siehe CONTRIBUTING.md).
 

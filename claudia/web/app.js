@@ -1849,12 +1849,91 @@ function jumpTo(id) {
   if (el) { el.open = true; el.scrollIntoView({ behavior: "smooth", block: "start" }); }
 }
 
+
+/* ------------------------------------------------------------------ Programm-Update */
+let updShown = false;
+function updFrame(title, scroll, foot) {
+  const dlg = $("#upddlg"), box = $("#upd-body");
+  box.replaceChildren(
+    h("div", { class: "uni-head" }, h("h2", { text: title }), h("button", { class: "dlg-x", type: "button", title: "Schließen", "aria-label": "Schließen", onclick: () => dlg.close(), text: "\u2715" })),
+    h("div", { class: "uni-scroll" }, scroll),
+    foot ? h("div", { class: "uni-foot" }, foot) : null);
+  if (!dlg.open) dlg.showModal();
+}
+async function openUpdate(manual) {
+  const dlg = $("#upddlg");
+  updFrame("Programm-Update", h("p", { text: "Suche nach einer neuen Version …" }));
+  let st;
+  try { st = manual ? await api("/api/app-update-check", {}) : await api("/api/app-update"); } catch (e) { updFrame("Programm-Update", h("p", { text: e.error || "Nicht möglich." })); return; }
+  renderUpdate(st);
+}
+function renderUpdate(st) {
+  const dlg = $("#upddlg"), close = h("button", { class: "btn ghost", type: "button", onclick: () => dlg.close() }, "Abbrechen");
+  if (st.checking) { updFrame("Programm-Update", h("p", { text: "Suche nach einer neuen Version …" })); setTimeout(async () => { try { renderUpdate(await api("/api/app-update")); } catch (e) { /* bleibt */ } }, 1200); return; }
+  if (!st.newer) {
+    const bad = st.checked && st.ok === false;
+    updFrame("Programm-Update", [h("p", { text: bad ? "Die Suche war nicht möglich (keine Internetverbindung oder GitHub nicht erreichbar)." : "Du verwendest die aktuelle Version." }),
+      h("p", { class: "hint", text: "Installierte Version: " + st.current })],
+      h("div", { class: "dlg-actions" }, h("button", { class: "btn", type: "button", onclick: () => dlg.close() }, "Schließen")));
+    return;
+  }
+  const i = st.info, ins = st.install || {};
+  if (ins.running || ins.done) { renderInstall(st); return; }
+  const go = h("button", { class: "btn primary", type: "button", disabled: !st.installable || S.running }, "Update installieren");
+  go.addEventListener("click", async () => {
+    go.disabled = true;
+    try { renderInstall(await api("/api/app-update-install", { version: i.version })); } catch (e) { toast(e.error || "Nicht möglich."); go.disabled = false; }
+  });
+  const skip = h("button", { class: "btn ghost", type: "button", onclick: async () => { try { await api("/api/app-update-skip", { version: i.version }); } catch (e) { /* egal */ } $("#updbtn").classList.remove("has-upd"); dlg.close(); } }, "Update überspringen");
+  updFrame("Neue Version verfügbar", [
+    h("p", { "data-nt": "1", text: tr("Version %s ist verfügbar. Installiert ist Version %s.").replace("%s", i.version).replace("%s", st.current) + (i.published ? " (" + i.published + ")" : "") }),
+    i.notes ? h("div", { class: "upd-notes", "data-nt": "1", text: i.notes }) : null,
+    h("p", { class: "hint", text: "Beim Installieren wird das Paket geladen und mit der veröffentlichten Prüfsumme verglichen, der bisherige Programmordner wird gesichert und bei einem Fehler automatisch wiederhergestellt. Danach startet CLAUDIA neu. Deine Verbindungen, Einstellungen und Berichte bleiben unverändert." }),
+    st.installable ? null : h("p", { class: "hint", text: "Für diese Version gibt es kein Paket mit veröffentlichter Prüfsumme. Bitte von der Release-Seite laden." }),
+    S.running ? h("p", { class: "hint", text: "Bitte warten, bis die Prüfung beendet ist." }) : null,
+    i.page ? h("p", {}, h("a", { href: i.page, text: "Release-Seite im Browser öffnen" })) : null],
+    h("div", { class: "dlg-actions" }, close, skip, go));
+}
+function renderInstall(st) {
+  const dlg = $("#upddlg"), ins = st.install || {};
+  if (ins.error) {
+    updFrame("Update fehlgeschlagen", [h("p", { text: ins.error }), h("p", { class: "hint", text: "Protokoll: " + (ins.log || "") })],
+      h("div", { class: "dlg-actions" }, h("button", { class: "btn", type: "button", onclick: () => dlg.close() }, "Schließen")));
+    return;
+  }
+  if (ins.done) {
+    updFrame("Update installiert", h("p", { text: "CLAUDIA wird jetzt neu gestartet. Dieses Fenster schließt sich von selbst." }));
+    api("/api/app-update-restart", {}).catch(() => {});
+    return;
+  }
+  const bar = h("i", {}); bar.style.width = (ins.pct || 1) + "%";
+  updFrame("Update wird installiert", [h("p", { text: ins.step || "Start" }), h("div", { class: "upd-bar" }, bar), h("p", { class: "hint", text: "Bitte das Fenster nicht schließen." })]);
+  setTimeout(async () => { try { renderInstall(await api("/api/app-update")); } catch (e) { /* Programm startet neu */ } }, 800);
+}
+async function autoUpdateCheck() {
+  for (let n = 0; n < 12; n++) {
+    let st;
+    try { st = await api("/api/app-update"); } catch (e) { return; }
+    if (st.checked && !st.checking) {
+      if (st.newer) {
+        $("#updbtn").classList.add("has-upd");
+        $("#updbtn").textContent = tr("Update verfügbar");
+        if (!st.skipped && !updShown && !S.running && !$("#upddlg").open) { updShown = true; renderUpdate(st); }
+      }
+      return;
+    }
+    await new Promise(r => setTimeout(r, 2500));
+  }
+}
+
 /* ------------------------------------------------------------------ Start */
 (async function main() {
   try { S.init = await api("/api/init"); } catch (e) { document.body.textContent = e.error || "Fehler beim Start."; return; }
   if (S.init.lang && S.init.lang !== "de") { try { applyLang(await api("/api/lang")); } catch (e) { /* bleibt deutsch */ } }
   $("#conn-off").addEventListener("click", disconnect);
   $("#help").addEventListener("click", openHelp);
+  $("#updbtn").addEventListener("click", () => openUpdate(true));
+  autoUpdateCheck();
   $("#uninstall").addEventListener("click", openUninstall);
   if (S.init.loc > 0) { $("#locn").textContent = Number(S.init.loc).toLocaleString(); $("#loc").hidden = false; }
   if (location.hash === "#uninstall") setTimeout(openUninstall, 300);

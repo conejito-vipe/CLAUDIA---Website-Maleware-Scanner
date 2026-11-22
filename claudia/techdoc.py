@@ -30,6 +30,8 @@ BASICS: List[Tuple[str, str, List[Tuple[str, str]]]] = [
                                  ("claudia.actions", "_mysql_script"), ("claudia.actions", "_check_vars"), ("claudia.actions", "_read_cfg_site"), ("claudia.actions", "_read_cfg")]),
     ("sicherung", "claudia.actions", [("claudia.actions", "_home_dir"), ("claudia.actions", "_mkdir_backup"), ("claudia.actions", "_db_dump_script"), ("claudia.actions", "make_backup")]),
     ("protokoll", "claudia.actions", [("claudia.actions", "Traced")]),
+    ("programmupdate", "claudia.appupdate", [("claudia.appupdate", "parse_release"), ("claudia.appupdate", "check"), ("claudia.appupdate", "verify_package"),
+                                            ("claudia.appupdate", "backup"), ("claudia.appupdate", "restore"), ("claudia.appupdate", "install"), ("claudia.appupdate", "finish_code")]),
 ]
 
 # Welche Funktionen eine Aktion ausführt (Name im Modul claudia.actions). Aktionen ohne Eintrag laufen direkt in run_action
