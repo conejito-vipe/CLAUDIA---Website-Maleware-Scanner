@@ -31,6 +31,8 @@ Requirements: Windows 10/11, Python 3.9+ (start.bat downloads and installs it au
 
 1. Unpack the ZIP in Finder. 2. Double-click `start.command` (first time: right-click > Open). If Python 3.9+ is missing, it downloads the official installer from python.org, checks the signature and installs it (macOS asks for your password). 3. Enter the SSH access data and start.
 
+**Installer (since 2.14.0):** On Windows you can run `CLAUDIA-Setup-….exe` instead of the ZIP (current user only, no administrator rights, Start menu entry, optional desktop shortcut, listed under "Installed apps"). On the Mac, unpack the ZIP and run `install.command` (target `~/Applications/CLAUDIA`). If CLAUDIA is already installed, the installer asks whether to update; your connections, settings and reports are kept. The installer is not Microsoft-certified either, so the same SmartScreen explanation applies.
+
 Run from source on any OS:
 
 ```

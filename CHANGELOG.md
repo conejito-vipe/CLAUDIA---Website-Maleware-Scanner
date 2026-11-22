@@ -2,6 +2,18 @@
 
 Generated from `claudia/docs/aenderungen.en.txt` (do not edit by hand).
 
+## 2.14.0 (2026-11-22) - Installer
+
+### Installer for Windows and Mac (no administrator rights)
+- **What:** Windows now has an installer (CLAUDIA-Setup-<version>.exe) that installs CLAUDIA into your user folder (%LOCALAPPDATA%\\Programs\\CLAUDIA), with a Start menu entry, an optional desktop shortcut and an entry under "Installed apps". On the Mac there is install.command (target ~/Applications/CLAUDIA). Both detect an existing installation and ask whether to update (lower version), reinstall or downgrade.
+- **Why:** Easier start without unpacking and hunting for the folder; updates without data loss.
+- **How:** An update replaces program code only; your connections, settings and reports (the Claudia folder under %APPDATA% or ~/Library/Application Support) and the Python environment .venv are kept. The installer needs no administrator rights, is not code-signed like the program (see README for the SmartScreen note) and is built on GitHub (Actions, windows-latest). If CLAUDIA was set up with the installer, "Uninstall" in the program no longer offers the program folder; use Settings > Apps instead.
+
+### Intern
+- **What:** New file installer/claudia.iss (Inno Setup), workflow .github/workflows/build-windows.yml (manual only), install.command, uninstall.installed_by_setup().
+- **Why:** The installer can only be built on Windows; the Linux test system checks scripts and logic.
+- **How:** New test test_installer.py; the installer itself is tested in practice on Windows and Mac.
+
 ## 2.13.0 (2026-11-21) - Shopware
 
 ### Shopware sites are detected and checked

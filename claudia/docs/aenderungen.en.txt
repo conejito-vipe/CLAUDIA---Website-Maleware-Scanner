@@ -1,3 +1,12 @@
+## 2.14.0 | 2026-11-22 | Installer
+### Installer for Windows and Mac (no administrator rights)
+Was: Windows now has an installer (CLAUDIA-Setup-<version>.exe) that installs CLAUDIA into your user folder (%LOCALAPPDATA%\\Programs\\CLAUDIA), with a Start menu entry, an optional desktop shortcut and an entry under "Installed apps". On the Mac there is install.command (target ~/Applications/CLAUDIA). Both detect an existing installation and ask whether to update (lower version), reinstall or downgrade.
+Warum: Easier start without unpacking and hunting for the folder; updates without data loss.
+Wie: An update replaces program code only; your connections, settings and reports (the Claudia folder under %APPDATA% or ~/Library/Application Support) and the Python environment .venv are kept. The installer needs no administrator rights, is not code-signed like the program (see README for the SmartScreen note) and is built on GitHub (Actions, windows-latest). If CLAUDIA was set up with the installer, "Uninstall" in the program no longer offers the program folder; use Settings > Apps instead.
+### Intern
+Was: New file installer/claudia.iss (Inno Setup), workflow .github/workflows/build-windows.yml (manual only), install.command, uninstall.installed_by_setup().
+Warum: The installer can only be built on Windows; the Linux test system checks scripts and logic.
+Wie: New test test_installer.py; the installer itself is tested in practice on Windows and Mac.
 ## 2.13.0 | 2026-11-21 | Shopware
 ### Shopware sites are detected and checked
 What: CLAUDIA now detects Shopware 6 (6.5 and newer, Composer installation) and shows its own checks: core (version from composer.lock, support phase from a built-in table, security advisories from Packagist, comparison of the shopware/core, administration and storefront packages with the original from GitHub), settings (.env, dev mode, APP_SECRET, permissions of the .env and the private JWT key), publicly reachable files and pages, packages, plugins and apps (security advisories where listed on Packagist), administrator accounts, HTTPS of the shop addresses, integrations with administrator rights, webhooks, and code in shopping experiences, products, categories, snippets and settings.

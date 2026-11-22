@@ -17,7 +17,7 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 from claudia import __version__, helpdocs  # noqa: E402
 
-SKIP_DIRS = {"__pycache__", ".venv", ".git", "dist", "build"}
+SKIP_DIRS = {"__pycache__", ".venv", ".git", "dist", "build", "Output"}
 SKIP_FILES = {"PRUEFSUMMEN.txt"}
 
 

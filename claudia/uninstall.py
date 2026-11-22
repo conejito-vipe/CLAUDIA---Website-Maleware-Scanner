@@ -62,6 +62,14 @@ def python_org_hint(data_dir: str) -> str:
     return ""
 
 
+def installed_by_setup(root: str) -> bool:
+    """True, wenn der Programmordner vom Windows-Installer (Inno Setup) stammt: dort liegt dessen Deinstaller (unins000.exe)."""
+    try:
+        return any(n.lower().startswith("unins") and n.lower().endswith(".exe") for n in os.listdir(root))
+    except OSError:
+        return False
+
+
 def plan(root: str, data_dir: str, reports_dir: str) -> List[Dict[str, Any]]:
     """Alle möglichen Einträge mit Pfad, Größe, Erklärung und Vorbelegung. 'exists' False = nichts zu tun."""
     root, data_dir, reports_dir = os.path.abspath(root), os.path.abspath(data_dir), os.path.abspath(reports_dir)
@@ -88,7 +96,7 @@ def plan(root: str, data_dir: str, reports_dir: str) -> List[Dict[str, Any]]:
         items.append({"id": "python", "label": "Python (von start.bat per winget installiert)", "path": "winget uninstall %s" % PY_WINGET_ID,
                       "why": "Python wurde auf diesem PC nur für dieses Programm installiert. Bitte nur entfernen, wenn du es sonst nicht brauchst.",
                       "default": False, "exists": True, "personal": False, "kind": "winget", "files": 0, "bytes": 0})
-    if _safe_root(root):
+    if _safe_root(root) and not installed_by_setup(root):
         add("program", "Programmordner dieser Version", root, "Der Ordner mit start.bat bzw. start.command und dem Programmcode. Wird zuletzt gelöscht.", False, "dir", False)
     return items
 

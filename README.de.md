@@ -33,7 +33,7 @@ Du brauchst weder PowerShell noch die Eingabeaufforderung:
 2. ZIP in einen normalen Ordner entpacken.
 3. **Windows:** `start.bat` doppelklicken. **Mac:** `start.command` doppelklicken. Mehr ist nicht nötig; fehlt Python, richtet die Startdatei es selbst ein.
 
-Eine einzelne `.exe` bzw. Mac-App kommt zusammen mit dem Installer (siehe „Geplant“).
+**Installer (ab 2.14.0):** Statt des ZIPs kannst du unter Windows `CLAUDIA-Setup-….exe` ausführen (Installation nur für deinen Benutzer, ohne Administratorrechte, mit Startmenü-Eintrag und auf Wunsch Desktop-Verknüpfung; erscheint unter „Installierte Apps“). Auf dem Mac: ZIP entpacken und `install.command` ausführen (Ziel `~/Applications/CLAUDIA`). Ist CLAUDIA schon installiert, fragt der Installer, ob er aktualisieren soll; deine Verbindungen, Einstellungen und Berichte bleiben erhalten. Auch der Installer ist nicht von Microsoft zertifiziert, es gilt dieselbe SmartScreen-Erklärung wie unten. Eine einzelne `.exe` bzw. Mac-App ohne Python-Einrichtung ist weiter geplant.
 
 ### Windows zeigt eine Warnung (SmartScreen)
 
@@ -71,19 +71,17 @@ Das kannst du tun:
 
 ## Geplant
 
-Alle geplanten Systeme sind eingebaut (Joomla, WordPress mit WooCommerce, Drupal, TYPO3, Contao, PrestaShop, Shopware). Die Reihenfolge ist Absicht: erst Installer, dann Härtung und Komfort. Zugesagt ist nur, was schon unter „Änderungen“ im Handbuch steht; alles hier ist Planung und kann sich ändern.
+Alle geplanten Systeme sind eingebaut (Joomla, WordPress mit WooCommerce, Drupal, TYPO3, Contao, PrestaShop, Shopware). Die Reihenfolge ist Absicht: erst Härtung, dann Komfort. Zugesagt ist nur, was schon unter „Änderungen“ im Handbuch steht; alles hier ist Planung und kann sich ändern.
 
-1. **Installer** für Windows und Mac, danach auch eine einzelne `.exe` bzw. Mac-App. Der Installer prüft, ob CLAUDIA schon installiert ist, und schlägt ein Update vor, wenn die vorhandene Versionsnummer niedriger ist.
+1. **Code-Prüfung und Härtung:** Der gesamte Code wird auf Schwachstellen und Doppelungen durchgesehen; Missbrauch soll so schwer wie möglich werden.
 
-2. **Code-Prüfung und Härtung:** Der gesamte Code wird auf Schwachstellen und Doppelungen durchgesehen; Missbrauch soll so schwer wie möglich werden.
+2. **Englische Übersetzung vervollständigen** (danach, damit sich die Texte nicht mehr ändern).
 
-3. **Englische Übersetzung vervollständigen** (danach, damit sich die Texte nicht mehr ändern).
+3. **Update-Prozess:** CLAUDIA meldet neue Versionen und prüft vor dem Austausch die Prüfsumme (mit Sicherung und Weg zurück).
 
-4. **Update-Prozess:** CLAUDIA meldet neue Versionen und prüft vor dem Austausch die Prüfsumme (mit Sicherung und Weg zurück).
+4. **Dashboard:** Übersicht über mehrere Seiten und den Verlauf der Befunde.
 
-5. **Dashboard:** Übersicht über mehrere Seiten und den Verlauf der Befunde.
-
-6. **Praxistests** auf echten Windows- und Mac-Rechnern mit echten Seiten.
+5. **Praxistests** auf echten Windows- und Mac-Rechnern mit echten Seiten.
 
 Wünsche und Fehler bitte als Issue melden (Vorschläge zum Code als Pull Request, siehe CONTRIBUTING.md).
 
