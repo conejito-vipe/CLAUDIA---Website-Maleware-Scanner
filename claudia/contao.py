@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import unquote, urlsplit
 
 from . import drupal
-from .typo3 import DANGEROUS, advisories_for, affected, norm_version, parse_advisories, strip_comments  # gleiche Composer- und Packagist-Regeln wie bei TYPO3
+from .typo3 import DANGEROUS, advisories_for, affected, cycle, norm_version, parse_advisories, strip_comments  # gleiche Composer- und Packagist-Regeln wie bei TYPO3
 
 __all__ = ["advisories_for", "affected", "parse_advisories", "norm_version"]
 
@@ -35,11 +35,6 @@ LIFECYCLE_MIN = (5, 3)
 
 major = drupal.major
 version_key = drupal.version_key
-
-
-def cycle(version: str) -> Tuple[int, int]:
-    m = re.match(r"^(\d+)\.(\d+)", norm_version(version))
-    return (int(m.group(1)), int(m.group(2))) if m else (0, 0)
 
 
 def _day(s: str) -> float:
@@ -109,7 +104,7 @@ def parse_env(text: str) -> Dict[str, str]:
         if not s or s.startswith("#"):
             continue
         s = re.sub(r"^export\s+", "", s)
-        m = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$", s)
+        m = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\Z", s)
         if not m:
             continue
         v = m.group(2).strip()
@@ -129,7 +124,7 @@ def parse_yaml_flat(text: str) -> Dict[str, str]:
         if not raw.strip() or raw.lstrip().startswith(("#", "-", "---")):
             continue
         indent = len(raw) - len(raw.lstrip(" "))
-        m = re.match(r"^\s*([^:#\s][^:]*?)\s*:(?:\s+(.*))?$", raw)
+        m = re.match(r"^\s*([^:#\s][^:]*?)\s*:(?:\s+(.*))?\Z", raw)
         if not m:
             continue
         while stack and stack[-1][0] >= indent:

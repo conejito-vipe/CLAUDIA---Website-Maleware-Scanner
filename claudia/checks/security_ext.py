@@ -221,7 +221,7 @@ def security_ext(ctx, res):
 
 # ============================================================================ Sicherungs-Erweiterung
 BACKUP_FILE_FIND = r"\( -iname '*.jpa' -o -iname '*.jps' -o -iname '*.zip' -o -iname '*.tar' -o -iname '*.tar.gz' -o -iname '*.tgz' -o -iname '*.gz' -o -iname '*.wpress' -o -iname '*.sql' -o -iname '*.sql.gz' -o -iname '*.7z' \)"
-DIR_RE = re.compile(r"^[A-Za-z0-9_./*-]{1,120}$")
+DIR_RE = re.compile(r"^[A-Za-z0-9_./*-]{1,120}\Z")
 
 
 def backup_scan_script(dirs: List[str]) -> str:
@@ -250,10 +250,10 @@ def parse_backup_scan(out: str) -> Dict[str, Any]:
         elif ln == "@@IDX" and cur is not None:
             cur["index"] = True
         elif cur is not None:
-            m = re.match(r"^(\d+)(?:\.\d+)?\s+(\d+)\s+(.+)$", ln)
+            m = re.match(r"^(\d+)(?:\.\d+)?\s+(\d+)\s+(.+)\Z", ln)
             if m:
                 cur["files"].append((int(m.group(1)), int(m.group(2)), m.group(3)))
-        elif re.match(r"^\d{9,}$", ln):
+        elif re.match(r"^\d{9,}\Z", ln):
             res["now"] = int(ln)
     return res
 

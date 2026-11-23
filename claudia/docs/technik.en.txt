@@ -26,6 +26,12 @@ At start CLAUDIA asks the project's release page on GitHub in the background (a 
 - appupdate.install writes every file through a temporary file and os.replace. If anything fails, restore puts the backup back and removes newly created files; update.log contains every step.
 - start.bat, start.command and install.command are replaced only after the program has ended (finish_code in a detached process), because a running start file would otherwise change in the middle of its run. The same process then restarts CLAUDIA.
 - Manual way back: unpack the backup from %APPDATA%\CLAUDIA\update into the program folder (replace files).
+## g:haertung | Protection functions and their tests
+Everything that creates trust or limits damage is central and covered by tests with proof of effect: if the function is weakened on purpose, the matching test must fail (tests/test_sicherheitsfunktionen.py).
+- util.sq quotes every value for the server's shell; db.validate_vars allows only ordinary characters for database name, prefix, user, host and socket and ends with \Z so that even an appended line break is rejected.
+- util.parse_xml reads foreign XML only without DOCTYPE/ENTITY, up to 3 MB, and returns None instead of raising on any error. util.digits accepts ASCII digits only.
+- util.mask_secrets masks credentials; the value is limited to 4096 characters so the run time stays linear.
+- The local server checks Host and Origin, requires the session cookie and the X-Claudia header, limits the request size and serves files only from a fixed list.
 ## g:protokoll | How the status window follows along
 During an action every command runs through the wrapper Traced. It reports command and answer to the status window so you can see live what happens on the server.
 - mask replaces passwords, download keys and tokens with *** (known secrets and patterns like key=..., token=...) before anything is shown or saved in the report.

@@ -74,7 +74,7 @@ def parse_wp_header(text: str) -> Dict[str, str]:
     out: Dict[str, str] = {}
     head = text[:8192]
     for line in head.splitlines():
-        m = re.match(r"^[\s*#/@]*([A-Za-z][A-Za-z ]{2,20}):\s*(.+?)\s*(?:\*/)?\s*$", line)
+        m = re.match(r"^[\s*#/@]*([A-Za-z][A-Za-z ]{2,20}):\s*(.+?)\s*(?:\*/)?\s*\Z", line)
         if m:
             key = _HEAD_KEYS.get(m.group(1).strip().lower())
             if key and key not in out:

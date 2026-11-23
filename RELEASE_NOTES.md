@@ -1,3 +1,4 @@
-# CLAUDIA 2.16.0 - Program update
+# CLAUDIA 2.16.1 - Hardening and cleanup
 
-- **CLAUDIA looks for new versions at start**: At start CLAUDIA checks in the background whether a newer version exists on GitHub. A window shows the release notes and offers "Cancel", "Skip update" and "Install update"; the "Updates" button at the top searches at any time on request.
+- **Code audit: inputs, run time, XML**: Values from the server's configuration (database name, prefix, user, host and more) are checked more strictly: a trailing line break used to pass. Foreign XML (update lists, extension manifests) is read the same safe way everywhere, including the update list from joomla.org. Numbers from server output are only accepted as real digits. Masking credentials no longer takes minutes for files with very many unterminated entries, only seconds. Aborted connections to the local window no longer print an error.
+- **Cleanup**: Duplicate code merged (shared helpers of the evaluations, version cycle for TYPO3, Contao, PrestaShop and Shopware), unused imports removed, the tool folders .hypothesis, .pytest_cache and .ruff_cache no longer enter the package, the GitHub Actions are pinned to fixed commits.

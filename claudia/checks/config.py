@@ -88,7 +88,7 @@ HT_BLOCKS = [
     (r"^litespeed|^w3 total cache|^wp super cache|^wp rocket|^supercache|^wpsupercache|^w3tc", "Cache-Plugin"),
     (r"^wps hide login", "WPS Hide Login"),
 ]
-HT_MARK_RE = re.compile(r"^\s*#\s*(BEGIN|END)\s+(.+?)\s*$", re.IGNORECASE)
+HT_MARK_RE = re.compile(r"^\s*#\s*(BEGIN|END)\s+(.+?)\s*\Z", re.IGNORECASE)
 
 
 def _ht_block_name(name: str) -> str:
@@ -147,7 +147,7 @@ echo '@@NOW'; date +%s
     hits = []
     noexec_files = set()
     for ln in sec.get("HITS", "").splitlines():
-        m = re.match(r"^(.*?):(\d+):(.*)$", ln)
+        m = re.match(r"^(.*?):(\d+):(.*)\Z", ln)
         if not m:
             continue
         hits.append((m.group(1), m.group(2), m.group(3)))
@@ -155,7 +155,7 @@ echo '@@NOW'; date +%s
             noexec_files.add(m.group(1))
     marks = []
     for ln in sec.get("MARK", "").splitlines():
-        m = re.match(r"^(.*?):(\d+):(.*)$", ln)
+        m = re.match(r"^(.*?):(\d+):(.*)\Z", ln)
         mm = HT_MARK_RE.match(m.group(3)) if m else None
         if m and mm:
             marks.append((m.group(1), int(m.group(2)), mm.group(1).upper(), mm.group(2)))
@@ -231,7 +231,7 @@ find . \( -name '.user.ini' -o -name 'php.ini' -o -name '.php.ini' -o -name 'php
     crit, warn, info = [], [], []
     seen_files = set()
     for ln in lines_of(out):
-        m = re.match(r"^(.*?):(\d+):(.*)$", ln)
+        m = re.match(r"^(.*?):(\d+):(.*)\Z", ln)
         if not m:
             continue
         path, no, line = m.group(1), m.group(2), m.group(3).strip()
@@ -361,7 +361,7 @@ for f in index.php administrator/index.php; do [ -f "$f" ] && { echo "== $f"; he
     crit, warn, info_hosts, unknown_hosts = [], [], [], []
     inline_scripts = 0
     for ln in sec.get("HITS", "").splitlines():
-        m = re.match(r"^(.*?):(\d+):(.*)$", ln)
+        m = re.match(r"^(.*?):(\d+):(.*)\Z", ln)
         if not m:
             continue
         path, no, line = m.group(1), m.group(2), m.group(3)

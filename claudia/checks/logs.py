@@ -337,7 +337,7 @@ done
             files.append("%s  (%d KB, %s)" % (clean_line(p[3]), int(p[1] or 0) // 1024, p[2]))
     strong_crit, strong_warn, scanner = [], [], []
     for ln in sec.get("STRONG", "").splitlines():
-        m = re.match(r"^(.*?):(\d+):(.*)$", ln)
+        m = re.match(r"^(.*?):(\d+):(.*)\Z", ln)
         if not m:
             continue
         if m.group(3).lstrip().startswith("#"):
@@ -368,7 +368,7 @@ done
     total_fail = 0
     items = []
     for ln in fails:
-        m = re.match(r"^(.*):(\d+)$", ln)
+        m = re.match(r"^(.*):(\d+)\Z", ln)
         if m:
             total_fail += int(m.group(2))
             items.append("%s: %s" % (clean_line(m.group(1)), m.group(2)))

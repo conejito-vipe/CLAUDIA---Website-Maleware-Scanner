@@ -89,7 +89,7 @@ def parse_info_yml(text: str) -> Dict[str, str]:
     """Liest die einfachen Schlüssel einer *.info.yml (name, type, version, core_version_requirement, project, package)."""
     out: Dict[str, str] = {}
     for line in (text or "").splitlines():
-        m = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.*?)\s*$", line)
+        m = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.*?)\s*\Z", line)
         if m and m.group(1) in ("name", "type", "version", "core_version_requirement", "core", "project", "package", "description", "lifecycle", "hidden"):
             out.setdefault(m.group(1), _unq(re.sub(r"\s+#.*$", "", m.group(2))))
     return out

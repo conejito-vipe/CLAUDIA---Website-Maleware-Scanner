@@ -173,7 +173,7 @@ def shopware_settings(ctx, res):
     if paths:
         out = ctx.sh("stat -c '%%a %%U %%n' %s 2>/dev/null" % " ".join(_q(p) for p in paths[:12]), timeout=20).out
         for ln in out.splitlines():
-            m = re.match(r"^(\d{3,4}) (\S+) (.+)$", ln.strip())
+            m = re.match(r"^(\d{3,4}) (\S+) (.+)\Z", ln.strip())
             if m:
                 modes[m.group(3)] = "%s %s" % (m.group(1), m.group(2))
     _emit(res, ash.judge_settings(cfg, modes))

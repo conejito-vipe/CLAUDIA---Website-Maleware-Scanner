@@ -10,8 +10,8 @@ from typing import Any, Dict, List
 from . import coreref
 from .contaoref import compare, hash_zip, parse_server_hashes, MAX_ZIP  # noqa: F401  (gleiche Regeln wie bei Contao)
 
-VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:\.\d+)?$")
-PACKAGE_RE = re.compile(r"^shopware/(core|administration|storefront)$")
+VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:\.\d+)?\Z")
+PACKAGE_RE = re.compile(r"^shopware/(core|administration|storefront)\Z")
 ARCHIVE = "https://github.com/shopware/%s/archive/refs/tags/v%s.zip"
 
 

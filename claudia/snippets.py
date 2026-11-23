@@ -192,7 +192,7 @@ def core_candidate_wp(path: str) -> bool:
     if p.startswith(("wp-admin/", "wp-includes/")):
         return p.split(".")[-1].lower() in ("php", "js", "css", "html", "json")
     if "/" not in p:
-        return bool(re.match(r"^(wp-[\w-]+|index|xmlrpc)\.php$", p))
+        return bool(re.match(r"^(wp-[\w-]+|index|xmlrpc)\.php\Z", p))
     return bool(re.match(r"^wp-content/themes/twenty[\w-]+/", p) or p.startswith("wp-content/plugins/akismet/"))
 
 

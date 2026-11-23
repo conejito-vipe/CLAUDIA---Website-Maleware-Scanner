@@ -5,7 +5,7 @@ welcher Befund hierher gehört, steht in RULES (Prüfung, Anfang des Titels, For
 from __future__ import annotations
 
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Tuple
 
 SEV_ORDER = {"crit": 0, "warn": 1, "info": 2}
 SKIP_SEV = ("ok",)

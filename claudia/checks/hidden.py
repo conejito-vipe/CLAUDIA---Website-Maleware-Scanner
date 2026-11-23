@@ -66,7 +66,7 @@ find . \( @PRUNE@ \) -prune -o -type f \( -iname '*.js' -o -iname '*.html' -o -i
 
 def classify(text: str, sigs) -> List[Tuple[str, str, str, str, str]]:
     """Ordnet eine Trefferzeile 'Datei:Zeile:Treffer' dem ersten passenden Muster zu: (id, sev, Datei, Zeile, Ausschnitt)."""
-    m = re.match(r"^(.*?):(\d+):(.*)$", text)
+    m = re.match(r"^(.*?):(\d+):(.*)\Z", text)
     if not m:
         return []
     path, no, frag = m.groups()

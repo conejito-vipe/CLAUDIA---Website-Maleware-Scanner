@@ -9,10 +9,10 @@ import re
 import tarfile
 from typing import Any, Dict
 
-from . import coreref, typo3
+from . import coreref
 
 MAX_TAR = 220 * 1024 * 1024
-VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
+VERSION_RE = re.compile(r"^\d+\.\d+\.\d+\Z")
 PAGE = "https://get.typo3.org/version/%s"
 PACKAGE = "https://get.typo3.org/%s/tar.gz"
 

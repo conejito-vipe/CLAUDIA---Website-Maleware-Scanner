@@ -12,9 +12,11 @@ import hashlib
 import io
 import re
 import zipfile
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Set, Tuple
 from urllib.parse import quote
 from xml.etree import ElementTree as ET
+
+from .util import parse_xml
 
 MAX_ZIP_BYTES = 25_000_000
 MAX_UNPACKED = 200_000_000
@@ -81,7 +83,7 @@ def parse_local_themes(out: str) -> Dict[str, Dict[str, str]]:
     """Ausgabe von sha256sum für wp-content/themes/<slug>/<Pfad> -> {slug: {Pfad: sha256}}."""
     res: Dict[str, Dict[str, str]] = {}
     for ln in out.splitlines():
-        m = re.match(r"^([0-9a-f]{64})  \*?(?:\./)?wp-content/themes/([^/]+)/(.+)$", ln)
+        m = re.match(r"^([0-9a-f]{64})  \*?(?:\./)?wp-content/themes/([^/]+)/(.+)\Z", ln)
         if m:
             res.setdefault(m.group(2), {})[m.group(3)] = m.group(1)
     return res
@@ -132,7 +134,7 @@ def entries_with_downloads(xml_text: str, joomla: str) -> List[Dict[str, Any]]:
         urls = []
         for dl in up.iter("downloadurl"):
             u = (dl.text or "").strip()
-            if re.match(r"^https://[A-Za-z0-9.-]+(:\d+)?/\S*$", u):
+            if re.match(r"^https://[A-Za-z0-9.-]+(:\d+)?/\S*\Z", u):
                 urls.append((dl.get("type", "full") or "full", u))
         urls.sort(key=lambda t: 0 if t[0] == "full" else 1)
         out.append({"element": g("element").lower(), "type": g("type").lower(), "folder": g("folder").lower(),
@@ -149,17 +151,14 @@ def _files_folders(root: ET.Element, xpath: str) -> List[str]:
 
 def target_dirs(manifest: str, ext: Dict[str, Any]) -> List[Tuple[str, str]]:
     """[(Ordner im ZIP, Ordner auf dem Server)] für eine Erweiterung. Leer, wenn die Art nicht unterstützt ist oder das Manifest nicht passt."""
-    if not manifest or "<!DOCTYPE" in manifest or "<!ENTITY" in manifest:
-        return []
-    try:
-        root = ET.fromstring(manifest)
-    except ET.ParseError:
+    root = parse_xml(manifest)
+    if root is None:
         return []
     kind = str(ext.get("type") or "").lower()
     if (root.get("type") or "").lower() != kind:
         return []
     element = str(ext.get("element") or "")
-    if not re.match(r"^[a-z0-9_]{2,60}$", element, re.I):
+    if not re.match(r"^[a-z0-9_]{2,60}\Z", element, re.I):
         return []
     out: List[Tuple[str, str]] = []
     if kind == "component":
@@ -193,7 +192,7 @@ def parse_local(out: str, dirs: List[str]) -> Dict[str, Dict[str, str]]:
     res: Dict[str, Dict[str, str]] = {d: {} for d in dirs}
     order = sorted(dirs, key=len, reverse=True)
     for ln in out.splitlines():
-        m = re.match(r"^([0-9a-f]{64})  \*?(?:\./)?(.+)$", ln)
+        m = re.match(r"^([0-9a-f]{64})  \*?(?:\./)?(.+)\Z", ln)
         if not m:
             continue
         path = m.group(2)

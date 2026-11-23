@@ -61,7 +61,7 @@ def changelog(lang: str) -> List[Dict[str, Any]]:
             ih, _, ib = item.partition("\n")
             it: Dict[str, Any] = {"title": ih.strip(), "what": "", "why": "", "how": ""}
             for ln in ib.split("\n"):
-                m = re.match(r"^([^:\n]{2,12}):\s*(.*)$", ln.strip())
+                m = re.match(r"^([^:\n]{2,12}):\s*(.*)\Z", ln.strip())
                 if m and m.group(1).lower() in _KEYS:
                     it[_KEYS[m.group(1).lower()]] = m.group(2).strip()
             rel["items"].append(it)

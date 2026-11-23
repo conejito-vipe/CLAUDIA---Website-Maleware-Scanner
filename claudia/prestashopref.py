@@ -12,7 +12,7 @@ from . import contaoref, coreref
 from .prestashop import CORE_DIRS
 
 MAX_ZIP = 220 * 1024 * 1024
-VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(\.\d+)?$")
+VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(\.\d+)?\Z")
 ARCHIVE = "https://github.com/PrestaShop/PrestaShop/archive/refs/tags/%s.zip"
 
 
@@ -45,7 +45,7 @@ def server_hash_sh() -> str:
 def parse_server_hashes(out: str) -> Dict[str, str]:
     res: Dict[str, str] = {}
     for line in (out or "").splitlines():
-        m = re.match(r"^([0-9a-f]{64})\s+\*?(?:\./)?(.+)$", line)
+        m = re.match(r"^([0-9a-f]{64})\s+\*?(?:\./)?(.+)\Z", line)
         if m:
             res[m.group(2)] = m.group(1)
     return res

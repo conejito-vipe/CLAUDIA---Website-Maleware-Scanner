@@ -284,7 +284,7 @@ Q_TRIG = ("SELECT trigger_name AS n, event_object_table AS t, action_timing AS z
 Q_EVENTS = "SELECT event_name AS n, status AS s, LEFT(event_definition, 300) AS st FROM information_schema.events WHERE event_schema = DATABASE()"
 Q_ROUT = "SELECT routine_name AS n, routine_type AS typ, LEFT(routine_definition, 300) AS st FROM information_schema.routines WHERE routine_schema = DATABASE()"
 Q_ADMSESS = ("SELECT s.username AS u, s.time AS t, s.client_id AS c FROM #__session s WHERE s.guest = 0 AND s.client_id = 1 ORDER BY s.time DESC LIMIT 20")
-ODD_TABLE_RE = re.compile(r"^(wp_|tmp|temp|test|backup|bak|old|dump|copy)|(_bak|_old|_backup|_copy|_tmp|_dump)$|^[a-f0-9]{10,}$", re.IGNORECASE)
+ODD_TABLE_RE = re.compile(r"^(wp_|tmp|temp|test|backup|bak|old|dump|copy)|(_bak|_old|_backup|_copy|_tmp|_dump)$|^[a-f0-9]{10,}\Z", re.IGNORECASE)
 
 
 @check(

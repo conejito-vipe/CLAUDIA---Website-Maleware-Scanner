@@ -9,76 +9,18 @@ from __future__ import annotations
 
 import calendar
 import datetime
-import math
 import re
 import statistics
 from typing import Any, Dict, List, Optional, Tuple
 
-Finding = Tuple[str, str, str, List[str], str]
+from .auswertung_joomla import Finding, _clean, _f, _np, _num, _to_flag  # gemeinsame Hilfsfunktionen (früher doppelt)
 
-_EMOJI = re.compile("[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF\uFE0F]")
-_HEX_LONG = re.compile(r"[0-9a-fA-F]{32,}")
-_CTRL = re.compile(r"[\x00-\x1f\x7f]")
 _DAY = 86400
 
 
 # ---------------------------------------------------------------------------
 # Hilfsfunktionen
 # ---------------------------------------------------------------------------
-
-def _clean(value: Any, limit: int = 100) -> str:
-    """Eingegebenen Text für die Ausgabe säubern: keine Steuerzeichen, Emojis, Gedankenstriche, langen Hex-Ketten."""
-    if not isinstance(value, str):
-        return ""
-    t = _CTRL.sub(" ", value)
-    t = _EMOJI.sub("", t)
-    t = t.replace("\u2014", "-").replace("\u2013", "-")
-    t = _HEX_LONG.sub("(Kette entfernt)", t)
-    t = re.sub(r"(?i)claudia", "CLAUDIA", t)
-    t = " ".join(t.split())
-    if len(t) > limit:
-        t = t[: limit - 3].rstrip() + "..."
-    return t
-
-
-def _cap(items: List[str]) -> List[str]:
-    """Höchstens 60 Einträge mit je höchstens 300 Zeichen."""
-    out = [i if len(i) <= 300 else i[:297] + "..." for i in items]
-    if len(out) > 60:
-        rest = len(out) - 59
-        out = out[:59] + ["... und %d weitere" % rest]
-    return out
-
-
-def _f(sev: str, title: str, text: str = "", items: Optional[List[str]] = None, hint: str = "") -> Finding:
-    t = title if len(title) <= 120 else title[:117] + "..."
-    return (sev, t, text, _cap(list(items or [])), hint)
-
-
-def _np(was: str, grund: str) -> List[Finding]:
-    """Genau ein Hinweis, wenn die Eingabe unbrauchbar ist."""
-    return [_f("info", "%s nicht prüfbar" % was, grund)]
-
-
-def _num(v: Any) -> Optional[float]:
-    if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v):
-        return None
-    return float(v)
-
-
-def _to_flag(v: Any) -> Optional[bool]:
-    if isinstance(v, bool):
-        return v
-    if isinstance(v, (int, float)) and v in (0, 1):
-        return bool(v)
-    if isinstance(v, str):
-        s = v.strip().lower()
-        if s in ("1", "true", "yes", "on"):
-            return True
-        if s in ("0", "false", "no", "off"):
-            return False
-    return None
-
 
 def _size_text(size: float) -> str:
     if size < 1024:

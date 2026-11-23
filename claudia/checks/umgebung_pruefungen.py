@@ -12,14 +12,13 @@ import os
 import re
 import socket
 import ssl
-import time
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 from .. import secure
 from ..model import CheckSkipped
 from ..registry import check
-from ..util import sq
+from ..util import digits, sq
 from . import auswertung_umgebung as au
 from .web import UA_BROWSER, fetch
 
@@ -156,7 +155,7 @@ def backup_age(ctx, res):
         ctx.progress("Lesbarkeit der neuesten Sicherungen testen")
         r = ctx.sh(test_script(it["path"]), timeout=150).out.strip().splitlines()
         last = r[-1].strip() if r else ""
-        it["test_rc"] = int(last) if last.isdigit() else None
+        it["test_rc"] = int(last) if digits(last) else None
     _emit(res, au.judge_backup_age(items, now))
 
 

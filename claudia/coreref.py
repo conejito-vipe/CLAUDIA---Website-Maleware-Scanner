@@ -17,17 +17,16 @@ import urllib.error
 import urllib.request
 import zipfile
 from typing import Any, Dict, Tuple
-from xml.etree import ElementTree as ET
 
 from . import secure
-from .util import atomic_write
+from .util import atomic_write, parse_xml
 
 GITHUB_API = "https://api.github.com/repos/joomla/joomla-cms/releases/tags/%s"
 GITHUB_DL = "https://github.com/joomla/joomla-cms/releases/download/%s/%s"
 UPDATE_LIST = "https://update.joomla.org/core/list.xml"
 MAX_ZIP = 120 * 1024 * 1024
 UA = "CLAUDIA/2.0 (Sicherheitspruefung; https://github.com/)"
-VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
+VERSION_RE = re.compile(r"^\d+\.\d+\.\d+\Z")
 # Pfade, die nie aus einem Paket zurückgespielt werden und beim Vergleich ausgenommen sind (Inhalt gehört der Seite, nicht dem Kern)
 SKIP_PREFIXES = ("installation/", "images/", "tmp/", "cache/", "logs/", "administrator/cache/", "administrator/logs/")
 SKIP_FILES = {"configuration.php", ".htaccess", "robots.txt", "web.config", "php.ini", ".user.ini", "htaccess.txt", "web.config.txt", "robots.txt.dist",
@@ -108,8 +107,10 @@ def update_server_hashes(version: str) -> Dict[str, str]:
     """sha256-Werte, die der Joomla-Update-Server für diese Version nennt ({Dateiname: sha256}). Leer, wenn die Version dort nicht (mehr) geführt wird."""
     out: Dict[str, str] = {}
     try:
-        lst = ET.fromstring(fetch_bytes(UPDATE_LIST, 500_000))
-    except (RefError, ET.ParseError):
+        lst = parse_xml(fetch_bytes(UPDATE_LIST, 500_000))
+    except RefError:
+        return out
+    if lst is None:
         return out
     urls = []
     for e in lst.iter("extension"):
@@ -118,8 +119,10 @@ def update_server_hashes(version: str) -> Dict[str, str]:
             urls.append(u)
     for u in urls[:8]:
         try:
-            root = ET.fromstring(fetch_bytes(u, 500_000))
-        except (RefError, ET.ParseError):
+            root = parse_xml(fetch_bytes(u, 500_000))
+        except RefError:
+            continue
+        if root is None:
             continue
         for up in root.iter("update"):
             if (up.findtext("version") or "").strip() != version:

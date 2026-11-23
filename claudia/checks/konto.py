@@ -11,8 +11,8 @@ import time
 from typing import Dict, List, Optional, Tuple
 
 from ..registry import check
-from ..util import clean_line, lines_of, split_sections, trunc
-from .database import age_days, fetch, fmt_date, need_db
+from ..util import clean_line, digits, lines_of, split_sections, trunc
+from .database import fetch, need_db
 
 G = "konto"
 RECENT_DAYS = 30
@@ -144,7 +144,7 @@ def parse_keys(out: str) -> Dict[str, object]:
     d = lines_of(sec.get("DIR", ""))
     if d and d[0].strip() != "FEHLT":
         p = d[0].split()
-        if len(p) >= 3 and p[2].isdigit():
+        if len(p) >= 3 and digits(p[2]):
             res["dir"] = {"mode": p[0], "owner": p[1], "mtime": int(p[2])}
     for i in range(1, len(parts) - 1, 2):
         name, body = parts[i], parts[i + 1]
@@ -155,18 +155,18 @@ def parse_keys(out: str) -> Dict[str, object]:
         meta = first.split()
         info: Dict[str, object] = {"mode": "", "owner": "", "mtime": 0, "keys": [], "options": [], "count": 0}
         pre = body.split("@@LIST")[0].strip().split()
-        if len(pre) >= 3 and pre[2].isdigit():
+        if len(pre) >= 3 and digits(pre[2]):
             info["mode"], info["owner"], info["mtime"] = pre[0], pre[1], int(pre[2])
         keys = []
         for ln in lines_of(s.get("LIST", "")):
-            m = re.match(r"^(\d+)\s+(SHA256:\S+|MD5:\S+)\s*(.*?)\s*\(([A-Za-z0-9-]+)\)\s*$", ln.strip())
+            m = re.match(r"^(\d+)\s+(SHA256:\S+|MD5:\S+)\s*(.*?)\s*\(([A-Za-z0-9-]+)\)\s*\Z", ln.strip())
             if m:
                 keys.append({"bits": int(m.group(1)), "fp": m.group(2), "comment": m.group(3), "type": m.group(4)})
         info["keys"] = keys
         info["listing_failed"] = bool(lines_of(s.get("LIST", ""))) and not keys
         info["options"] = [ln.strip() for ln in (s.get("OPT", "") or "").splitlines() if ln.strip() and ln.strip() != "-"]
         c = lines_of(s.get("COUNT", ""))
-        info["count"] = int(c[0]) if c and c[0].strip().isdigit() else len(keys)
+        info["count"] = int(c[0]) if c and digits(c[0].strip()) else len(keys)
         res["files"][name] = info
     return res
 
@@ -245,7 +245,7 @@ SELF_NOISE = re.compile(r"(?:readlink /proc|ps -u|@@EXE|@@PS|\bsshd:|sftp-server
 
 def etime_seconds(s: str) -> int:
     """ps-Laufzeit '[[dd-]hh:]mm:ss' in Sekunden."""
-    m = re.match(r"^(?:(\d+)-)?(?:(\d+):)?(\d+):(\d+)$", (s or "").strip())
+    m = re.match(r"^(?:(\d+)-)?(?:(\d+):)?(\d+):(\d+)\Z", (s or "").strip())
     if not m:
         return 0
     d, h, mi, se = (int(x or 0) for x in m.groups())
@@ -256,18 +256,18 @@ def parse_procs(out: str) -> Dict[str, object]:
     sec = split_sections(out)
     procs = []
     for ln in (sec.get("PS", "") or "").splitlines():
-        m = re.match(r"^\s*(\d+)\s+(\d+)\s+(\S+)\s+(.*)$", ln)
+        m = re.match(r"^\s*(\d+)\s+(\d+)\s+(\S+)\s+(.*)\Z", ln)
         if m:
             procs.append({"pid": int(m.group(1)), "ppid": int(m.group(2)), "etime": m.group(3), "secs": etime_seconds(m.group(3)), "args": m.group(4).strip()})
     deleted = {}
     for ln in lines_of(sec.get("EXE", "")):
-        m = re.match(r"^(\d+)\s+(.*)$", ln.strip())
+        m = re.match(r"^(\d+)\s+(.*)\Z", ln.strip())
         if m:
             deleted[int(m.group(1))] = m.group(2)
     shm = []
     for ln in lines_of(sec.get("SHM", "")):
         p = ln.split()
-        if len(p) >= 3 and p[1].isdigit():
+        if len(p) >= 3 and digits(p[1]):
             shm.append({"key": p[0], "bytes": int(p[1]), "attached": p[2]})
     return {"procs": procs, "deleted": deleted, "ok": "PS" in sec, "shm": shm}
 
@@ -362,7 +362,7 @@ def parse_startup(out: str) -> List[Dict[str, object]]:
         name, _, rest = blk.partition("\n")
         meta, _, body = rest.partition("@@BODY\n")
         p = meta.split()
-        mt = int(p[1]) if len(p) >= 2 and p[1].isdigit() else 0
+        mt = int(p[1]) if len(p) >= 2 and digits(p[1]) else 0
         files.append({"name": name.strip(), "mode": p[0] if p else "", "mtime": mt, "body": body.split("@@ENDFILE")[0]})
     return files
 
@@ -493,7 +493,7 @@ def sessions_check(ctx, res):
     adm = [r for r in rows if str(r.get("client")) == "1"]
     lines = []
     for r in adm[:15]:
-        t = int(r["t"]) if str(r.get("t") or "").isdigit() else 0
+        t = int(r["t"]) if digits(str(r.get("t") or "")) else 0
         lines.append("%s: Backend-Sitzung, zuletzt aktiv %s" % (clean_line(r.get("login") or "?"), time.strftime("%Y-%m-%d %H:%M", time.localtime(t)) if t else "?"))
     names = {r.get("login") for r in adm}
     if len(adm) > 3 or len(names) > 2:
@@ -543,7 +543,7 @@ def wp_cron_check(ctx, res):
     if not rows or not (rows[0].get("v") or "").strip():
         res.add("info", "Kein Aufgabenplan gespeichert", "Die Option 'cron' ist leer. WordPress legt sie beim nächsten Seitenaufruf neu an.")
         return
-    if str(rows[0].get("len") or "0").isdigit() and int(rows[0]["len"]) > 60000:
+    if digits(str(rows[0].get("len") or "0")) and int(rows[0]["len"]) > 60000:
         res.add("info", "Der Aufgabenplan ist sehr groß", "Es wurden nur die ersten 60.000 Zeichen gelesen (%s insgesamt)." % rows[0]["len"])
     hooks = parse_cron_hooks(rows[0].get("v") or "")
     unknown = [h for h in hooks if h not in CORE_HOOKS]

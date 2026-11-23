@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from . import coreref, secure
-from .util import vcmp
+from .util import parse_xml, vcmp
 
 MAX_SITES = 60
 MAX_FOLLOW = 40
@@ -51,12 +51,7 @@ def parse_sites(out: str) -> List[Dict[str, Any]]:
 
 
 def _safe_xml(text: str) -> Optional[ET.Element]:
-    if "<!DOCTYPE" in text or "<!ENTITY" in text:
-        return None
-    try:
-        return ET.fromstring(text)
-    except ET.ParseError:
-        return None
+    return parse_xml(text)
 
 
 def _client(v: str) -> int:
@@ -185,7 +180,7 @@ def live_core(current: str) -> Optional[str]:
             continue
         got = True
         for up in parse_updates(sub, current):
-            if up["element"] == "joomla" and up["type"] == "file" and re.match(r"^\d+\.\d+\.\d+$", up["version"]) and (not best or vcmp(up["version"], best) > 0):
+            if up["element"] == "joomla" and up["type"] == "file" and re.match(r"^\d+\.\d+\.\d+\Z", up["version"]) and (not best or vcmp(up["version"], best) > 0):
                 best = up["version"]
     return best if got and best else None
 

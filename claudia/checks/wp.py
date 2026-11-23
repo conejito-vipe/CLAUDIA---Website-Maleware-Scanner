@@ -14,7 +14,7 @@ from urllib.parse import quote, urlparse
 from .. import coreref, extsums, wordpress, wpsums
 from ..model import CheckSkipped, Option
 from ..registry import check
-from ..util import clean_line, extract_hosts, host_allowed, lines_of, split_sections, trunc, vcmp
+from ..util import clean_line, digits, extract_hosts, host_allowed, lines_of, split_sections, trunc, vcmp
 from . import web as webmod
 from .config import ENTRY_TOKENS
 from .database import add_manual_sql, age_days, fetch, fmt_date, inject_scan, need_db, _inj_query
@@ -186,7 +186,7 @@ echo '@@HEAD'
             sizes[p[1]] = int(p[2] or 0)
     crit, warn, info_hosts = [], [], []
     for ln in sec.get("HITS", "").splitlines():
-        m = re.match(r"^(.*?):(\d+):(.*)$", ln)
+        m = re.match(r"^(.*?):(\d+):(.*)\Z", ln)
         if not m:
             continue
         path, no, line = m.group(1), m.group(2), m.group(3)
@@ -270,7 +270,7 @@ def wp_core(ctx, res):
     locale = (re.search(r"'([A-Za-z_]+)'", sec.get("LOCALE", "")) or [None, "en_US"])[1]
     sums: Dict[str, str] = {}
     for ln in sec.get("SUMS", "").splitlines():
-        m = re.match(r"^([0-9a-f]{32})\s+\*?(.+)$", ln)
+        m = re.match(r"^([0-9a-f]{32})\s+\*?(.+)\Z", ln)
         if m:
             sums[m.group(2).lstrip("./")] = m.group(1)
     ctx.progress("Lade Prüfsummen für WordPress %s" % ver)
@@ -674,7 +674,7 @@ def wp_theme_integrity(ctx, res):
             break
         slug = th["slug"]
         label = "%s %s" % (clean_line(th.get("name", slug)), th["version"])
-        if slug not in local or not re.match(r"^[A-Za-z0-9._-]{1,80}$", slug) or not re.match(r"^[A-Za-z0-9._+-]{1,40}$", th["version"]):
+        if slug not in local or not re.match(r"^[A-Za-z0-9._-]{1,80}\Z", slug) or not re.match(r"^[A-Za-z0-9._+-]{1,40}\Z", th["version"]):
             continue
         ctx.progress("Prüfe Theme %s" % slug[:40])
         try:
@@ -735,7 +735,7 @@ def _is_wp_admin(caps: str) -> bool:
 
 def _idtag(uid) -> str:
     """Maschinenlesbare Marke am Zeilenende, damit Aktionen (Konto sperren, Anwendungs-Passwörter widerrufen) die Zeile zuordnen können."""
-    return "  [ID %s]" % uid if str(uid or "").isdigit() else ""
+    return "  [ID %s]" % uid if digits(str(uid or "")) else ""
 
 
 @check(
@@ -859,7 +859,7 @@ def wp_db_options(ctx, res):
     active = re.findall(r's:\d+:"([^"]+)";', o.get("active_plugins", ""))
     fs = get_wp_fs(ctx)
     present = {p["slug"] for p in fs["plugins"]} | {s["path"].split("/")[-1] for s in fs["singles"]}
-    weird = [a for a in active if ".." in a or a.startswith("/") or not re.match(r"^[\w\-./]+\.php$", a)]
+    weird = [a for a in active if ".." in a or a.startswith("/") or not re.match(r"^[\w\-./]+\.php\Z", a)]
     nohead_dirs = {n["path"].rstrip("/").split("/")[-1] for n in fs["nohead"] if n["kind"] == "plugin"}
     hidden_active = [a for a in active if a not in weird and a.split("/")[0] in nohead_dirs]
     gone = [a for a in active if a not in weird and a not in hidden_active and a.split("/")[0] not in present and a not in present]
@@ -972,7 +972,7 @@ echo '@@DBERR'
     if fatal:
         res.add("warn", "Schwere PHP-Fehler in debug.log (letzte 2000 Zeilen)", "Die Zahl steht vor dem Plugin bzw. Theme. Ein ständig abstürzendes Plugin ist veraltet oder defekt.", [clean_line(x) for x in fatal])
     dberr = lines_of(sec.get("DBERR", ""))
-    if dberr and dberr[0].isdigit() and int(dberr[0]) > 0:
+    if dberr and digits(dberr[0]) and int(dberr[0]) > 0:
         res.add("warn", "%s Datenbank-Fehler in debug.log" % dberr[0], "Wiederholte Datenbank-Fehler können durch ein defektes Plugin oder durch Einschleusversuche (SQL-Injection) entstehen.")
 
 

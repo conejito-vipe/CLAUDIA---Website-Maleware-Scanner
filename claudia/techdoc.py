@@ -9,7 +9,6 @@ Kommentare im Code bleiben deutsch (nicht übersetzt)."""
 from __future__ import annotations
 
 import ast
-import os
 import re
 import sys
 import textwrap
@@ -32,6 +31,7 @@ BASICS: List[Tuple[str, str, List[Tuple[str, str]]]] = [
     ("protokoll", "claudia.actions", [("claudia.actions", "Traced")]),
     ("programmupdate", "claudia.appupdate", [("claudia.appupdate", "parse_release"), ("claudia.appupdate", "check"), ("claudia.appupdate", "verify_package"),
                                             ("claudia.appupdate", "backup"), ("claudia.appupdate", "restore"), ("claudia.appupdate", "install"), ("claudia.appupdate", "finish_code")]),
+    ("haertung", "claudia.util", [("claudia.util", "sq"), ("claudia.util", "parse_xml"), ("claudia.util", "digits"), ("claudia.util", "mask_secrets"), ("claudia.db", "validate_vars")]),
 ]
 
 # Welche Funktionen eine Aktion ausführt (Name im Modul claudia.actions). Aktionen ohne Eintrag laufen direkt in run_action

@@ -317,6 +317,12 @@ def norm_version(v: str) -> str:
     return re.sub(r"^[vV](?=\d)", "", (v or "").strip())
 
 
+def cycle(version: str) -> Tuple[int, int]:
+    """'10.4.3' -> (10, 4); unbrauchbar -> (0, 0). Gemeinsam für TYPO3, Contao, PrestaShop und Shopware."""
+    m = re.match(r"^(\d+)\.(\d+)", norm_version(version))
+    return (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+
+
 def ext_key_of(path: str) -> Optional[str]:
     m = re.match(r"^\.?/?(?:public/)?(?:typo3conf/ext|packages)/([^/]+)", path.strip())
     return m.group(1) if m else None
@@ -429,7 +435,7 @@ def affected(version: str, constraint: str) -> bool:
     """Liegt 'version' im Bereich 'constraint' (Composer-Schreibweise: ODER mit '|' oder '||', UND mit ',' oder Leerzeichen, z. B. '>=12.0.0,<12.4.8|>=13.0.0,<13.1.1')?
     Entwicklungs- und Vorabversionen (dev-main, -rc1) ergeben False: ihr Stand ist nicht beurteilbar."""
     v = norm_version(version)
-    if not re.match(r"^\d+(\.\d+){0,3}$", v):
+    if not re.match(r"^\d+(\.\d+){0,3}\Z", v):
         return False
     for alt in re.split(r"\s*\|\|?\s*", constraint or ""):
         parts = [p for p in re.split(r"\s*,\s*|\s+(?=[<>=!])", alt.strip()) if p]

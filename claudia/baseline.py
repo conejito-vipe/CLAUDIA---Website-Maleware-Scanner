@@ -9,11 +9,11 @@ import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from .util import atomic_write
+from .util import atomic_write, digits
 
 VERSION = 1
 MAX_FILES = 30000
-KEY_RE = re.compile(r"^[0-9a-f]{16}$")
+KEY_RE = re.compile(r"^[0-9a-f]{16}\Z")
 
 
 def make_key(host: str, user: str, site_dir: str) -> str:
@@ -136,7 +136,7 @@ def parse_scan(out: str) -> Tuple[Dict[str, str], Dict[str, int], bool]:
         p = ln.split("\t", 2)
         if len(p) == 3 and p[0] == "H" and re.fullmatch(r"[0-9a-f]{64}", p[1]):
             files[p[2]] = p[1]
-        elif len(p) == 3 and p[0] == "U" and p[1].isdigit():
+        elif len(p) == 3 and p[0] == "U" and digits(p[1]):
             uploads[p[2]] = int(p[1])
     return files, uploads, cut
 

@@ -9,7 +9,7 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from .contao import parse_database_url, parse_env, parse_lock, parse_release_list, split_config_output as _split, PLACEHOLDER_SECRETS
-from .typo3 import advisories_for, affected, norm_version, parse_advisories, version_key
+from .typo3 import advisories_for, affected, cycle, norm_version, parse_advisories, version_key
 
 __all__ = ["advisories_for", "affected", "parse_advisories", "norm_version", "parse_release_list", "parse_lock", "version_key"]
 
@@ -27,11 +27,6 @@ LIFECYCLE: Dict[str, Tuple[str, str]] = {
 }
 LIFECYCLE_ASOF = "2026-11"
 LIFECYCLE_MIN = (6, 5)
-
-
-def cycle(version: str) -> Tuple[int, int]:
-    m = re.match(r"^(\d+)\.(\d+)", norm_version(version))
-    return (int(m.group(1)), int(m.group(2))) if m else (0, 0)
 
 
 def _day(s: str) -> float:

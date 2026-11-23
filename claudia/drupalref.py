@@ -14,7 +14,7 @@ from . import coreref
 
 MAX_TAR = 60 * 1024 * 1024
 HOSTS = ("ftp.drupal.org",)
-VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
+VERSION_RE = re.compile(r"^\d+\.\d+\.\d+\Z")
 
 
 class RefError(coreref.RefError):

@@ -38,7 +38,7 @@ def parse_cpe(s: str) -> Dict[str, str]:
 def compact_cve(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     c = item.get("cve") or item
     cid = str(c.get("id") or "")
-    if not re.match(r"^CVE-\d{4}-\d+$", cid):
+    if not re.match(r"^CVE-\d{4}-\d+\Z", cid):
         return None
     desc = next((str(d.get("value") or "") for d in c.get("descriptions") or [] if d.get("lang") == "en"), "")
     score, sev = 0.0, ""

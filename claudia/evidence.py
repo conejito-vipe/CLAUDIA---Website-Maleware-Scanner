@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from .util import clean_line, sq
+from .util import clean_line, digits
 
 MAX_HITS = 30           # so viele Fundstellen werden höchstens mit Code gezeigt
 WIDTH = 300             # Zeichen pro Codezeile
@@ -20,7 +20,7 @@ done
 
 
 def safe_hit(path: str, line: Any) -> bool:
-    return isinstance(path, str) and path.startswith("./") and "\n" not in path and "\0" not in path and "\t" not in path and len(path) < 400 and str(line).isdigit() and 0 < int(line) < 10_000_000
+    return isinstance(path, str) and path.startswith("./") and "\n" not in path and "\0" not in path and "\t" not in path and len(path) < 400 and digits(str(line)) and 0 < int(line) < 10_000_000
 
 
 def fetch(ctx, hits: List[Tuple[str, int]], before: int = 2, after: int = 2, width: int = WIDTH) -> Dict[Tuple[str, int], List[Dict[str, Any]]]:
@@ -36,13 +36,13 @@ def fetch(ctx, hits: List[Tuple[str, int]], before: int = 2, after: int = 2, wid
     for ln in out.split("\n"):
         if ln.startswith("@@HIT\t"):
             parts = ln.split("\t", 2)
-            if len(parts) == 3 and parts[1].isdigit():
+            if len(parts) == 3 and digits(parts[1]):
                 cur = (parts[2], int(parts[1]))
                 res[cur] = []
             continue
         if cur is not None and "\t" in ln:
             n, t = ln.split("\t", 1)
-            if n.isdigit():
+            if digits(n):
                 res[cur].append({"n": int(n), "t": clean_line(t.rstrip("\r"))})
     return res
 

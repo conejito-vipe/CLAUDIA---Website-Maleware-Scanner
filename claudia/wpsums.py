@@ -48,7 +48,7 @@ def parse_local(out: str) -> Dict[str, Dict[str, str]]:
     """Ausgabe von sha256sum für wp-content/plugins/<slug>/<Pfad> -> {slug: {Pfad: sha256}}."""
     res: Dict[str, Dict[str, str]] = {}
     for ln in out.splitlines():
-        m = re.match(r"^([0-9a-f]{64})  \*?(?:\./)?wp-content/plugins/([^/]+)/(.+)$", ln)
+        m = re.match(r"^([0-9a-f]{64})  \*?(?:\./)?wp-content/plugins/([^/]+)/(.+)\Z", ln)
         if m:
             res.setdefault(m.group(2), {})[m.group(3)] = m.group(1)
     return res

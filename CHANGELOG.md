@@ -2,6 +2,18 @@
 
 Generated from `claudia/docs/aenderungen.en.txt` (do not edit by hand).
 
+## 2.16.1 (2026-11-23) - Hardening and cleanup
+
+### Code audit: inputs, run time, XML
+- **What:** Values from the server's configuration (database name, prefix, user, host and more) are checked more strictly: a trailing line break used to pass. Foreign XML (update lists, extension manifests) is read the same safe way everywhere, including the update list from joomla.org. Numbers from server output are only accepted as real digits. Masking credentials no longer takes minutes for files with very many unterminated entries, only seconds. Aborted connections to the local window no longer print an error.
+- **Why:** A code audit with attack patterns, random inputs and load on the local server found these places. No gap was exploited, and the protection functions are now covered by tests that prove their effect.
+- **How:** New helpers util.parse_xml and util.digits; the input rules end with \Z instead of $. New tests test_sicherheitsfunktionen.py (each protection is weakened on purpose, the test must then fail) and test_stress_robustheit.py.
+
+### Cleanup
+- **What:** Duplicate code merged (shared helpers of the evaluations, version cycle for TYPO3, Contao, PrestaShop and Shopware), unused imports removed, the tool folders .hypothesis, .pytest_cache and .ruff_cache no longer enter the package, the GitHub Actions are pinned to fixed commits.
+- **Why:** Fewer copies mean fewer differences between copies, the most common cause of gaps.
+- **How:** Behavior unchanged; existing tests not changed.
+
 ## 2.16.0 (2026-11-22) - Program update
 
 ### CLAUDIA looks for new versions at start

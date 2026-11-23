@@ -11,7 +11,7 @@ import re
 from typing import List
 
 from ..registry import check
-from ..util import clean_line, lines_of, split_sections
+from ..util import clean_line, digits, lines_of, split_sections
 
 G = "grundlagen"
 
@@ -88,7 +88,7 @@ done | head -30
 
 
 def _to_kb(txt: str) -> int:
-    return int(txt) if txt.strip().isdigit() else 0
+    return int(txt) if digits(txt.strip()) else 0
 
 
 def _mem_mb(v: str) -> int:
@@ -174,7 +174,7 @@ def update_ready(ctx, res):
 
     # ---- Webserver-Benutzer
     wo = [l.split() for l in lines_of(sec.get("WEBOWNER", ""))]
-    owners = {w[1]: int(w[0]) for w in wo if len(w) >= 2 and w[0].isdigit()}
+    owners = {w[1]: int(w[0]) for w in wo if len(w) >= 2 and digits(w[0])}
     if me and owners:
         foreign = {u: n for u, n in owners.items() if u != me}
         if foreign and me not in owners:
@@ -309,7 +309,7 @@ def update_ready(ctx, res):
         notes.append("Erreichbarkeit des Update-Servers (Offline-Modus)")
     elif code == "KEIN_CURL":
         notes.append("Erreichbarkeit des Update-Servers (auf dem Server fehlt das Programm curl)")
-    elif re.match(r"^\d{3}$", code) and code.startswith("2"):
+    elif re.match(r"^\d{3}\Z", code) and code.startswith("2"):
         checked.append("Update-Server erreichbar (%s)" % re.sub(r"^https://([^/]+)/.*$", r"\1", UPDATE_SERVER[cms]))
     elif code and code != "000":
         problems.append("updateserver")

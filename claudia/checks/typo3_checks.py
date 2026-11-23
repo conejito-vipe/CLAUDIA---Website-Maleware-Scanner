@@ -13,7 +13,7 @@ from urllib.parse import quote
 from .. import coreref, typo3, typo3ref
 from ..model import CheckSkipped
 from ..registry import check
-from ..util import split_sections
+from ..util import digits, split_sections
 from . import auswertung_typo3 as at
 from . import web as webmod
 from .database import fetch, need_db
@@ -56,7 +56,7 @@ echo '@@INSTALL'; for f in %s; do if [ -e "$f" ]; then echo "$f"; stat -c %%Y "$
         tool = None
         if inst:
             age = None
-            if len(inst) >= 3 and inst[1].strip().isdigit() and inst[2].strip().isdigit():
+            if len(inst) >= 3 and digits(inst[1].strip()) and digits(inst[2].strip()):
                 age = int(inst[2]) - int(inst[1])
             tool = {"path": inst[0].strip(), "age_s": age}
         ctx.shared["typo3_layout"] = {"version": typo3.parse_typo3_version(sec.get("VER", ""), sec.get("OLD", "")), "mode": (sec.get("MODE", "classic").split() or ["classic"])[0],
@@ -210,7 +210,7 @@ def typo3_settings(ctx, res):
     if path:
         out = ctx.sh("stat -c '%%a %%U %%n' %s %s 2>/dev/null" % (_q(path), _q(os.path.dirname(path) or ".")), timeout=20).out
         for ln in out.splitlines():
-            m = re.match(r"^(\d{3,4}) (\S+) (.+)$", ln.strip())
+            m = re.match(r"^(\d{3,4}) (\S+) (.+)\Z", ln.strip())
             if m:
                 modes[m.group(3)] = "%s %s" % (m.group(1), m.group(2))
     _emit(res, at.judge_settings(cfg, modes, lay.get("install_tool")))

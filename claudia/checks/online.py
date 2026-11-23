@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from ..model import CheckSkipped, Option
 from ..registry import check
-from ..util import clean_line, trunc, vcmp
+from ..util import clean_line, digits, trunc, vcmp
 from .ext import get_ext_fs
 from .web import UA_BROWSER, fetch
 
@@ -77,7 +77,7 @@ def vel_matches(items: List[Dict[str, Any]], manifests: List[Dict[str, str]]) ->
 def _scheme_mismatch(installed: str, listed: str) -> bool:
     """Zusatz-Plugins tragen oft die Platzhalter-Version '1.0' (z. B. die Convert-Forms-Plugins) und werden nur wegen eines ähnlichen Namens
     mit einem Eintrag wie 'AcyMailing 5.9.5' verwechselt. Dann sagt der Versionsvergleich nichts aus."""
-    if not (installed.startswith("1.0") and re.match(r"^1\.0(\.0)*$", installed)):
+    if not (installed.startswith("1.0") and re.match(r"^1\.0(\.0)*\Z", installed)):
         return False
     m = re.match(r"^(\d+)", listed or "")
     return bool(m) and int(m.group(1)) >= 3
@@ -183,7 +183,7 @@ def jed_candidates(m: Dict[str, str], known: Optional[Dict[str, str]] = None) ->
     out.append(_slug(re.sub(r"^(plg|com|mod|tpl)_", "", m.get("element", ""), flags=re.I)))
     uniq: List[str] = []
     for x in out:
-        if x and not x.isdigit() and x not in uniq:
+        if x and not digits(x) and x not in uniq:
             uniq.append(x)
     return uniq[:4]
 

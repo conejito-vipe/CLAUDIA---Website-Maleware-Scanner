@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from .. import phppick
 from ..model import CheckSkipped
 from ..registry import check
-from ..util import clean_line, lines_of, mask_secrets, split_sections
+from ..util import clean_line, digits, lines_of, mask_secrets, split_sections
 from .config import ENTRY_TOKENS
 
 G = "konfig"
@@ -227,8 +227,8 @@ memcached_server_host memcached_server_port redis_persist redis_server_host redi
 
 STR_LIT = r"'(?:[^'\\]|\\.)*'|\"(?:[^\"\\$]|\\.)*\""
 SCALAR = r"(?:%s|-?\d+(?:\.\d+)?|true|false|null)" % STR_LIT
-LITERAL_RE = re.compile(r"^(?:%s|(?:array\s*\(|\[)\s*(?:%s(?:\s*=>\s*%s)?(?:\s*,\s*%s(?:\s*=>\s*%s)?)*\s*,?\s*)?(?:\)|\]))$" % (SCALAR, SCALAR, SCALAR, SCALAR, SCALAR), re.I)
-PROP_LINE_RE = re.compile(r"^\s*public\s+(?:\?\w+\s+|\w+\s+)?\$(\w+)\s*=\s*(.*?)\s*;\s*(?://.*|#.*)?$")
+LITERAL_RE = re.compile(r"^(?:%s|(?:array\s*\(|\[)\s*(?:%s(?:\s*=>\s*%s)?(?:\s*,\s*%s(?:\s*=>\s*%s)?)*\s*,?\s*)?(?:\)|\]))\Z" % (SCALAR, SCALAR, SCALAR, SCALAR, SCALAR), re.I)
+PROP_LINE_RE = re.compile(r"^\s*public\s+(?:\?\w+\s+|\w+\s+)?\$(\w+)\s*=\s*(.*?)\s*;\s*(?://.*|#.*)?\Z")
 
 CFG_SCRIPT = r"""
 echo '@@STAT'; stat -c '%a %U %Y %s' configuration.php 2>/dev/null
@@ -319,7 +319,7 @@ def evaluate_config(text: str, vars_: Dict[str, Any], stat: str, me: str, now: i
     elif ls:
         rows.append(lint_row(ls, text))
     p = stat.split()
-    if len(p) >= 4 and p[0].isdigit() and p[2].isdigit() and p[3].isdigit():
+    if len(p) >= 4 and digits(p[0]) and digits(p[2]) and digits(p[3]):
         mode, owner, mt, size = int(p[0], 8), p[1], int(p[2]), int(p[3])
         if mode & 0o002:
             rows.append(("crit", "configuration.php ist für alle beschreibbar (%s)" % p[0], "Jedes Konto auf dem Server kann die Datei verändern.", [], "chmod 640 (oder 644) setzen."))
@@ -353,7 +353,7 @@ def config_integrity(ctx, res):
         raise CheckSkipped("configuration.php nicht gefunden.")
     sec = split_sections(ctx.sh(CFG_SCRIPT.replace("@PICK@", ctx.php_pick()), timeout=90, raw="config_pruefung").out)
     now_s = (lines_of(sec.get("NOW", "")) or ["0"])[0].strip()
-    now = int(now_s) if now_s.isdigit() else 0
+    now = int(now_s) if digits(now_s) else 0
     rows = evaluate_config(cfg["text"], cfg["vars"], (lines_of(sec.get("STAT", "")) or [""])[0], (lines_of(sec.get("ME", "")) or [""])[0].strip(), now,
                            sec.get("LINT", ""), ctx.own_host())
     copies = [l.split("\t", 1) for l in lines_of(sec.get("COPIES", "")) if "\t" in l]

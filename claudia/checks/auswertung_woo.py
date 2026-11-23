@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import re
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 from urllib.parse import urlparse
 
 from ..util import host_allowed
-from .auswertung_joomla import _cap, _clean, _f, _np, _to_int  # gleiche Säuberung und Form wie die übrigen Bewertungen
+from .auswertung_joomla import _clean, _f, _np, _to_int  # gleiche Säuberung und Form wie die übrigen Bewertungen
 
 Finding = Tuple[str, str, str, List[str], str]
 

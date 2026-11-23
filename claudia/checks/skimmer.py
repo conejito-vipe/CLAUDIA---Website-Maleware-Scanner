@@ -5,7 +5,7 @@ import re
 from typing import Dict, List
 
 from ..registry import check
-from ..util import clean_line, extract_hosts, host_allowed, lines_of, split_sections
+from ..util import clean_line, host_allowed, lines_of, split_sections
 
 G = "dateien"
 SHOW = 40
@@ -69,7 +69,7 @@ def parse_ws(out: str) -> List[Dict[str, str]]:
     """Zeilen 'Pfad:WebSocket("wss://host' des Abschnitts @@WS: Datei und Zieladresse."""
     rows: List[Dict[str, str]] = []
     for ln in lines_of(split_sections(out).get("WS", "")):
-        m = re.match(r"^(.*?):WebSocket\s*\(\s*.(wss?)://([A-Za-z0-9.-]+)$", ln.strip())
+        m = re.match(r"^(.*?):WebSocket\s*\(\s*.(wss?)://([A-Za-z0-9.-]+)\Z", ln.strip())
         if m:
             rows.append({"path": clean_line(m.group(1)), "host": m.group(3).lower()})
     return rows

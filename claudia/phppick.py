@@ -25,7 +25,7 @@ def candidate_names(web_version: str, cands: Iterable[Dict[str, Any]]) -> List[s
         a, b = m.groups()
         names += ["php%s.%s" % (a, b), "php-%s.%s" % (a, b), "php%s%s" % (a, b)]
     names.append("php")
-    known = [c for c in cands if c.get("version") and re.match(r"^[A-Za-z0-9._/+-]+$", str(c.get("name", "")))]
+    known = [c for c in cands if c.get("version") and re.match(r"^[A-Za-z0-9._/+-]+\Z", str(c.get("name", "")))]
     known.sort(key=lambda c: vtuple(str(c["version"]).replace("PHP ", "")), reverse=True)
     names += [c["name"] for c in known]
     return list(dict.fromkeys(names))

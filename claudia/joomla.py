@@ -4,7 +4,9 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
-_PROP_RE = re.compile(r"^\s*public\s+\$(\w+)\s*=\s*(.*?)\s*;\s*(?://.*|#.*)?$")
+from .util import digits
+
+_PROP_RE = re.compile(r"^\s*public\s+\$(\w+)\s*=\s*(.*?)\s*;\s*(?://.*|#.*)?\Z")
 
 
 def _parse_value(raw: str) -> Any:
@@ -47,9 +49,9 @@ def parse_config(text: str) -> Dict[str, Any]:
             continue
         if s.startswith(("//", "#", "*")):
             continue
-        if s in ("<?php", "<?", "?>", "{", "}") or re.match(r"^(final\s+)?class\s+JConfig\s*\{?$", s):
+        if s in ("<?php", "<?", "?>", "{", "}") or re.match(r"^(final\s+)?class\s+JConfig\s*\{?\Z", s):
             continue
-        if re.match(r"^(declare\s*\(strict_types=1\)\s*;|namespace\s+[\w\\]+\s*;)$", s):
+        if re.match(r"^(declare\s*\(strict_types=1\)\s*;|namespace\s+[\w\\]+\s*;)\Z", s):
             continue
         m = _PROP_RE.match(line)
         if m:
@@ -64,7 +66,7 @@ def split_db_host(host: str):
     host = (host or "localhost").strip()
     if ":" in host and not host.startswith("["):
         h, rest = host.rsplit(":", 1)
-        if rest.isdigit():
+        if digits(rest):
             return h, int(rest), ""
         if rest.startswith("/"):
             return h, 0, rest

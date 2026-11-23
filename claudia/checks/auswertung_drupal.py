@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import re
 import time
-import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional, Tuple
 
 from .. import drupal
-from .auswertung_joomla import _cap, _clean, _f, _np, _to_int
+from ..util import parse_xml
+from .auswertung_joomla import _clean, _f, _np, _to_int
 from .auswertung_woo import BAD_MARKUP, php_strings, php_value
 
 Finding = Tuple[str, str, str, List[str], str]
@@ -29,13 +29,8 @@ def parse_release_history(text: Any) -> Dict[str, Any]:
     Unbrauchbare oder verdächtige Eingaben (DOCTYPE/ENTITY, kein XML) ergeben ok=False. Die Elementnamen folgen der Beschreibung der Update-Schnittstelle von Drupal
     (version, status, release_link, terms/term 'Release type' mit 'Security update', 'Insecure', 'Unsupported'); sie sind noch nicht gegen die echte Antwort des Servers geprüft."""
     bad = {"ok": False, "status": "", "supported": [], "releases": []}
-    if not isinstance(text, str) or not text.strip() or len(text) > 3_000_000 or re.search(r"<!\s*(DOCTYPE|ENTITY)", text, re.I):
-        return bad
-    try:
-        root = ET.fromstring(text)
-    except ET.ParseError:
-        return bad
-    if root.tag != "project":
+    root = parse_xml(text)
+    if root is None or root.tag != "project":
         return bad
     rels: List[Dict[str, Any]] = []
     for r in root.iter("release"):

@@ -3,7 +3,7 @@
 Reine Funktion ohne Dateizugriff, Netz, Uhrzeit oder Zufall. Der Plan ist eine EMPFEHLUNG
 von CLAUDIA und sagt nichts darüber aus, ob eine Seite sauber oder sicher ist.
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 PHASE_ORDER = ["vorbereitung", "einbruch", "zugaenge", "luecken", "haertung", "umfeld", "weitere"]
 

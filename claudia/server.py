@@ -14,6 +14,7 @@ import shutil
 import re
 import secrets
 import sys
+import socket
 import threading
 import time
 import traceback
@@ -30,7 +31,7 @@ from .registry import PRESETS, cluster_map, cluster_title_defs, groups_for, load
 from .runner import (WeakCrypto, AuthFailed, ConnectFailed, HostKeyChanged, HostKeyUnknown, KnownHosts, LocalRunner,
                      MissingDependency, Runner, RunnerError, SSHRunner)
 from .summary import summarize
-from .util import atomic_write, split_allow
+from .util import atomic_write, digits, split_allow
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 WEB = os.path.join(HERE, "web")
@@ -743,7 +744,7 @@ class App:
         threading.Thread(target=self.selfupd_check, daemon=True).start()
 
     def selfupd_skip(self, version: str) -> Dict[str, Any]:
-        if not re.match(r"^\d+\.\d+\.\d+$", version or ""):
+        if not re.match(r"^\d+\.\d+\.\d+\Z", version or ""):
             raise ApiError("Ungültige Versionsnummer.", 400)
         appupdate.save_state(self.dir, skip=version)
         return self.selfupd_state()
@@ -890,9 +891,9 @@ class App:
             return {}
         out = {k: str(d.get(k) or "").strip()[:200] for k in ("host", "port", "user", "name", "prefix")}
         out["password"] = str(d.get("password") or "")[:300]
-        if out["port"] and not out["port"].isdigit():
+        if out["port"] and not digits(out["port"]):
             raise ApiError("Der Port der Datenbank muss eine Zahl sein.")
-        if out["prefix"] and not re.match(r"^[A-Za-z0-9_]{1,40}$", out["prefix"]):
+        if out["prefix"] and not re.match(r"^[A-Za-z0-9_]{1,40}\Z", out["prefix"]):
             raise ApiError("Das Tabellenpräfix darf nur Buchstaben, Ziffern und _ enthalten.")
         return {k: v for k, v in out.items() if v}
 
@@ -1070,7 +1071,7 @@ class App:
         if not (snippets.core_candidate_wp(file) if wp else snippets.core_candidate(file)):
             return {"status": "kein_original", "note": "Das ist keine Datei des offiziellen %s (Theme oder Plugin eines Drittanbieters), deshalb gibt es kein Original zum Vergleichen. "
                                                        "Die grüne Zeile ist aus der Zeile selbst abgeleitet: nur die rot markierte Stelle fehlt." % name}
-        if not re.match(r"^\d+(\.\d+){1,3}$", ver):
+        if not re.match(r"^\d+(\.\d+){1,3}\Z", ver):
             return {"status": "kein_original", "note": "Die %s-Version ist nicht bekannt, ein Vergleich mit dem Original ist nicht möglich." % name}
         if os.environ.get("CLAUDIA_OFFLINE"):
             return {"status": "kein_original", "note": "Offline-Modus: der Vergleich mit dem Original wird nicht abgerufen."}
@@ -1611,7 +1612,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"ok": True})
             if method == "POST" and path == "/api/open-url":
                 url = str(body.get("url", ""))
-                if not re.match(r"^https://[A-Za-z0-9.-]+(:\d+)?(/[^\s\x00-\x1f]*)?$", url) or len(url) > 400:
+                if not re.match(r"^https://[A-Za-z0-9.-]+(:\d+)?(/[^\s\x00-\x1f]*)?\Z", url) or len(url) > 400:
                     raise ApiError("Nur https-Adressen werden im Browser geöffnet.")
                 import webbrowser
                 webbrowser.open(url)
@@ -1663,6 +1664,12 @@ class Server(ThreadingHTTPServer):
         self.on_stop: List[Any] = []
 
     # --- Zugang: Einmal-Startschlüssel -> Sitzungs-Cookie. Der Schlüssel liegt nur im Speicher und wird nie in einer Seite oder Datei ausgegeben.
+    def handle_error(self, request: Any, client_address: Any) -> None:
+        """Abgebrochene Verbindungen (Browser zu, halbe Anfrage) sind normal und brauchen keine Fehlerausgabe mit Stacktrace; echte Fehler bleiben sichtbar."""
+        if isinstance(sys.exc_info()[1], (ConnectionError, TimeoutError, socket.timeout)):
+            return
+        super().handle_error(request, client_address)
+
     def new_key(self) -> str:
         key = secrets.token_urlsafe(24)
         with self._lock:

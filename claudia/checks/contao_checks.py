@@ -16,7 +16,6 @@ from ..util import split_sections
 from . import auswertung_contao as ac
 from . import web as webmod
 from .database import fetch, need_db
-from .joomla_core import parse_sums
 from .typo3_checks import advisories, MAX_PACKAGES
 
 RELEASE_URLS = ("https://repo.packagist.org/p2/contao/core-bundle.json", "https://packagist.org/packages/contao/core-bundle.json")
@@ -141,7 +140,7 @@ def contao_settings(ctx, res):
     if paths:
         out = ctx.sh("stat -c '%%a %%U %%n' %s 2>/dev/null" % " ".join(_q(p) for p in paths[:12]), timeout=20).out
         for ln in out.splitlines():
-            m = re.match(r"^(\d{3,4}) (\S+) (.+)$", ln.strip())
+            m = re.match(r"^(\d{3,4}) (\S+) (.+)\Z", ln.strip())
             if m:
                 modes[m.group(3)] = "%s %s" % (m.group(1), m.group(2))
     _emit(res, ac.judge_settings(cfg, modes))

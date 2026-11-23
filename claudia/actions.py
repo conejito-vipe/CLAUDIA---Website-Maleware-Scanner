@@ -9,12 +9,13 @@ from __future__ import annotations
 
 import re
 import time
+import xml.etree.ElementTree as ET
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from . import db as dbmod, joomla, wordpress
 from . import updcheck
 from .runner import Runner, RunnerError
-from .util import lines_of, sq
+from .util import digits, lines_of, parse_xml, sq
 
 CHMOD_MAX = 200
 
@@ -472,7 +473,7 @@ STEP_WHY = {
 OLD_ID = "".join(chr(c) for c in (106, 115, 99))      # Vorsilbe der Ordner früherer Versionen; sie bleiben auf dem Server les- und löschbar
 BACKUP_NAME_RE = re.compile(r"^(?:claudia|" + OLD_ID + r")-sicherung-(?:[a-z]+-)?\d{8}-\d{6}(?:-[0-9a-f]{8})?$")
 
-_PERM_RE = re.compile(r"^(\d{3,4})\s+(\./\S.*)$")
+_PERM_RE = re.compile(r"^(\d{3,4})\s+(\./\S.*)\Z")
 
 
 def php_choices(info: Dict[str, Any], manual: str = "") -> List[Dict[str, Any]]:
@@ -480,7 +481,7 @@ def php_choices(info: Dict[str, Any], manual: str = "") -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     want = re.sub(r"[^0-9.]", "", manual or "")[:3]
     for c in info.get("php_candidates") or []:
-        if not c.get("version") or not re.match(r"^[A-Za-z0-9._/+-]+$", c.get("name", "")):
+        if not c.get("version") or not re.match(r"^[A-Za-z0-9._/+-]+\Z", c.get("name", "")):
             continue
         ver = c["version"].replace("PHP ", "")
         out.append({"name": c["name"], "version": ver, "default": bool(want and ver.startswith(want))})
@@ -494,7 +495,7 @@ def php_choices(info: Dict[str, Any], manual: str = "") -> List[Dict[str, Any]]:
 _JCE_ITEM_RE = re.compile(r"^#(\d+)\s+(.*?):")
 _SHELL_ITEM_RE = re.compile(r"^(\./\S+?)\s+-\s+\d+:")
 _UPLOAD_ITEM_RE = re.compile(r"^(\./)?((?:images|files|wp-content/uploads)/\S+?\.\w+)\s+\(")
-WP_DELETE_RE = re.compile(r"^wp-content/(?:uploads|upgrade|mu-plugins|cache|backups?|backup-db|ai1wm-backups)/|^wp-content/plugins/[^/]+\.php$")
+WP_DELETE_RE = re.compile(r"^wp-content/(?:uploads|upgrade|mu-plugins|cache|backups?|backup-db|ai1wm-backups)/|^wp-content/plugins/[^/]+\.php\Z")
 
 
 def wp_shell_deletable(path: str, extra_files=(), extra_prefixes=()) -> bool:
@@ -506,7 +507,7 @@ def wp_shell_deletable(path: str, extra_files=(), extra_prefixes=()) -> bool:
         return True
     if WP_DELETE_RE.match(p):
         return True
-    return bool(re.match(r"^wp-[\w-]+\.php$", p)) and p.lower() not in WORDPRESS["core_files"]
+    return bool(re.match(r"^wp-[\w-]+\.php\Z", p)) and p.lower() not in WORDPRESS["core_files"]
 PHP_EXT_FIND = r"\( -iname '*.php' -o -iname '*.php[0-9]' -o -iname '*.phtml' -o -iname '*.pht' -o -iname '*.phps' -o -iname '*.phar' -o -iname '*.php.*' \)"
 SAFE_JCE_NAMES = {"default", "front end", "blogger", "mobile", "markdown"}
 MAX_FILES = 300
@@ -576,8 +577,8 @@ def parse_scan(text: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {"home": (lines_of(sec.get("HOME", "")) or [""])[0], "tmp": [], "backups": []}
     for ln in (sec.get("TMP", "") or "").splitlines():
         p = ln.split("\t")
-        if len(p) >= 4 and p[0] in TMP_DIRS_ALL and p[1].strip().isdigit():
-            out["tmp"].append({"dir": p[0], "count": int(p[1]), "kb": int(p[2] or 0) if p[2].strip().isdigit() else 0, "php": int(p[3] or 0) if p[3].strip().isdigit() else 0})
+        if len(p) >= 4 and p[0] in TMP_DIRS_ALL and digits(p[1].strip()):
+            out["tmp"].append({"dir": p[0], "count": int(p[1]), "kb": int(p[2] or 0) if digits(p[2].strip()) else 0, "php": int(p[3] or 0) if digits(p[3].strip()) else 0})
     it = sec.get("IMGTMP", "") or ""
     out["wpcli"] = (lines_of(sec.get("WPCLI", "")) or [""])[0].strip()
     out["images_exists"] = "images_vorhanden" in it
@@ -592,7 +593,7 @@ def parse_scan(text: str) -> Dict[str, Any]:
                 mt = int(p[1])
             except ValueError:
                 mt = 0
-            out["backups"].append({"name": p[0], "mtime": mt, "kb": int(p[2]) if p[2].strip().isdigit() else 0, "kind": kind,
+            out["backups"].append({"name": p[0], "mtime": mt, "kb": int(p[2]) if digits(p[2].strip()) else 0, "kind": kind,
                                    "malware": (not m) or m.group(1) in ("dateien", "tmp"),
                                    "files": [x for x in (p[3].split(",") if len(p) > 3 else []) if x.strip()]})
     out["backups"].sort(key=lambda b: b["mtime"], reverse=True)
@@ -600,13 +601,13 @@ def parse_scan(text: str) -> Dict[str, Any]:
     for ln in (sec.get("QUAR", "") or "").splitlines():
         p = ln.split("\t")
         if p[0] == "DIR" and len(p) >= 3 and QUAR_NAME_RE.match(p[1]):
-            qmap[p[1]] = {"name": p[1], "mtime": int(p[2]) if p[2].strip().isdigit() else 0, "site": p[3] if len(p) > 3 else "", "entries": [],
-                          "count": int(p[4]) if len(p) > 4 and p[4].strip().isdigit() else 0, "kb": int(p[5]) if len(p) > 5 and p[5].strip().isdigit() else 0,
+            qmap[p[1]] = {"name": p[1], "mtime": int(p[2]) if digits(p[2].strip()) else 0, "site": p[3] if len(p) > 3 else "", "entries": [],
+                          "count": int(p[4]) if len(p) > 4 and digits(p[4].strip()) else 0, "kb": int(p[5]) if len(p) > 5 and digits(p[5].strip()) else 0,
                           "own": len(p) > 6 and p[6].strip() == "1"}
-        elif p[0] == "E" and len(p) >= 9 and p[1] in qmap and p[2].isdigit():
+        elif p[0] == "E" and len(p) >= 9 and p[1] in qmap and digits(p[2]):
             origin = "\t".join(p[8:])
             if _safe_path(origin):
-                qmap[p[1]]["entries"].append({"id": p[2], "size": int(p[3]) if p[3].strip().isdigit() else 0, "mode": p[4], "owner": p[5], "sha": p[6],
+                qmap[p[1]]["entries"].append({"id": p[2], "size": int(p[3]) if digits(p[3].strip()) else 0, "mode": p[4], "owner": p[5], "sha": p[6],
                                               "state": "belegt" if p[7] == "belegt" else "frei", "origin": origin})
     out["quarantines"] = sorted([q for q in qmap.values() if q["entries"]], key=lambda q: q["mtime"], reverse=True)
     # zum Löschen: alle Quarantäne-Ordner DIESER Seite (auch leere); die Einträge stehen nur bei Ordnern dieser Seite im Scan
@@ -1031,9 +1032,9 @@ def available(results: List[Dict[str, Any]], info: Dict[str, Any], manual: str =
     return res
 
 
-SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,80}$")
-ELEMENT_RE = re.compile(r"^[a-z][a-z0-9_]{1,60}$")
-STAND_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,80}\Z")
+ELEMENT_RE = re.compile(r"^[a-z][a-z0-9_]{1,60}\Z")
+STAND_RE = re.compile(r"^\d{4}-\d{2}-\d{2}\Z")
 MANIFEST_RE = re.compile(r"^https://[A-Za-z0-9.-]+(:\d+)?/[^\s'\"\\`$;|&<>]*$")
 
 
@@ -1093,17 +1094,13 @@ def _security_target(params: Dict[str, Any], kind: str = "security") -> Dict[str
 
 def newest_download(xml_text: str) -> Dict[str, str]:
     """Neueste Version aus dem Update-Manifest (XML) mit ihrer https-Download-Adresse. Leeres Ergebnis, wenn nichts Passendes darin steht."""
-    import xml.etree.ElementTree as ET
-    if "<!DOCTYPE" in xml_text or "<!ENTITY" in xml_text:
-        return {}
-    try:
-        root = ET.fromstring(xml_text)
-    except ET.ParseError:
+    root = parse_xml(xml_text)
+    if root is None:
         return {}
     best: Dict[str, str] = {}
     for up in root.iter("update"):
         v = (up.findtext("version") or "").strip()
-        if not re.match(r"^[0-9A-Za-z._-]+$", v):
+        if not re.match(r"^[0-9A-Za-z._-]+\Z", v):
             continue
         url = pick_download(ET.tostring(up, encoding="unicode").join(["<updates>", "</updates>"]), v)
         if url and (not best or joomla_vcmp(v, best["version"]) > 0):
@@ -1180,7 +1177,7 @@ def _db_dump_script(vars_: Dict[str, Any], outdir: str, tables: Optional[List[st
     """mysqldump-Aufruf. Bewusst nur Optionen, die jede mysqldump-/mariadb-dump-Version kennt (--connect-timeout z. B. kennt mysqldump
     bei manchen Hostern NICHT und bricht mit 'unknown variable' ab). --no-tablespaces wird zuerst versucht und bei Ablehnung weggelassen."""
     _check_vars(vars_)
-    if any(not re.match(r"^[A-Za-z0-9_]{1,80}$", t) for t in (tables or [])):
+    if any(not re.match(r"^[A-Za-z0-9_]{1,80}\Z", t) for t in (tables or [])):
         raise ActionError("Ein Tabellenname sieht ungewöhnlich aus. Aus Sicherheitsgründen wird nichts gesichert.")
     host, port, sock = joomla.split_db_host(str(vars_.get("host", "localhost")))
     opts = ["--single-transaction", "--default-character-set=utf8mb4"]
@@ -1328,7 +1325,7 @@ def make_backup(runner: Runner, site_dir: str, log: Callable[[str, bool, str], N
     # 1. Platz
     est = runner.sh(site_dir, "du -sk %s . 2>/dev/null | tail -1 | cut -f1; df -Pk \"$HOME\" | awk 'NR==2{print $4}'"
                     % " ".join("--exclude=%s" % sq(e[2:]) for e in excludes), 180)
-    nums = [int(x) for x in lines_of(est.out) if x.strip().isdigit()]
+    nums = [int(x) for x in lines_of(est.out) if digits(x.strip())]
     if len(nums) < 2:
         raise ActionError("Der freie Speicherplatz konnte nicht ermittelt werden.")
     need, free = nums[0], nums[1]
@@ -1353,7 +1350,7 @@ def make_backup(runner: Runner, site_dir: str, log: Callable[[str, bool, str], N
         raise ActionError("Die Dateien konnten nicht gesichert werden.")
     # 4. Prüfung
     r = runner.sh(site_dir, "ls -l %s/db.sql.gz %s/dateien.tgz | awk '{print $5, $9}'" % (q, q), 30)
-    sizes = [l.split()[0] for l in lines_of(r.out) if l.split() and l.split()[0].isdigit()]
+    sizes = [l.split()[0] for l in lines_of(r.out) if l.split() and digits(l.split()[0])]
     good = len(sizes) == 2 and all(int(s) > 1000 for s in sizes)
     log("Sicherung prüfen", good, r.out.strip())
     if not good:
@@ -1660,7 +1657,7 @@ def parse_ext_updates(out: str) -> List[Dict[str, Any]]:
         except (ValueError, KeyError):
             continue
         d["needs_key"] = d.get("needs_key") == "1"
-        if not re.match(r"^https://[A-Za-z0-9.-]+(:\d+)?/\S*$", d.get("detailsurl", "")) or not re.match(r"^[0-9A-Za-z._-]+$", d.get("new_version", "")):
+        if not re.match(r"^https://[A-Za-z0-9.-]+(:\d+)?/\S*\Z", d.get("detailsurl", "")) or not re.match(r"^[0-9A-Za-z._-]+\Z", d.get("new_version", "")):
             continue
         rows.append(d)
     return rows[:80]
@@ -1668,12 +1665,8 @@ def parse_ext_updates(out: str) -> List[Dict[str, Any]]:
 
 def pick_download(xml_text: str, version: str, element: str = "") -> str:
     """Download-Adresse des Pakets zur gewünschten Version aus dem Update-Manifest (XML). Leer, wenn nichts Passendes gefunden wird."""
-    import xml.etree.ElementTree as ET
-    try:
-        if "<!DOCTYPE" in xml_text or "<!ENTITY" in xml_text:
-            return ""
-        root = ET.fromstring(xml_text)
-    except ET.ParseError:
+    root = parse_xml(xml_text)
+    if root is None:
         return ""
     best = ""
     for up in root.iter("update"):
@@ -1682,9 +1675,9 @@ def pick_download(xml_text: str, version: str, element: str = "") -> str:
             continue
         for dl in up.iter("downloadurl"):
             u = (dl.text or "").strip()
-            if re.match(r"^https://[A-Za-z0-9.-]+(:\d+)?/\S*$", u) and (dl.get("type", "full") in ("full", "")):
+            if re.match(r"^https://[A-Za-z0-9.-]+(:\d+)?/\S*\Z", u) and (dl.get("type", "full") in ("full", "")):
                 return u
-            if re.match(r"^https://[A-Za-z0-9.-]+(:\d+)?/\S*$", u) and not best:
+            if re.match(r"^https://[A-Za-z0-9.-]+(:\d+)?/\S*\Z", u) and not best:
                 best = u
     return best
 
@@ -1729,9 +1722,9 @@ def run_action(runner: Runner, site_dir: str, aid: str, params: Dict[str, Any], 
             _selected_updates(params, context)          # ohne gültige Auswahl nicht erst eine Sicherung anlegen
         if aid in ("install_security", "install_backup"):
             tgt = _security_target(params, _tool_kind(aid))              # unbekannte Erweiterung: abbrechen, bevor eine Sicherung entsteht
-            if tgt["cms"] == "wordpress" and not re.match(r"^[A-Za-z0-9._/~+-]+$", str(params.get("wpcli") or "")):
+            if tgt["cms"] == "wordpress" and not re.match(r"^[A-Za-z0-9._/~+-]+\Z", str(params.get("wpcli") or "")):
                 raise ActionError("WP-CLI wurde auf dem Server nicht gefunden. Installiere das Plugin im Dashboard unter Plugins -> Installieren.")
-        if aid in ("wp_update", "wp_core_reinstall") and not re.match(r"^[A-Za-z0-9._/~+-]+$", str(params.get("wpcli") or "")):
+        if aid in ("wp_update", "wp_core_reinstall") and not re.match(r"^[A-Za-z0-9._/~+-]+\Z", str(params.get("wpcli") or "")):
             raise ActionError("WP-CLI wurde auf dem Server nicht gefunden. Aktualisiere im WordPress-Dashboard unter Dashboard -> Aktualisierungen.")
         if a["backup"]:
             emit("info", "Schritt 1: Sicherung anlegen und prüfen (ohne gültige Sicherung wird nichts verändert)")
@@ -1971,7 +1964,7 @@ def _run_wp_config_edit(runner, site_dir: str, aid: str, log, result: Dict[str, 
         raise ActionError("Die neue Datei konnte nicht geschrieben werden. Es wurde nichts verändert.")
     chk = runner.sh(site_dir, "grep -c 'wp-settings.php' wp-config.php.claudia-neu; wc -c < wp-config.php.claudia-neu", 15)
     nums = [x.strip() for x in lines_of(chk.out)]
-    good = len(nums) >= 2 and nums[0].isdigit() and int(nums[0]) >= 1 and nums[1].isdigit() and abs(int(nums[1]) - len(old.encode("utf-8"))) < 3000
+    good = len(nums) >= 2 and digits(nums[0]) and int(nums[0]) >= 1 and digits(nums[1]) and abs(int(nums[1]) - len(old.encode("utf-8"))) < 3000
     log("Neue Datei prüfen", good, "Größe %s Byte (vorher %d)" % (nums[1] if len(nums) > 1 else "?", len(old.encode("utf-8"))))
     if not good:
         runner.sh(site_dir, "rm -f wp-config.php.claudia-neu", 15)
@@ -2020,7 +2013,7 @@ def _wp_cmd(php: str, wpcli: str, tail: str, seconds: int = 600) -> str:
 
 def _run_wp_cli(runner, site_dir: str, php: str, aid: str, params: Dict[str, Any], log, result: Dict[str, Any]) -> None:
     wpcli = str(params.get("wpcli") or "")
-    if not wpcli or not re.match(r"^[A-Za-z0-9._/~+-]+$", wpcli):
+    if not wpcli or not re.match(r"^[A-Za-z0-9._/~+-]+\Z", wpcli):
         raise ActionError("WP-CLI wurde auf dem Server nicht gefunden. Aktualisiere im WordPress-Dashboard unter Dashboard -> Aktualisierungen.")
     r = runner.sh(site_dir, _wp_cmd(php, wpcli, "core version", 90), 120)
     if r.rc != 0 or not re.search(r"\d+\.\d+", r.out):
@@ -2045,7 +2038,7 @@ def _run_wp_cli(runner, site_dir: str, php: str, aid: str, params: Dict[str, Any
     pending = ""
     if aid == "wp_update":
         r2 = runner.sh(site_dir, _wp_cmd(php, wpcli, "plugin list --update=available --field=name", 120), 150)
-        names = [x.strip() for x in lines_of(r2.out) if re.match(r"^[\w.-]+$", x.strip())]
+        names = [x.strip() for x in lines_of(r2.out) if re.match(r"^[\w.-]+\Z", x.strip())]
         pending = ", ".join(names)
         log("Noch ausstehende Plugin-Updates", not names, pending or "keine")
     result["ok"] = ok_sum and not pending
@@ -2093,7 +2086,7 @@ def _run_install_security(runner, site_dir: str, php: str, tgt: Dict[str, Any], 
     cfg = _read_cfg(runner, site_dir)
     r = runner.sh(site_dir, _mysql_script(cfg, "SELECT COUNT(*) AS n FROM #__extensions WHERE element = '%s'" % tgt["element"]), 60, stdin=str(cfg.get("password", "")) + "\n")
     n = (lines_of(r.out)[1:] or ["0"])[0].strip()
-    ok = n.isdigit() and int(n) > 0
+    ok = digits(n) and int(n) > 0
     log("Steht die Erweiterung in der Datenbank?", ok, "Einträge: %s" % (n or "?"))
     runner.sh(site_dir, cli + "cache:clean </dev/null 2>&1", 330)
     result["ok"] = ok
@@ -2125,7 +2118,7 @@ def _backup_selection(params: Dict[str, Any]) -> List[str]:
     return [n for n in dict.fromkeys(params.get("selected_backups") or []) if isinstance(n, str) and BACKUP_NAME_RE.match(n) and n in known]
 
 
-LOG_NAME_RE = re.compile(r"^aktion_([a-z_]+)_(\d{8}-\d{6})\.txt$")
+LOG_NAME_RE = re.compile(r"^aktion_([a-z_]+)_(\d{8}-\d{6})\.txt\Z")
 
 
 def list_local_logs(directory: str) -> List[Dict[str, Any]]:
@@ -2191,11 +2184,11 @@ def _run_clean_tmp(runner, site_dir: str, params: Dict[str, Any], log, result: D
     free_kb = 0
     for ln in lines_of(chk.out):
         p = ln.split("\t")
-        if p[0] == "OK" and len(p) >= 4 and p[2].strip().isdigit() and p[3].strip().isdigit():
+        if p[0] == "OK" and len(p) >= 4 and digits(p[2].strip()) and digits(p[3].strip()):
             ok_dirs.append(p[1])
             size_kb += int(p[2])
             count += int(p[3])
-        elif ln.strip().isdigit():
+        elif digits(ln.strip()):
             free_kb = int(ln.strip())
     if not ok_dirs:
         raise ActionError("Die Ordner %s wurden nicht eindeutig gefunden (oder sind ein Verweis). Es wurde nichts verändert." % ", ".join(dirs))
@@ -2221,7 +2214,7 @@ def _run_clean_tmp(runner, site_dir: str, params: Dict[str, Any], log, result: D
         result["error"] = "Nicht alles konnte gelöscht werden (Rechte?). Der Rest muss im Datei-Manager des Hosters gelöscht werden."
 
 
-_CORE_PATH_RE = re.compile(r"^[A-Za-z0-9_@+.-]+(?:/[A-Za-z0-9_@+.-]+)*$")
+_CORE_PATH_RE = re.compile(r"^[A-Za-z0-9_@+.-]+(?:/[A-Za-z0-9_@+.-]+)*\Z")
 
 
 def _upload_file(runner, site_dir: str, local: str, remote: str, log) -> bool:
@@ -2274,7 +2267,7 @@ def _run_joomla_core(runner, site_dir: str, params: Dict[str, Any], log, result:
                   'else echo "FEHLT $f"; fi; done', 300, stdin=lst)
     now = {}
     for ln in lines_of(r.out):
-        m = re.match(r"^([0-9a-f]{64})\s+\*?(.+)$", ln)
+        m = re.match(r"^([0-9a-f]{64})\s+\*?(.+)\Z", ln)
         if m:
             now[m.group(2)] = m.group(1)
     todo = [f for f in files if now.get(f) != ref["files"][f]]
@@ -2315,7 +2308,7 @@ def _run_joomla_core(runner, site_dir: str, params: Dict[str, Any], log, result:
     r = runner.sh(site_dir, 'H=sha256sum; command -v sha256sum >/dev/null 2>&1 || H="shasum -a 256"; while IFS= read -r f; do [ -f "$f" ] && $H -- "$f"; done', 300, stdin=lst2)
     after = {}
     for ln in lines_of(r.out):
-        m = re.match(r"^([0-9a-f]{64})\s+\*?(.+)$", ln)
+        m = re.match(r"^([0-9a-f]{64})\s+\*?(.+)\Z", ln)
         if m:
             after[m.group(2)] = m.group(1)
     bad = [f for f in todo if after.get(f) != ref["files"][f]]
@@ -2373,7 +2366,7 @@ def _run_remove_jce(runner, site_dir: str, params: Dict[str, Any], log, result: 
     if r.rc != 0:
         raise ActionError("Die Profile konnten nicht gelesen werden: %s" % (r.err or r.out)[:200])
     rows = [l.split("\t") for l in lines_of(r.out)[1:]]
-    todo = [int(x[0]) for x in rows if len(x) >= 2 and x[0].isdigit() and x[1].strip().lower() not in SAFE_JCE_NAMES]
+    todo = [int(x[0]) for x in rows if len(x) >= 2 and digits(x[0]) and x[1].strip().lower() not in SAFE_JCE_NAMES]
     kept = [x[1] for x in rows if len(x) >= 2 and x[1].strip().lower() in SAFE_JCE_NAMES]
     log("Profile prüfen", True, "Zu löschen: %s%s" % (", ".join("#%d" % i for i in todo) or "keine", ("; Standardprofile mit 'php' bitte von Hand ansehen: " + ", ".join(kept)) if kept else ""))
     if not todo:
@@ -2529,7 +2522,7 @@ def _parse_quar_lines(out: str) -> List[Tuple[str, ...]]:
 
 # ---- B7 (2.4.0): Schadcode in der Datenbank entfernen (nur Skript-/Frame-Blöcke, je Eintrag mit Sicherung des alten Werts)
 DBFIND_RE = re.compile(r"^(\w+) #(\d+) '(.*)' \((\w+)\): ")
-DBKEY_RE = re.compile(r"^([a-z_]{1,30})\.([a-z_]{1,30}):(\d{1,12})$")
+DBKEY_RE = re.compile(r"^([a-z_]{1,30})\.([a-z_]{1,30}):(\d{1,12})\Z")
 DBCODE_MAX_HEX = 2_000_000
 _SCRIPT_EL = re.compile(r"<script\b[^>]*>.*?</script\s*>|<script\b[^>]*/>", re.IGNORECASE | re.DOTALL)
 _IFRAME_EL = re.compile(r"<iframe\b[^>]*>.*?</iframe\s*>|<iframe\b[^>]*/>", re.IGNORECASE | re.DOTALL)
@@ -3267,7 +3260,7 @@ def _run_remove_shells(runner, site_dir: str, params: Dict[str, Any], allowed: O
     bad = [x for x in rows if x[0] == "FEHLER"]
     notes = [x for x in rows if x[0] == "HINWEIS"]
     cnt = (lines_of(runner.sh(site_dir, "ls -1 -- %s/d | wc -l" % q, 30).out) or ["0"])[-1].strip()
-    confirmed = cnt.isdigit() and int(cnt) == len(moved)
+    confirmed = digits(cnt) and int(cnt) == len(moved)
     log("%d Datei(en) verschieben" % len(present), len(moved) == len(present) and confirmed,
         "%d verschoben, %d übersprungen, %d fehlgeschlagen; im Quarantäne-Ordner liegen %s Datei(en)" % (len(moved), len(skipped), len(bad), cnt))
     for x in notes:
@@ -3496,8 +3489,8 @@ def recheck_line(kind: str, cw: Tuple[int, int]) -> str:
 
 
 PICK_ACTIONS = ("block_users", "revoke_tokens", "deactivate_extension", "wp_deactivate_plugin", "remove_shells", "restore_quarantine", "delete_quarantine", "remove_db_code")
-PICK_RE = re.compile(r"^(u|e|p|f|q|k|x):(.{1,400})$")
-EXT_KEY_RE = re.compile(r"^(component|plugin|module)/([A-Za-z0-9_.-]{1,60}|-)/([A-Za-z0-9_.-]{1,80})$")
+PICK_RE = re.compile(r"^(u|e|p|f|q|k|x):(.{1,400})\Z")
+EXT_KEY_RE = re.compile(r"^(component|plugin|module)/([A-Za-z0-9_.-]{1,60}|-)/([A-Za-z0-9_.-]{1,80})\Z")
 _ID_TAG_RE = re.compile(r"\s*\[ID (\d+)\]\s*$")
 _EXT_TAG_RE = re.compile(r"\[Kennung: ([^\]]+)\]\s*$")
 PROTECTED_JOOMLA_FOLDERS = ("authentication", "multifactorauth", "twofactorauth")
@@ -3514,7 +3507,7 @@ def _picked(params: Dict[str, Any], kind: str) -> List[str]:
 
 
 def _picked_ids(params: Dict[str, Any]) -> List[int]:
-    return sorted({int(x) for x in _picked(params, "u") if x.isdigit()})
+    return sorted({int(x) for x in _picked(params, "u") if digits(x)})
 
 
 def pick_from_items(items: List[str], kind: str) -> List[Dict[str, Any]]:
@@ -3599,8 +3592,8 @@ def _run_block_users(runner, site_dir: str, params: Dict[str, Any], log, result:
         base = ("SELECT COUNT(DISTINCT u.id) FROM #__users u JOIN #__user_usergroup_map m ON m.user_id = u.id WHERE m.group_id IN (%s) AND u.block = 0 AND u.id %%s IN (%s)" % (grp, il))
         left = _sql_rows(runner, site_dir, cfg, pw, base % "NOT")
         sel = _sql_rows(runner, site_dir, cfg, pw, base % "")
-    n_left = int((left[0][0] if left and left[0] and left[0][0].isdigit() else "0"))
-    n_sel = int((sel[0][0] if sel and sel[0] and sel[0][0].isdigit() else "0"))
+    n_left = int((left[0][0] if left and left[0] and digits(left[0][0]) else "0"))
+    n_sel = int((sel[0][0] if sel and sel[0] and digits(sel[0][0]) else "0"))
     log("Schutz des letzten Administrators prüfen", n_sel == 0 or n_left > 0,
         "Ausgewählte Administratoren: %d, danach übrig: %d" % (n_sel, n_left))
     if n_sel > 0 and n_left == 0:
@@ -3625,7 +3618,7 @@ def _run_block_users(runner, site_dir: str, params: Dict[str, Any], log, result:
         return
     prefix = str(cfg.get("dbprefix", "jos_"))
     old = _sql_rows(runner, site_dir, cfg, pw, "SELECT id, block FROM #__users WHERE id IN (%s)" % il)
-    todo = [int(x[0]) for x in old if len(x) >= 2 and x[0].isdigit() and x[1] == "0"]
+    todo = [int(x[0]) for x in old if len(x) >= 2 and digits(x[0]) and x[1] == "0"]
     out = _dump_for_change(runner, site_dir, cfg, pw, "benutzer", [prefix + "users"], "benutzer.sql.gz", log)
     result["backup_dir"] = out
     if todo:
@@ -3704,7 +3697,7 @@ def _run_disable_api(runner, site_dir: str, log, result: Dict[str, Any]) -> None
     pw = str(cfg.get("password", "")) + "\n"
     prefix = str(cfg.get("dbprefix", "jos_"))
     rows = _sql_rows(runner, site_dir, cfg, pw, "SELECT extension_id, IFNULL(folder, ''), element FROM #__extensions WHERE type = 'plugin' AND enabled = 1 AND protected = 0 AND (%s)" % API_PLUGIN_SQL)
-    todo = [(int(x[0]), "%s/%s" % (x[1], x[2])) for x in rows if len(x) >= 3 and x[0].isdigit()]
+    todo = [(int(x[0]), "%s/%s" % (x[1], x[2])) for x in rows if len(x) >= 3 and digits(x[0])]
     log("Eingeschaltete API-Plugins suchen", True, ", ".join("%s (#%d)" % (n, i) for i, n in todo) or "keine")
     if not todo:
         result["ok"] = True
@@ -3744,7 +3737,7 @@ def _run_deactivate_joomla(runner, site_dir: str, params: Dict[str, Any], log, r
     tools = _protected_tool_names()
     todo, skipped = [], []
     for x in rows:
-        if len(x) < 8 or not x[0].isdigit():
+        if len(x) < 8 or not digits(x[0]):
             continue
         eid, typ, folder, el, enabled, prot, core, name = x[:8]
         why = ""
@@ -3785,7 +3778,7 @@ def _run_deactivate_wp(runner, site_dir: str, php: str, params: Dict[str, Any], 
     if not slugs:
         raise ActionError("Keine Plugins ausgewählt.")
     wpcli = str(params.get("wpcli") or "")
-    if not re.match(r"^[A-Za-z0-9._/~+-]+$", wpcli):
+    if not re.match(r"^[A-Za-z0-9._/~+-]+\Z", wpcli):
         raise ActionError("WP-CLI wurde auf dem Server nicht gefunden. Schalte das Plugin im Dashboard unter Plugins aus.")
     tools = _protected_tool_names()
     todo, skipped = [], []

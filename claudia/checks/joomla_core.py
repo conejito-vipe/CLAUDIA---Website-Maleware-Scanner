@@ -124,7 +124,7 @@ def classify_extra(extra: List[str], elements: set) -> Dict[str, object]:
 def parse_sums(text: str) -> Dict[str, str]:
     out: Dict[str, str] = {}
     for ln in text.splitlines():
-        m = re.match(r"^([0-9a-f]{64})\s+\*?(.+)$", ln.rstrip("\r"))
+        m = re.match(r"^([0-9a-f]{64})\s+\*?(.+)\Z", ln.rstrip("\r"))
         if m:
             n = m.group(2)
             out[n[2:] if n.startswith("./") else n] = m.group(1)

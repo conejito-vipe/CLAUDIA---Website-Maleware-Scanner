@@ -17,6 +17,7 @@ from . import auswertung_joomla as aj
 from . import auswertung_umgebung as au
 from .database import fetch, need_db
 from .logs import geo_of
+from ..util import digits
 
 G = "datenbank"
 Q_PARAMS = "SELECT params FROM #__extensions WHERE type = 'component' AND element = '%s' LIMIT 1"
@@ -116,7 +117,7 @@ def db_textfilter(ctx, res):
     rows: List[Dict[str, Any]] = []
     if isinstance(filters, dict):
         for k, v in filters.items():
-            if not (isinstance(v, dict) and str(k).isdigit()):
+            if not (isinstance(v, dict) and digits(str(k))):
                 continue
             rows.append({"group_id": int(k), "title": titles.get(int(k), "Gruppe %s" % k), "filter_type": str(v.get("filter_type", "")),
                          "filter_tags": str(v.get("filter_tags", "")), "filter_attributes": str(v.get("filter_attributes", ""))})

@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, Tuple
 from ..db import DbError, DbTableMissing
 from ..model import CheckSkipped, Option
 from ..registry import check
-from ..util import clean_line, extract_hosts, host_allowed, trunc
+from ..util import clean_line, digits, extract_hosts, host_allowed, trunc
 from .ext import get_ext_fs
 
 G = "datenbank"
@@ -107,7 +107,7 @@ Q_USERS: List[Query] = [
 
 def _idtag(uid) -> str:
     """Maschinenlesbare Marke am Zeilenende, damit Aktionen (Konto sperren, Token widerrufen) die Zeile zuordnen können."""
-    return "  [ID %s]" % uid if str(uid or "").isdigit() else ""
+    return "  [ID %s]" % uid if digits(str(uid or "")) else ""
 
 
 @check(
@@ -208,8 +208,8 @@ def db_jce(ctx, res):
     if bad:
         snippets = fetch(db, Q_JCE[1][1]) or []
         items = ["#%s %s: ...%s" % (s.get("id"), clean_line(s.get("name") or ""), trunc(clean_line(s.get("ausschnitt") or ""), 150)) for s in snippets]
-        add_manual_sql(ctx, db, "JCE-Profile mit 'php'", [("Profile ansehen/sichern", "SELECT * FROM #__wf_profiles WHERE id IN (%s)" % ",".join(str(int(b["id"])) for b in bad if str(b.get("id") or "").isdigit()))]
-                       if any(str(b.get("id") or "").isdigit() for b in bad) else [])
+        add_manual_sql(ctx, db, "JCE-Profile mit 'php'", [("Profile ansehen/sichern", "SELECT * FROM #__wf_profiles WHERE id IN (%s)" % ",".join(str(int(b["id"])) for b in bad if digits(str(b.get("id") or ""))))]
+                       if any(digits(str(b.get("id") or "")) for b in bad) else [])
         res.add("crit", "%d JCE-Profil(e) erwähnen 'php' in den Einstellungen" % len(bad),
                 "Das ist das Muster des JCE-Angriffs: ein Profil, das den Upload von PHP-Dateien erlaubt.", items or [clean_line(b.get("name") or "") for b in bad],
                 "Profil im Backend (Komponenten -> JCE Editor -> Profile) ansehen. Wenn du es nicht angelegt hast: löschen. JCE auf die aktuelle Version bringen.")
@@ -295,7 +295,7 @@ def inject_scan(ctx, res, db, queries, hints):
                 warn.append(text + "  -> Skript direkt im Inhalt")
             else:
                 info.append(text)
-            if len(crit) + len(warn) > flag_before and mi and str(r.get("id") or "").isdigit() and re.fullmatch(r"\w+", str(r.get("tabelle"))) and re.fullmatch(r"\w+", str(r.get("spalte"))):
+            if len(crit) + len(warn) > flag_before and mi and digits(str(r.get("id") or "")) and re.fullmatch(r"\w+", str(r.get("tabelle"))) and re.fullmatch(r"\w+", str(r.get("spalte"))):
                 sel.append(("%s #%s (%s): kompletten Wert ansehen/sichern" % (r.get("tabelle"), r.get("id"), r.get("spalte")),
                             "SELECT `%s`, `%s` FROM #__%s WHERE `%s` = %s" % (mi.group(1), r.get("spalte"), r.get("tabelle"), mi.group(1), r.get("id"))))
     add_manual_sql(ctx, db, "Eingeschleuster Code in der Datenbank", sel)
@@ -515,8 +515,8 @@ def db_redirects(ctx, res):
             else:
                 ext_ok.append(txt)
     add_manual_sql(ctx, db, "Weiterleitungen/Links auf unbekannte Domains",
-                   [(lab + "n ansehen" if lab == "Umleitung" else lab + "punkte ansehen", "SELECT * FROM #__%s WHERE id IN (%s)" % (tab, ",".join(str(int(i)) for i in ids if str(i or "").isdigit())))
-                    for lab, tab, ids in (("Umleitung", "redirect_links", bad_ids["Umleitung"]), ("Menü", "menu", bad_ids["Menü"])) if any(str(i or "").isdigit() for i in ids)])
+                   [(lab + "n ansehen" if lab == "Umleitung" else lab + "punkte ansehen", "SELECT * FROM #__%s WHERE id IN (%s)" % (tab, ",".join(str(int(i)) for i in ids if digits(str(i or "")))))
+                    for lab, tab, ids in (("Umleitung", "redirect_links", bad_ids["Umleitung"]), ("Menü", "menu", bad_ids["Menü"])) if any(digits(str(i or "")) for i in ids)])
     if bad:
         res.add("warn", "%d Weiterleitung(en)/Link(s) auf unbekannte Domains" % len(bad),
                 "Kann legitim sein (z. B. Partnerseite), ist aber auch das Muster von SEO-Spam.", bad[:40], "Kennst du das Ziel? Falls nicht, löschen.")

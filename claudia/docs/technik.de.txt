@@ -26,6 +26,12 @@ Beim Start fragt CLAUDIA im Hintergrund die Release-Seite des Projekts auf GitHu
 - appupdate.install schreibt jede Datei über eine Nebendatei und os.replace. Schlägt etwas fehl, spielt restore die Sicherung zurück und entfernt neu angelegte Dateien; update.log enthält jeden Schritt.
 - start.bat, start.command und install.command werden erst nach dem Beenden ersetzt (finish_code in einem losgelösten Prozess), weil eine laufende Startdatei sonst mitten im Lauf geändert würde. Derselbe Prozess startet CLAUDIA danach neu.
 - Von Hand zurück: die Sicherung aus %APPDATA%\CLAUDIA\update in den Programmordner entpacken (Dateien ersetzen).
+## g:haertung | Schutzfunktionen und ihre Tests
+Alles, was Vertrauen herstellt oder Schaden begrenzt, ist zentral und mit Tests samt Wirksamkeitsbeweis abgesichert: Wird die Funktion absichtlich entschärft, muss der zugehörige Test scheitern (tests/test_sicherheitsfunktionen.py).
+- util.sq setzt jeden Wert für die Shell des Servers in Anführungszeichen; db.validate_vars erlaubt für Datenbankname, Präfix, Benutzer, Host und Socket nur gewöhnliche Zeichen und endet mit \Z, damit auch ein angehängter Zeilenumbruch abgelehnt wird.
+- util.parse_xml liest fremdes XML nur ohne DOCTYPE/ENTITY, bis 3 MB und gibt bei jedem Fehler None statt einer Ausnahme zurück. util.digits akzeptiert nur ASCII-Ziffern.
+- util.mask_secrets schwärzt Zugangsdaten; der Wert ist auf 4096 Zeichen begrenzt, damit die Laufzeit linear bleibt.
+- Der lokale Server prüft Host und Origin, verlangt Sitzungs-Cookie und Kopf X-Claudia, begrenzt die Anfragegröße und gibt Dateien nur aus einer festen Liste aus.
 ## g:protokoll | Wie das Statusfenster mitliest
 Während einer Aktion läuft jeder Befehl durch die Hülle Traced. Sie meldet Befehl und Antwort an das Statusfenster, damit du live siehst, was auf dem Server passiert.
 - mask ersetzt Passwörter, Download-Schlüssel und Tokens durch *** (bekannte Geheimnisse und Muster wie key=..., token=...), bevor etwas angezeigt oder im Bericht gespeichert wird.

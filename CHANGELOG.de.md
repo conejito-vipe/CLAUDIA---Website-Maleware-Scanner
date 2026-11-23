@@ -2,6 +2,18 @@
 
 Erzeugt aus `claudia/docs/aenderungen.de.txt` (nicht von Hand ändern).
 
+## 2.16.1 (2026-11-23) - Härtung und Aufräumen
+
+### Code-Prüfung: Eingaben, Laufzeit, XML
+- **Was:** Eingaben aus der Konfiguration des Servers (Datenbankname, Präfix, Benutzer, Host und weitere) werden strenger geprüft: Ein angehängter Zeilenumbruch wurde bisher durchgelassen. Fremdes XML (Update-Listen, Erweiterungs-Manifeste) wird überall gleich und sicher gelesen, auch die Update-Liste von joomla.org. Zahlen aus Server-Ausgaben werden nur noch als echte Ziffern akzeptiert. Das Schwärzen von Zugangsdaten braucht bei Dateien mit sehr vielen unvollständigen Einträgen nicht mehr Minuten, sondern Sekunden. Abgebrochene Verbindungen zum lokalen Fenster erzeugen keine Fehlerausgabe mehr.
+- **Warum:** Eine Code-Prüfung mit Angriffsmustern, Zufallseingaben und Last auf dem lokalen Server hat diese Stellen gefunden. Eine Lücke wurde nicht ausgenutzt, die Schutzfunktionen sind jetzt aber mit Tests samt Wirksamkeitsbeweis abgesichert.
+- **Wie:** Neue Hilfsfunktionen util.parse_xml und util.digits; die Regeln der Eingabeprüfung enden mit \Z statt $. Neue Tests test_sicherheitsfunktionen.py (jede Schutzfunktion wird absichtlich entschärft, der Test muss dann scheitern) und test_stress_robustheit.py.
+
+### Aufgeräumt
+- **Was:** Doppelter Code zusammengeführt (gemeinsame Hilfsfunktionen der Bewertungen, Versionszyklus für TYPO3, Contao, PrestaShop und Shopware), ungenutzte Importe entfernt, die Werkzeug-Ordner .hypothesis, .pytest_cache und .ruff_cache kommen nicht mehr ins Paket, die GitHub-Actions sind auf feste Commit-Stände festgelegt.
+- **Warum:** Weniger Kopien bedeuten weniger Abweichungen zwischen Kopien, das ist die häufigste Ursache für Lücken.
+- **Wie:** Verhalten unverändert; bestehende Tests nicht verändert.
+
 ## 2.16.0 (2026-11-22) - Programm-Update
 
 ### CLAUDIA sucht beim Start nach neuen Versionen

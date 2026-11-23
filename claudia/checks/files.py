@@ -120,8 +120,8 @@ echo '@@NOW'; date +%s
 
 
 # ----------------------------------------------------------------------------- JavaScript
-NOCONFLICT_RE = re.compile(r"^(?:var\s+|window\.)?\$\s*=\s*(?:window\.)?jQuery\.noConflict\(\)\s*;?\s*$")
-JQ_CORE_RE = re.compile(r"^jquery(?:[-.]\d+(?:\.\d+)*)?(?:\.slim)?(?:\.min)?\.js$|^jquery[-.](?:migrate|ui)[-.\d]*(?:\.min)?\.js$")
+NOCONFLICT_RE = re.compile(r"^(?:var\s+|window\.)?\$\s*=\s*(?:window\.)?jQuery\.noConflict\(\)\s*;?\s*\Z")
+JQ_CORE_RE = re.compile(r"^jquery(?:[-.]\d+(?:\.\d+)*)?(?:\.slim)?(?:\.min)?\.js$|^jquery[-.](?:migrate|ui)[-.\d]*(?:\.min)?\.js\Z")
 
 
 def jquery_kind(path: str) -> str:
@@ -195,7 +195,7 @@ echo '@@NOW'; date +%s
     pack_hits = lines_of(sec.get("PACK", ""))
     fcc_items: List[str] = []
     for x in lines_of(sec.get("FCC", "")):
-        m = re.match(r"^(\./[^:]+):(\d+):(.*)$", x)
+        m = re.match(r"^(\./[^:]+):(\d+):(.*)\Z", x)
         if m:
             fcc_items.append("%s Zeile %s: %s" % (m.group(1)[2:], m.group(2), trunc(clean_line(m.group(3)), 140)))
     if fcc_items:
@@ -504,7 +504,7 @@ echo '@@NOW'; date +%s
     for ln in sec.get("A8I", "").splitlines():
         p = ln.split("\t", 2)
         if len(p) == 3 and p[0] == "IM":
-            m = re.match(r"^(.*?):(\d+):(.*)$", p[2])
+            m = re.match(r"^(.*?):(\d+):(.*)\Z", p[2])
             if m:
                 a8_rows.append((p[1], m))
     a8_known = known_tool_split(ctx, [m.group(1) for _, m in a8_rows])
@@ -559,9 +559,9 @@ echo '@@NOW'; date +%s
 
 
 # ----------------------------------------------------------------------------- auffällige Dateinamen
-STRONG_NAME_RE = re.compile(r"^(wp-[a-z-]+|adminer[^/]*|phpinfo|shell[^/]*|cmd|c99|r57|wso|b374k|alfa|uploader|bypass|lock360|leaf)\.php$")
+STRONG_NAME_RE = re.compile(r"^(wp-[a-z-]+|adminer[^/]*|phpinfo|shell[^/]*|cmd|c99|r57|wso|b374k|alfa|uploader|bypass|lock360|leaf)\.php\Z")
 ODD_EXT_RE = re.compile(r"\.(phtml|pht|phar|suspected|php[0-9])$|\.php\.[^/]+$")
-WEAK_NAME_RE = re.compile(r"^(radio|index2|up|info|xmlrpc|[a-z0-9]|\.[^/]+)\.php$")
+WEAK_NAME_RE = re.compile(r"^(radio|index2|up|info|xmlrpc|[a-z0-9]|\.[^/]+)\.php\Z")
 KNOWN_DOTFILES = {".php-cs-fixer.dist.php", ".php-cs-fixer.php", ".phpstorm.meta.php"}
 CODE_DIR_RE = re.compile(r"^\./(administrator/)?(components|modules|plugins|templates|layouts|libraries|language)/|^\./(layouts|libraries|api|includes|cli)/")
 WP_CODE_DIR_RE = re.compile(r"^\./wp-content/(plugins|themes|mu-plugins|languages)/|^\./(wp-includes|wp-admin)/")
@@ -725,7 +725,7 @@ echo '@@NOW'; date +%s
 
 
 # ----------------------------------------------------------------------------- Backups im Web-Verzeichnis
-INSTALLER_SQL_RE = re.compile(r"^\./(administrator/)?(components|modules|plugins|templates)/.+/sql/.*\.sql$|^\./installation/.*\.sql$", re.IGNORECASE)
+INSTALLER_SQL_RE = re.compile(r"^\./(administrator/)?(components|modules|plugins|templates)/.+/sql/.*\.sql$|^\./installation/.*\.sql\Z", re.IGNORECASE)
 
 # Installationsskripte legen nur Tabellen und Voreinstellungen an. Auffällig ist, was dort nichts verloren hat: Konten, Rechte, Code, Dateizugriffe.
 SQL_SUSPECT = [

@@ -12,8 +12,8 @@ from typing import Any, Dict, List
 from . import coreref
 
 MAX_ZIP = 120 * 1024 * 1024
-VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
-PACKAGE_RE = re.compile(r"^contao/[a-z0-9\-]+$")
+VERSION_RE = re.compile(r"^\d+\.\d+\.\d+\Z")
+PACKAGE_RE = re.compile(r"^contao/[a-z0-9\-]+\Z")
 ARCHIVE = "https://github.com/contao/%s/archive/refs/tags/%s.zip"
 MAX_PACKAGES = 6
 
@@ -73,7 +73,7 @@ def parse_server_hashes(out: str) -> Dict[str, Dict[str, str]]:
             cur = line[6:].strip()
             res[cur] = {}
         elif cur:
-            m = re.match(r"^([0-9a-f]{64})\s+\*?(?:\./)?(.+)$", line)
+            m = re.match(r"^([0-9a-f]{64})\s+\*?(?:\./)?(.+)\Z", line)
             if m:
                 res[cur][m.group(2)] = m.group(1)
     return res

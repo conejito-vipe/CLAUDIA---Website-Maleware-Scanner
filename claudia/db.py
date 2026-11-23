@@ -10,7 +10,7 @@ import re
 from typing import Dict, List, Optional
 
 from .joomla import split_db_host
-from .util import mysql_unescape, sq
+from .util import digits, mysql_unescape, sq
 
 
 class DbError(Exception):
@@ -28,11 +28,11 @@ def _clean_error(text: str, password: str) -> str:
     return text[:600]
 
 
-_NAME_RE = re.compile(r"^[A-Za-z0-9_$][A-Za-z0-9_$.-]{0,63}$")
-_PREFIX_RE = re.compile(r"^[A-Za-z0-9_]{1,40}$")
-_USER_RE = re.compile(r"^[A-Za-z0-9_$@][A-Za-z0-9_$@.+-]{0,79}$")
-_HOST_RE = re.compile(r"^[A-Za-z0-9_\[][A-Za-z0-9_.:\[\]-]{0,254}$")
-_SOCK_RE = re.compile(r"^/[A-Za-z0-9_./+-]{1,250}$")
+_NAME_RE = re.compile(r"^[A-Za-z0-9_$][A-Za-z0-9_$.-]{0,63}\Z")
+_PREFIX_RE = re.compile(r"^[A-Za-z0-9_]{1,40}\Z")
+_USER_RE = re.compile(r"^[A-Za-z0-9_$@][A-Za-z0-9_$@.+-]{0,79}\Z")
+_HOST_RE = re.compile(r"^[A-Za-z0-9_\[][A-Za-z0-9_.:\[\]-]{0,254}\Z")
+_SOCK_RE = re.compile(r"^/[A-Za-z0-9_./+-]{1,250}\Z")
 
 
 def validate_vars(name: str, prefix: str, user: str, host: str, sock: str) -> str:
@@ -75,7 +75,7 @@ class DbAccess:
         for src, dst in (("host", "host"), ("user", "user"), ("password", "password"), ("name", "db"), ("prefix", "dbprefix")):
             if str(own.get(src) or "").strip():
                 v[dst] = str(own[src]).strip() if src != "password" else str(own[src])
-        if str(own.get("port") or "").strip().isdigit() and str(v.get("host", "")).find(":") < 0:
+        if digits(str(own.get("port") or "").strip()) and str(v.get("host", "")).find(":") < 0:
             v["host"] = "%s:%s" % (v.get("host") or "localhost", own["port"].strip())
         host, port, sock = split_db_host(str(v.get("host", "localhost")))
         db = cls(ctx, host, port, sock, str(v.get("user", "")), str(v.get("password", "")),

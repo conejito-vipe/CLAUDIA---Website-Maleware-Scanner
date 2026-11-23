@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 from urllib.parse import urljoin, urlparse
 
 from .. import secure
 from ..model import CheckSkipped
 from ..registry import check
-from ..util import clean_line, trunc
+from ..util import clean_line
 from .web import G, UA_BROWSER, fetch, waf_block
 
 # Bedeutung der Regeln (Direktiven): Kurzname und Erklärung in Alltagssprache

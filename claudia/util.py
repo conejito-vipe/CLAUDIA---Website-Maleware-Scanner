@@ -3,12 +3,36 @@ from __future__ import annotations
 
 import re
 import shlex
+import xml.etree.ElementTree as ET
 from typing import Iterable, List, Optional, Tuple
 
 
 def sq(value: str) -> str:
     """Shell-sicheres Quoting für Linux-Befehle auf dem Server."""
     return shlex.quote(value)
+
+
+def parse_xml(text, max_len: int = 3_000_000) -> Optional[ET.Element]:
+    """Fremdes XML (Update-Listen, Manifeste) sicher lesen: einheitlich für alle Stellen.
+    Kein Text, zu lang, mit DOCTYPE/ENTITY (Entity-Bombe) oder kaputt -> None, nie eine Ausnahme."""
+    if isinstance(text, (bytes, bytearray)):
+        try:
+            text = bytes(text).decode("utf-8")
+        except UnicodeDecodeError:
+            return None
+    if not isinstance(text, str) or not text.strip() or len(text) > max_len:
+        return None
+    if re.search(r"<!\s*(DOCTYPE|ENTITY)", text, re.I):
+        return None
+    try:
+        return ET.fromstring(text)
+    except (ET.ParseError, ValueError, RecursionError):
+        return None
+
+
+def digits(value) -> bool:
+    """True nur für echte ASCII-Ziffern (str.isdigit() lässt auch '²' oder arabische Ziffern durch, int() scheitert dann)."""
+    return isinstance(value, str) and bool(value) and value.isascii() and value.isdigit()
 
 
 # ---------------------------------------------------------------- Versionen
@@ -32,19 +56,20 @@ def vcmp(a: str, b: str) -> int:
 
 
 # ---------------------------------------------------------------- Maskierung
+# Der Wert ist auf 4096 Zeichen begrenzt: Ohne Grenze braucht eine Datei mit vielen nicht geschlossenen Anführungszeichen quadratische Zeit (Stress-Fund der Code-Prüfung).
 _SECRET_KEYS = (
     "password", "secret", "smtppass", "ftp_pass", "proxy_pass",
     "user", "smtpuser", "ftp_user", "proxy_user", "ftp_root",
 )
 _SECRET_RE = re.compile(
-    r"(public\s+\$(?:%s)\s*=\s*)(['\"])(.*?)\2(\s*;)" % "|".join(_SECRET_KEYS),
+    r"(public\s+\$(?:%s)\s*=\s*)(['\"])(.{0,4096}?)\2(\s*;)" % "|".join(_SECRET_KEYS),
     re.IGNORECASE | re.DOTALL,
 )
 
 
 _WP_SECRET_RE = re.compile(
     r"""(define\s*\(\s*['"](?:DB_PASSWORD|DB_USER|DB_HOST|AUTH_KEY|SECURE_AUTH_KEY|LOGGED_IN_KEY|NONCE_KEY|AUTH_SALT|SECURE_AUTH_SALT|"""
-    r"""LOGGED_IN_SALT|NONCE_SALT|[A-Z_]*(?:PASSWORD|SECRET|API_KEY|TOKEN)[A-Z_]*)['"]\s*,\s*)(['"])(.*?)\2(\s*\))""",
+    r"""LOGGED_IN_SALT|NONCE_SALT|[A-Z_]*(?:PASSWORD|SECRET|API_KEY|TOKEN)[A-Z_]*)['"]\s*,\s*)(['"])(.{0,4096}?)\2(\s*\))""",
     re.IGNORECASE | re.DOTALL,
 )
 
@@ -169,7 +194,7 @@ def split_sections(text: str, marker: str = "@@") -> dict:
     sections: dict = {}
     cur, buf = None, []
     for line in (text or "").splitlines():
-        if line.startswith(marker) and re.match(r"^@@[A-Z0-9_]+\s*$", line):
+        if line.startswith(marker) and re.match(r"^@@[A-Z0-9_]+\s*\Z", line):
             if cur is not None:
                 sections[cur] = "\n".join(buf)
             cur, buf = line[2:].strip(), []
