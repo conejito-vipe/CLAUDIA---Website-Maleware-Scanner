@@ -32,6 +32,23 @@ Everything that creates trust or limits damage is central and covered by tests w
 - util.parse_xml reads foreign XML only without DOCTYPE/ENTITY, up to 3 MB, and returns None instead of raising on any error. util.digits accepts ASCII digits only.
 - util.mask_secrets masks credentials; the value is limited to 4096 characters so the run time stays linear.
 - The local server checks Host and Origin, requires the session cookie and the X-Claudia header, limits the request size and serves files only from a fixed list.
+## g:dashboard | How the dashboard keeps the history
+After every run that completed and after every action that was carried out, CLAUDIA writes a short entry to the file verlauf.json in the data folder. The dashboard only reads this file (and, on request, the stock of backups and quarantine on the server) and changes nothing.
+- Only time, site (host and folder), CMS, version, counts, the short titles of warnings and critical findings and carried-out actions with their result are stored. No passwords, no file contents, nothing is sent out. Cancelled runs and runs with an error are not stored.
+- In a comparison a finding counts as fixed only if the matching check really ran the second time (field ran). If it was not selected or was skipped, the finding is listed under "not checked", not under "fixed".
+- Limits: 400 runs and 600 actions in total; per site the last 12 runs keep their list of findings, older ones only the counts. A broken or foreign file gives an empty history, never an exception; writing and reading run under a lock.
+- Hints: last run older than 30 days, no backup or an old backup made with CLAUDIA.
+- Follow-up check: after the last successful cleanup (e.g. malicious code removed, accounts blocked) a run three or more days later counts as the follow-up check; the run right after is the success check. If it is missing the hint appears.
+- Check backup (verify_backup): read-only gzip -t and tar tzf for the files of a backup; the name must match the program's backups, otherwise nothing is run.
+- Export: export_csv defuses cells starting with =, +, - or @; the report writes all texts HTML-safe. support.build leaves out passwords, server address, user names, site folder and the texts of the findings.
+- Management: creating a backup, deleting old backups, restoring or deleting quarantine use the same tested actions as "Fixes at the push of a button" (preview of the commands, confirmation, execution). A full backup is deliberately not restored automatically because that overwrites the current state of the site and cannot be undone.
+## g:signatur | Digital signature for updates and knowledge data
+Program updates and new knowledge data can be checked with an Ed25519 signature. The program knows only the public key (signatur.PUBLIC_KEYS), so it can verify but not sign; the private key is only with the author (tools/signieren.py).
+- As long as no public key is entered, the check is not active: the checksum applies unchanged, nothing additional is loaded, and stored knowledge data is never used.
+- Once a key is entered, nothing is installed and nothing is taken over without a valid signature. Any deviation is invalid, even a single changed character, an unknown key id or a wrong purpose; verify never raises an exception.
+- What is signed is "CLAUDIA-SIG1", the purpose (release or wissen) and the file. So a signature for a package never applies to knowledge data and vice versa.
+- Program update: next to CLAUDIA_vX.Y.Z.zip the release page has CLAUDIA_vX.Y.Z.zip.sig; it is loaded only from addresses of this project.
+- Knowledge data: wissen/advisories.json with wissen/advisories.json.sig in the repository. A version is taken over only if it is valid JSON with all sections of the bundled version and has a newer date; on every read the signature is checked again.
 ## g:protokoll | How the status window follows along
 During an action every command runs through the wrapper Traced. It reports command and answer to the status window so you can see live what happens on the server.
 - mask replaces passwords, download keys and tokens with *** (known secrets and patterns like key=..., token=...) before anything is shown or saved in the report.

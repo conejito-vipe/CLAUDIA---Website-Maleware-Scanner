@@ -37,6 +37,8 @@ Du brauchst weder PowerShell noch die Eingabeaufforderung:
 
 **Updates (ab 2.16.0):** Beim Start prüft CLAUDIA im Hintergrund auf GitHub, ob es eine neuere Version gibt, und lädt sie nur nach deiner Bestätigung, vergleicht die SHA-256-Prüfsumme, sichert den Programmordner und tauscht ihn aus (bei Fehlern automatisch zurück). Du kannst eine Version überspringen oder mit dem Knopf "Updates" selbst suchen.
 
+**Dashboard (ab 2.17.0):** Der Knopf "Dashboard" zeigt je Seite Stand, Verlauf und Vergleich der Prüfungen und verwaltet Sicherungen und Quarantäne auf dem Server (Vorschau und Bestätigung wie bei den Lösungen auf Knopfdruck), prüft Sicherungen auf Lesbarkeit, erinnert an die Nachkontrolle nach einer Bereinigung und exportiert den Verlauf als CSV oder Bericht. Ein Support-Paket (ohne Passwörter und Serveradresse) hilft bei Fehlermeldungen.
+
 ### Windows zeigt eine Warnung (SmartScreen)
 
 CLAUDIA ist kostenlos und nicht von Microsoft zertifiziert. Deshalb kann Windows beim ersten Start von `start.bat` ein blaues Fenster „Der Computer wurde durch Windows geschützt“ mit dem Text „Von Windows SmartScreen wurde der Start einer unbekannten App verhindert“ zeigen. So geht es weiter:
@@ -75,13 +77,9 @@ Das kannst du tun:
 
 Alle geplanten Systeme sind eingebaut (Joomla, WordPress mit WooCommerce, Drupal, TYPO3, Contao, PrestaShop, Shopware). Die Reihenfolge ist Absicht: erst Härtung, dann Komfort. Zugesagt ist nur, was schon unter „Änderungen“ im Handbuch steht; alles hier ist Planung und kann sich ändern.
 
-1. **Code-Prüfung und Härtung:** Der gesamte Code wird auf Schwachstellen und Doppelungen durchgesehen; Missbrauch soll so schwer wie möglich werden.
+1. **Englische Übersetzung vervollständigen** (danach, damit sich die Texte nicht mehr ändern).
 
-2. **Englische Übersetzung vervollständigen** (danach, damit sich die Texte nicht mehr ändern).
-
-3. **Dashboard:** Übersicht über mehrere Seiten und den Verlauf der Befunde.
-
-4. **Praxistests** auf echten Windows- und Mac-Rechnern mit echten Seiten.
+2. **Praxistests** auf echten Windows- und Mac-Rechnern mit echten Seiten.
 
 Wünsche und Fehler bitte als Issue melden (Vorschläge zum Code als Pull Request, siehe CONTRIBUTING.md).
 

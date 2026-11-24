@@ -147,5 +147,19 @@ Deutsch und Englisch; umschalten mit den Flaggen oben rechts (nicht während ein
 - Programm-Updates: update.json (übersprungene Version) und der Ordner update mit der letzten Sicherung des Programmordners und dem Protokoll update.log, ebenfalls in %APPDATA%\CLAUDIA
 - Berichte (nur wenn du speicherst): Dokumente\CLAUDIA\Berichte
 - Gesicherte Protokolle: Dokumente\CLAUDIA\Protokolle
+- Verlauf für das Dashboard: verlauf.json (nur Zeit, Seite, Zählstände, Kurzbezeichnungen der Funde, Aktionen; keine Passwörter oder Dateiinhalte) in %APPDATA%\CLAUDIA
 - Zum Aufräumen genügt es, diese Ordner zu löschen.
 - Deinstallieren: Knopf "Deinstallieren" oben im Programm oder im Startfenster. Die Liste zeigt, was das Programm angelegt hat (Python-Umgebung .venv, Zwischenspeicher, Startprotokoll; optional Verbindungen, Berichte, Programmordner und ein von start.bat installiertes Python). Gelöscht wird nur Angehaktes, nach Bestätigung und nach dem Beenden des Programms; das Löschfenster zeigt jeden Schritt. Verbindungen, Berichte und Programmordner sind nie vorgewählt.
+
+## dashboard | 13. Dashboard (seit 2.17.0)
+Der Knopf "Dashboard" oben zeigt, was CLAUDIA über deine Seiten weiß. Alles stammt aus dem, was das Programm auf diesem Computer notiert hat (Datei verlauf.json); es wird nichts nach außen gesendet.
+- Übersicht je Seite: letzter Stand (Kritisch, Warnungen, in Ordnung), CMS und Version, Verlauf als kleine Kurve, Zahl der behobenen Funde und der ausgeführten Aktionen.
+- Vergleich: Aufklappen zeigt, was seit der Prüfung davor neu, behoben oder unverändert ist. Behoben zählt nur, wenn die Prüfung beim zweiten Mal wirklich gelaufen ist; sonst steht der Fund unter "nicht geprüft".
+- Hinweise: letzte Prüfung älter als 30 Tage, noch keine oder eine alte Sicherung mit CLAUDIA.
+- Nachkontrolle: Drei Tage nach einer Bereinigung (z. B. Schadcode entfernt, Konten gesperrt) erinnert das Dashboard, die Seite noch einmal zu prüfen. Die spätere Prüfung zeigt, ob seit vor der Bereinigung etwas Neues aufgetaucht ist; Schadsoftware kommt oft zurück.
+- Sicherung prüfen (nach der Verbindung, in der Liste der Sicherungen): öffnet die Archive nur lesend und meldet, ob sie vollständig lesbar sind. Es wird nichts zurückgespielt.
+- Export: "Verlauf als CSV" und "Bericht für diese Seite" (HTML, auch für Kunden geeignet) werden im Berichte-Ordner gespeichert; sie enthalten keine Passwörter und keine Dateiinhalte.
+- Support-Paket: eine kurze Textdatei mit Versionen, dem Ergebnis jeder Prüfung und dem Update-Protokoll, ohne Passwörter, Serveradresse, Benutzername und Seitenordner. Hänge sie an ein GitHub-Issue, wenn etwas nicht klappt, und sieh sie vorher kurz durch.
+- Verlauf einer Seite löschen: erst "Verlauf dieser Seite löschen", dann "Wirklich löschen?". Das betrifft nur die Notizen in CLAUDIA, nicht die Seite selbst.
+- Bestand auf dem Server (nach der Verbindung): Sicherungen und Quarantäne-Ordner mit Größe und Alter. Sicherung anlegen, alte Sicherungen löschen sowie Quarantäne zurückholen oder löschen laufen wie die "Lösungen auf Knopfdruck": erst die Befehle ansehen, dann bestätigen, dann ausführen.
+- Eine Vollsicherung wird bewusst nicht automatisch zurückgespielt: Das überschreibt den aktuellen Stand der Seite und lässt sich nicht rückgängig machen. Wende dich dafür an deinen Hoster oder an eine Fachperson.

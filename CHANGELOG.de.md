@@ -2,6 +2,28 @@
 
 Erzeugt aus `claudia/docs/aenderungen.de.txt` (nicht von Hand ändern).
 
+## 2.17.0 (2026-11-24) - Dashboard und mehr
+
+### Dashboard: Übersicht, Vergleich, Verwaltung
+- **Was:** Neuer Knopf "Dashboard". Er zeigt je Seite den letzten Stand, den Verlauf als Kurve, was seit der vorigen Prüfung neu, behoben oder unverändert ist, die Zahl der behobenen Funde und ausgeführten Aktionen sowie Hinweise (letzte Prüfung oder Sicherung zu alt). Nach der Verbindung zeigt es auch Sicherungen und Quarantäne-Ordner auf dem Server und bietet dafür Sicherung anlegen, alte Sicherungen löschen sowie Quarantäne zurückholen oder löschen an. Der Verlauf einer Seite lässt sich in zwei Schritten löschen.
+- **Warum:** Wer mehrere Seiten betreut, sieht auf einen Blick, wo etwas offen ist und ob eine Behebung gewirkt hat.
+- **Wie:** Nach jeder vollständig gelaufenen Prüfung und jeder ausgeführten Aktion schreibt CLAUDIA einen kurzen Eintrag in verlauf.json (nur Zeit, Seite, CMS, Version, Zählstände, Kurzbezeichnungen, Aktionen; keine Passwörter oder Dateiinhalte, keine Übertragung). Behoben gilt nur, wenn die Prüfung beim zweiten Mal wirklich gelaufen ist. Die Verwaltung nutzt die vorhandenen, getesteten Aktionen mit Vorschau und Bestätigung. Das Zurückspielen einer Vollsicherung gibt es bewusst nicht automatisch, weil es nicht rückgängig zu machen ist.
+
+### Nachkontrolle, Sicherung prüfen, Export, Support-Paket
+- **Was:** Im Dashboard erinnert die Nachkontrolle: Drei Tage nach einer Bereinigung (z. B. Schadcode entfernt, Konten gesperrt) erscheint ein Hinweis, die Seite noch einmal zu prüfen; die spätere Prüfung zeigt, ob seit vor der Bereinigung etwas Neues aufgetaucht ist. "Sicherung prüfen" öffnet die Archive einer Sicherung nur lesend und meldet, ob sie vollständig lesbar sind. Der Verlauf lässt sich als CSV und je Seite als Bericht (HTML) in den Berichte-Ordner speichern. Das Support-Paket ist eine kurze Textdatei für ein GitHub-Issue.
+- **Warum:** Schadsoftware kommt oft zurück, und eine Sicherung, die sich nicht öffnen lässt, merkt man sonst erst im Ernstfall. Bei einem Fehler hilft ein Paket mit Versionen, Prüfstatus und Update-Protokoll mehr als eine Beschreibung aus dem Gedächtnis.
+- **Wie:** Die Sicherungsprüfung nutzt gzip -t und tar tzf, ändert nichts und akzeptiert nur Sicherungen aus der Liste des Programms. In CSV-Dateien werden Zellen, die mit =, +, - oder @ beginnen, entschärft; der Bericht schreibt alle Texte HTML-sicher. Das Support-Paket enthält keine Passwörter, keine Serveradresse, keinen Benutzernamen, keinen Seitenordner und keine Texte der Funde.
+
+### Digitale Unterschrift für Updates und Wissensdaten (vorbereitet)
+- **Was:** Programm-Updates und neue Wissensdaten (Fundmuster, Schwachstellenlisten in advisories.json) können mit einer digitalen Unterschrift (Ed25519) geprüft werden. Neue Wissensdaten lädt CLAUDIA getrennt vom Programm und nutzt sie ab dem nächsten Lauf. Die Prüfung ist eingeschaltet, sobald im Programm ein öffentlicher Schlüssel des Autors hinterlegt ist; bis dahin gilt unverändert die Prüfsumme, und es wird nichts zusätzlich geladen.
+- **Warum:** Die Prüfsumme steht auf derselben Release-Seite wie das Paket. Eine Unterschrift mit dem privaten Schlüssel des Autors, der nie im Programm liegt, schützt auch dann, wenn die Release-Seite verändert würde.
+- **Wie:** Ohne gültige Unterschrift wird nichts installiert und nichts übernommen; eine Unterschrift gilt nur für ihren Zweck (Programm oder Wissensdaten). Wissensdaten müssen alle Abschnitte der mitgelieferten Fassung enthalten und einen neueren Stand haben, und die Unterschrift wird bei jedem Lesen erneut geprüft. Neues Werkzeug tools/signieren.py (Schlüsselpaar erzeugen, unterschreiben, prüfen); der private Schlüssel liegt nie im Repository.
+
+### Intern
+- **Was:** Neue Module claudia/verlauf.py, claudia/signatur.py, claudia/wissen.py und claudia/support.py, neue Tests (Verlauf, Dashboard-Erweiterungen, Signatur, Browser-Test des Dashboards); die Liste der noch nicht übersetzten Texte (tests/uebersetzung_offen.json) enthält die neuen Texte.
+- **Warum:** Neue Funktionen sollen wie die übrigen mit Tests abgesichert sein, die Schutzfunktionen mit Wirksamkeitsbeweis und die Oberfläche im echten Browser.
+- **Wie:** Verhalten der bisherigen Funktionen unverändert; die Aktion backup_now ist auch ohne vorherige Prüfung nutzbar, sobald verbunden wurde (für die Verwaltung im Dashboard).
+
 ## 2.16.1 (2026-11-23) - Härtung und Aufräumen
 
 ### Code-Prüfung: Eingaben, Laufzeit, XML

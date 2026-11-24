@@ -144,6 +144,20 @@ German and English; switch with the flags at the top right (not during a run). A
 - Settings (language): einstellungen.json in the same folder
 - Program updates: update.json (skipped version) and the folder update with the last backup of the program folder and the log update.log, also in %APPDATA%\CLAUDIA
 - Reports (only if you save them): Documents\CLAUDIA\Berichte
+- History for the dashboard: verlauf.json (only time, site, counts, short titles of findings, actions; no passwords or file contents) in %APPDATA%\CLAUDIA
 - Saved logs: Documents\CLAUDIA\Protokolle
 - To clean up, simply delete these folders.
 - Uninstall: "Uninstall" button at the top of the program or in the start window. The list shows what the program created (Python environment .venv, cache, start log; optionally connections, reports, program folder and a Python installed by start.bat). Only checked entries are deleted, after confirmation and after the program has closed; the deletion window shows every step. Connections, reports and the program folder are never preselected.
+
+## dashboard | 13. Dashboard (since 2.17.0)
+The "Dashboard" button at the top shows what CLAUDIA knows about your sites. Everything comes from what the program noted on this computer (file verlauf.json); nothing is sent out.
+- Overview per site: latest state (critical, warnings, fine), CMS and version, history as a small curve, number of fixed findings and carried-out actions.
+- Comparison: expanding shows what is new, fixed or unchanged since the run before. Fixed counts only if the check really ran the second time; otherwise the finding is listed under "not checked".
+- Hints: last run older than 30 days, no backup or an old backup made with CLAUDIA.
+- Follow-up check: three days after a cleanup (e.g. malicious code removed, accounts blocked) the dashboard reminds you to check the site once more. The later run shows whether anything new has appeared since before the cleanup; malware often comes back.
+- Check backup (after connecting, in the list of backups): opens the archives read-only and reports whether they can be read completely. Nothing is restored.
+- Export: "History as CSV" and "Report for this site" (HTML, suitable for customers too) are saved in the reports folder; they contain no passwords and no file contents.
+- Support package: a short text file with versions, the result of every check and the update log, without passwords, server address, user name and site folder. Attach it to a GitHub issue when something does not work, and look it over briefly first.
+- Delete the history of a site: first "Delete history of this site", then "Really delete?". This affects only the notes in CLAUDIA, not the site itself.
+- Stock on the server (after connecting): backups and quarantine folders with size and age. Creating a backup, deleting old backups and restoring or deleting quarantine work like "Fixes at the push of a button": first look at the commands, then confirm, then run.
+- A full backup is deliberately not restored automatically: that overwrites the current state of the site and cannot be undone. Ask your host or a specialist for that.

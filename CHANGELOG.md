@@ -2,6 +2,28 @@
 
 Generated from `claudia/docs/aenderungen.en.txt` (do not edit by hand).
 
+## 2.17.0 (2026-11-24) - Dashboard and more
+
+### Dashboard: overview, comparison, management
+- **What:** New button "Dashboard". For each site it shows the latest state, the history as a curve, what is new, fixed or unchanged since the previous run, the number of fixed findings and carried-out actions, and hints (last run or backup too old). After connecting it also shows backups and quarantine folders on the server and offers creating a backup, deleting old backups and restoring or deleting quarantine. The history of a site can be deleted in two steps.
+- **Why:** Anyone looking after several sites sees at a glance where something is open and whether a fix worked.
+- **How:** After every run that completed and every action carried out, CLAUDIA writes a short entry to verlauf.json (only time, site, CMS, version, counts, short titles, actions; no passwords or file contents, nothing is sent). Fixed counts only if the check really ran the second time. Management uses the existing, tested actions with preview and confirmation. Restoring a full backup is deliberately not automatic because it cannot be undone.
+
+### Follow-up check, check backup, export, support package
+- **What:** In the dashboard the follow-up check reminds you: three days after a cleanup (e.g. malicious code removed, accounts blocked) a hint appears to check the site once more; the later run shows whether anything new has appeared since before the cleanup. "Check backup" opens the archives of a backup read-only and reports whether they can be read completely. The history can be saved as CSV and, per site, as a report (HTML) in the reports folder. The support package is a short text file for a GitHub issue.
+- **Why:** Malware often comes back, and a backup that cannot be opened is otherwise noticed only in an emergency. When something fails, a package with versions, check status and update log helps more than a description from memory.
+- **How:** The backup check uses gzip -t and tar tzf, changes nothing and accepts only backups from the program's list. In CSV files cells starting with =, +, - or @ are defused; the report writes all texts HTML-safe. The support package contains no passwords, no server address, no user name, no site folder and no texts of the findings.
+
+### Digital signature for updates and knowledge data (prepared)
+- **What:** Program updates and new knowledge data (patterns, vulnerability lists in advisories.json) can be checked with a digital signature (Ed25519). CLAUDIA loads new knowledge data separately from the program and uses it from the next run. The check is switched on as soon as the author's public key is stored in the program; until then the checksum applies unchanged and nothing additional is loaded.
+- **Why:** The checksum is on the same release page as the package. A signature made with the author's private key, which is never in the program, protects even if the release page were changed.
+- **How:** Without a valid signature nothing is installed and nothing is taken over; a signature is valid only for its purpose (program or knowledge data). Knowledge data must contain all sections of the bundled version and have a newer date, and the signature is checked again on every read. New tool tools/signieren.py (create key pair, sign, check); the private key is never in the repository.
+
+### Internal
+- **What:** New modules claudia/verlauf.py, claudia/signatur.py, claudia/wissen.py and claudia/support.py, new tests (history, dashboard extensions, signature, browser test of the dashboard); the list of not yet translated texts (tests/uebersetzung_offen.json) contains the new texts.
+- **Why:** New functions should be covered by tests like the rest, the protection functions with proof of effect and the interface in a real browser.
+- **How:** Behaviour of the existing functions is unchanged; the action backup_now can also be used without a previous run once connected (for the management in the dashboard).
+
 ## 2.16.1 (2026-11-23) - Hardening and cleanup
 
 ### Code audit: inputs, run time, XML

@@ -22,7 +22,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
-from . import appupdate, cms as cmsmod, contao, drupal, prestashop, shopware, typo3, APP_NAME, __version__, actionplan, actions, baseline, hoster, joomla, logsave, phpdetect, probe as probe_mod, report, snippets, uninstall, wordpress
+from . import appupdate, lizenz, support, verlauf, wissen, cms as cmsmod, contao, drupal, prestashop, shopware, typo3, APP_NAME, __version__, actionplan, actions, baseline, hoster, joomla, logsave, phpdetect, probe as probe_mod, report, snippets, uninstall, wordpress
 from .db import DbError
 from .engine import Ctx, Engine, Settings
 from . import helpdocs, i18n
@@ -217,6 +217,23 @@ def public_result(r: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+# Welche Wege zu welchem sperrbaren Bereich gehören (siehe lizenz.py). Alles, was hier nicht steht, ist immer frei: Prüfung, Verbindung, Hilfe, Update, Rückweg.
+AREA_OF = {"/api/action-preview": "aktionen", "/api/action-run": "aktionen",
+           "/api/logs-plan": "protokolle", "/api/logs-save": "protokolle", "/api/logs-open": "protokolle",
+           "/api/zip": "export", "/api/export": "export", "/api/handover": "export", "/api/open-folder": "export"}
+
+
+def _lizenz_msg(res: Dict[str, Any]) -> str:
+    if res.get("valid"):
+        return "Lizenz angenommen: %s, gültig bis %s." % (res["name"], res["until"])
+    return {"abgelaufen": "Dieser Schlüssel ist abgelaufen.", "gesperrt": "Dieser Schlüssel wurde gesperrt.", "Unterschrift ungültig": "Der Schlüssel ist ungültig (Unterschrift stimmt nicht).",
+            "unbekannter Schlüssel": "Dieser Schlüssel gehört nicht zu dieser Programmversion."}.get(str(res.get("reason")), "Das ist kein gültiger Lizenzschlüssel.")
+
+
+def area_of(path: str) -> str:
+    return "dashboard" if path.startswith("/api/dashboard") else AREA_OF.get(path, "")
+
+
 CONNECT_LIMIT = 45      # Sekunden, die ein Verbindungstest höchstens dauern darf
 
 
@@ -329,6 +346,12 @@ class ActionJob:
             if self.action["id"] == "check_updates" and not self.app.update_state.get("checked") and not self.app.update_state.get("failed"):
                 self.app.update_state = {"checked": False, "failed": True, "error": self.error or "Die Update-Suche ist fehlgeschlagen.", "ext_updates": []}
             self.app.scan_cache = None            # Zustand auf dem Server hat sich evtl. geändert: beim nächsten Mal neu lesen
+            if not self.silent and self.action["id"] != "check_updates":
+                try:
+                    key, label = self.app._site()
+                    verlauf.record_action(self.app.dir, key, label, self.action["id"], self.action["title"], bool(self.result.get("ok")))
+                except Exception:                  # noqa: BLE001
+                    pass
             self.finished = True
 
     def _recheck(self, aid: str) -> List[Dict[str, Any]]:
@@ -404,8 +427,8 @@ class App:
         self.last_export = ""
         self.settings_file = os.path.join(self.dir, "einstellungen.json")
         self.lang = self._load_lang()
-        with open(os.path.join(HERE, "advisories.json"), "r", encoding="utf-8") as fh:
-            self.advisories = json.load(fh)
+        self.advisories = wissen.load(self.dir)       # mitgelieferte Fassung; eine neuere, unterschriebene nur bei aktiver Unterschriftsprüfung
+        self.wissen_fetch: Any = None                 # nur für Tests: ersetzt den Abruf der Wissensdaten
         load_all()
         self.lock = threading.Lock()
         self.runner: Optional[Runner] = None
@@ -421,6 +444,7 @@ class App:
     def reset_run(self) -> None:
         self.update_state = {}
         self.scan_cache = None
+        self.manage = False                      # Dashboard-Verwaltung geöffnet: Aufräum-Aktionen auch ohne vorherige Prüfung anbieten
         self.update_checked = False
         self.results: List[Dict[str, Any]] = []     # vollständige Ergebnisse (mit Rohdaten)
         self.current: Dict[str, Any] = {}
@@ -587,6 +611,7 @@ class App:
         self.runner = None
         self.conn, self.info = {}, {}
         self.update_state, self.scan_cache = {}, None
+        self.manage = False
 
     def ensure_connected(self) -> None:
         """Verbindung vor dem Lauf prüfen, bei Abbruch (z. B. Leerlauf) neu aufbauen."""
@@ -695,6 +720,24 @@ class App:
             self.finished_at = time.time()
             self.current = {}
             self.running = False
+            if not self.cancelled and not self.run_error:
+                self._verlauf_run()
+
+    def _site(self) -> Tuple[str, str]:
+        """Kennung und Anzeigename der verbundenen Seite für den Verlauf ('' wenn keine Verbindung besteht)."""
+        try:
+            return (self.baseline_key(), self.baseline_label()) if self.conn and self.conn.get("host") else ("", "")
+        except Exception:                                  # noqa: BLE001  (Zusatzfunktion darf nie stören)
+            return ("", "")
+
+    def _verlauf_run(self) -> None:
+        try:
+            key, label = self._site()
+            if key:
+                cms = str((self.info or {}).get("cms") or "")
+                verlauf.record_run(self.dir, verlauf.run_entry(key, label, cms, str((self.info or {}).get(cms) or ""), [r if isinstance(r, dict) else r.to_dict() for r in self.results]))
+        except Exception:                                  # noqa: BLE001
+            pass
 
     def state(self, since: int) -> Dict[str, Any]:
         res = list(self.results)
@@ -715,6 +758,91 @@ class App:
                                 str((self.run_settings or {}).get("url") or ""), str((self.info or {}).get("host") or ""))
         except Exception:                                  # noqa: BLE001  (Zusatzanzeige darf den Zustand nie verhindern)
             return {"items": [], "mail": {"subject": "", "body": ""}}
+
+    # ------------------------------------------------------------ Dashboard (Verlauf, siehe verlauf.py)
+    def dashboard(self) -> Dict[str, Any]:
+        out = verlauf.dashboard(self.dir)
+        out["current"] = self._site()[0]
+        out["connected"] = bool(self.runner)
+        return out
+
+    def dashboard_delete(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        site = str(body.get("site", ""))
+        if not site:
+            raise ApiError("Welche Seite?")
+        return {"deleted": verlauf.delete_site(self.dir, site)}
+
+    def dashboard_server(self) -> Dict[str, Any]:
+        """Sicherungen und Quarantäne der verbundenen Seite (nur lesend). Öffnet die Verwaltung: die Aufräum-Aktionen stehen danach zur Verfügung."""
+        if not self.runner:
+            return {"connected": False}
+        self.manage = True
+        sc = self._scan()
+        return {"connected": True, "label": self._site()[1],
+                "backups": [{"name": b["name"], "mtime": b["mtime"], "kb": b["kb"], "kind": b["kind"]} for b in sc.get("backups") or []][:60],
+                "quarantines": [{"name": q["name"], "mtime": q["mtime"], "count": q["count"], "kb": q["kb"], "files": [e["origin"] for e in q["entries"]][:20]}
+                                for q in sc.get("quarantines") or []][:30]}
+
+    def dashboard_export(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        """Verlauf als CSV (alle Seiten oder eine) oder als Bericht über eine Seite (HTML) in den Berichte-Ordner schreiben."""
+        fmt, site = str(body.get("fmt", "")), str(body.get("site", ""))
+        stamp = time.strftime("%Y%m%d-%H%M%S")
+        if fmt == "csv":
+            name, text = "verlauf.csv", verlauf.export_csv(self.dir, site)
+        elif fmt == "html":
+            text = verlauf.export_html(self.dir, site)
+            if not text:
+                raise ApiError("Zu dieser Seite gibt es keinen Verlauf.", 404)
+            name = "bericht.html"
+        else:
+            raise ApiError("Unbekanntes Format.")
+        outdir = os.path.join(self.reports, "verlauf_" + stamp)
+        try:
+            os.makedirs(outdir, exist_ok=True)
+            with open(os.path.join(outdir, name), "w", encoding="utf-8", newline="") as fh:
+                fh.write(text)
+        except OSError as e:
+            raise ApiError("Die Datei konnte nicht gespeichert werden (%s). Ordner: %s" % (e.strerror or e, self.reports), 500)
+        return {"ok": True, "dir": outdir, "file": os.path.join(outdir, name)}
+
+    def dashboard_verify(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        """Eine Sicherung auf dem Server prüfen (nur lesend: lesbar und vollständig?). Nur Sicherungen aus der Liste des Programms."""
+        if not self.runner:
+            raise ApiError("Bitte zuerst eine Verbindung herstellen.", 409)
+        if self.actjob and not self.actjob.finished:
+            raise ApiError("Es läuft gerade eine Aktion.", 409)
+        name = str(body.get("name", ""))
+        if name not in [b["name"] for b in self._scan().get("backups") or []]:
+            raise ApiError("Diese Sicherung gibt es nicht (mehr). Bitte die Liste neu laden.", 404)
+        try:
+            self.ensure_connected()
+            return actions.verify_backup(self.runner, self._log_site(), name)
+        except (actions.ActionError, RunnerError, ApiError) as e:
+            raise ApiError(str(e) or "Nicht möglich.", 502)
+
+    def support_package(self) -> Dict[str, Any]:
+        """Support-Paket (Textdatei ohne Zugangsdaten und Serveradresse) erstellen und im Berichte-Ordner ablegen."""
+        c = self.conn or {}
+        hide = [c.get("password", ""), getattr(self, "db_password", ""), c.get("host", ""), c.get("user", ""), c.get("site_dir", ""), (self.info or {}).get("host", ""),
+                (self.info or {}).get("user", "")] + list(getattr(self, "secret_opts", []))
+        res = [r if isinstance(r, dict) else (r.to_dict() if hasattr(r, "to_dict") else {}) for r in self.results]
+        log = ""
+        try:
+            with open(os.path.join(appupdate.update_dir(self.dir), appupdate.LOG_FILE), "r", encoding="utf-8", errors="replace") as fh:
+                log = fh.read()[-20000:]
+        except OSError:
+            pass
+        key = self._site()[0]
+        acts = [a for a in verlauf.load(self.dir)["actions"] if not key or a["site"] == key]
+        text = support.build(__version__, self.info or {}, res, acts, log, str(self.advisories.get("stand", "")), [str(x) for x in hide])
+        path = os.path.join(self.reports, "support_%s.txt" % time.strftime("%Y%m%d-%H%M%S"))
+        try:
+            os.makedirs(self.reports, exist_ok=True)
+            with open(path, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write(text)
+        except OSError as e:
+            raise ApiError("Die Datei konnte nicht gespeichert werden (%s). Ordner: %s" % (e.strerror or e, self.reports), 500)
+        return {"ok": True, "file": path, "text": text}
 
     # ------------------------------------------------------------ Programm-Update (siehe appupdate.py)
     def selfupd_state(self) -> Dict[str, Any]:
@@ -742,6 +870,14 @@ class App:
 
     def selfupd_check_async(self) -> None:
         threading.Thread(target=self.selfupd_check, daemon=True).start()
+        threading.Thread(target=self.wissen_update, daemon=True).start()
+
+    def wissen_update(self) -> Dict[str, Any]:
+        """Neuere, unterschriebene Wissensdaten holen (nur bei aktiver Unterschriftsprüfung; sonst passiert nichts). Gilt ab dem nächsten Lauf."""
+        res = wissen.update(self.dir, self.wissen_fetch)
+        if res.get("neu"):
+            self.advisories = wissen.load(self.dir)
+        return res
 
     def selfupd_skip(self, version: str) -> Dict[str, Any]:
         if not re.match(r"^\d+\.\d+\.\d+\Z", version or ""):
@@ -997,8 +1133,9 @@ class App:
         if not self.running and not (self.actjob and not self.actjob.finished):
             if self.auto_update and self.results:
                 self.ensure_update_check()
-            scan = self._scan() if self.results else {}
+            scan = self._scan() if (self.results or self.manage) else {}
         scan = dict(scan)
+        scan["manage"] = self.manage
         scan["local_logs"] = actions.list_local_logs(self.reports)
         scan["log_dir"] = self.reports
         lst = actions.available(list(self.results) if not self.running else [], self.info, self._php_manual(), self.update_state, scan)
@@ -1398,7 +1535,7 @@ class App:
         cms = self.cms()
         return {
             "app": APP_NAME, "version": __version__, "stand": self.advisories.get("stand", ""), "cms": cms, "loc": python_lines(),
-            "cms_name": cmsmod.name_of(cms),
+            "cms_name": cmsmod.name_of(cms), "license": lizenz.state(self.dir),
             "groups": [{"id": g[0], "title": g[1], "text": g[2]} for g in groups_for(cms)],
             "presets": [{"id": p[0], "title": p[1], "text": p[2]} for p in PRESETS],
             "clusters": cluster_title_defs(cms),
@@ -1517,6 +1654,10 @@ class Handler(BaseHTTPRequestHandler):
         if not self._api_ok():
             return self._json({"error": "Nicht autorisiert. Dieses Programm lässt sich nur über sein eigenes Fenster bedienen."}, 403)
         app = self.app
+        area = area_of(path)
+        if area and not lizenz.frei(app.dir, area, str(body.get("id", "")) if area == "aktionen" else ""):
+            return self._json({"error": "Dieser Bereich (%s) ist nur mit gültigem Lizenzschlüssel nutzbar. Die Prüfung bleibt immer frei. Den Schlüssel trägst du unter „Lizenz“ ein."
+                               % lizenz.BEREICHE.get(area, area), "lizenz": True, "area": area}, 403)
         try:
             if method == "GET" and path == "/api/init":
                 return self._json(app.init_payload())
@@ -1546,6 +1687,26 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(app.cms_logo(), translate=False)
             if method == "POST" and path == "/api/store-info":
                 return self._json(app.store_info(body))
+            if method == "GET" and path == "/api/dashboard":
+                return self._json(app.dashboard())
+            if method == "POST" and path == "/api/dashboard-delete":
+                return self._json(app.dashboard_delete(body))
+            if method == "GET" and path == "/api/dashboard-server":
+                return self._json(app.dashboard_server())
+            if method == "POST" and path == "/api/dashboard-export":
+                return self._json(app.dashboard_export(body))
+            if method == "POST" and path == "/api/dashboard-verify":
+                return self._json(app.dashboard_verify(body))
+            if method == "POST" and path == "/api/support-package":
+                return self._json(app.support_package())
+            if method == "GET" and path == "/api/license":
+                return self._json(lizenz.state(app.dir))
+            if method == "POST" and path == "/api/license-set":
+                res = lizenz.store(app.dir, str(body.get("key", ""))[:lizenz.MAX_KEY_LEN + 1])
+                return self._json(dict(lizenz.state(app.dir), accepted=bool(res["valid"]), message=_lizenz_msg(res)))
+            if method == "POST" and path == "/api/license-remove":
+                lizenz.remove(app.dir)
+                return self._json(dict(lizenz.state(app.dir), removed=True))
             if method == "GET" and path == "/api/app-update":
                 return self._json(app.selfupd_state())
             if method == "POST" and path == "/api/app-update-check":

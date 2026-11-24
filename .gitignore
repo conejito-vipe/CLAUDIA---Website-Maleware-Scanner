@@ -24,3 +24,8 @@ UEBERGABE_*.md
 claudia_projekt.json
 tools/overview_notes.json
 installer/Output/
+
+# Lizenz: private Schlüssel und Ausstellungsliste gehören nie ins Repo
+*.pem
+lizenz_privat*
+lizenzen_ausgestellt.csv

@@ -22,7 +22,7 @@ import time
 import zipfile
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from . import __version__, coreref
+from . import __version__, coreref, signatur
 from .util import atomic_write, vcmp
 
 REPO = "conejito-vipe/CLAUDIA---Website-Maleware-Scanner"
@@ -63,6 +63,13 @@ def parse_release(data: Dict[str, Any], current: str) -> Dict[str, Any]:
     url = str(asset.get("browser_download_url") or "")
     if url and not url.startswith(DOWNLOAD_PREFIX):
         url = ""                                                                  # nur Downloads aus diesem Projekt
+    sig_url = ""
+    if url:
+        sig_name = str(asset.get("name") or "") + ".sig"
+        for a in data.get("assets") or []:
+            if isinstance(a, dict) and a.get("name") == sig_name and str(a.get("browser_download_url") or "").startswith(DOWNLOAD_PREFIX):
+                sig_url = str(a["browser_download_url"])
+                break
     notes = str(data.get("body") or "")
     sha = ""
     digest = str(asset.get("digest") or "")
@@ -77,7 +84,7 @@ def parse_release(data: Dict[str, Any], current: str) -> Dict[str, Any]:
                     break
     return {
         "version": version, "newer": vcmp(version, current) > 0, "notes": notes[:MAX_NOTES], "page": str(data.get("html_url") or ""),
-        "name": str(asset.get("name") or ""), "url": url, "size": int(asset.get("size") or 0), "sha256": sha,
+        "name": str(asset.get("name") or ""), "url": url, "sig_url": sig_url, "size": int(asset.get("size") or 0), "sha256": sha,
         "published": str(data.get("published_at") or "")[:10],
     }
 
@@ -148,6 +155,23 @@ def members(z: zipfile.ZipFile) -> List[Tuple[str, zipfile.ZipInfo]]:
             continue
         out.append((rel, info))
     return out
+
+
+def verify_signature(data: bytes, info: Dict[str, Any], fetch: Optional[Callable[..., bytes]] = None) -> bool:
+    """Prüft die Unterschrift des Pakets. Ist die Prüfung nicht aktiv (kein öffentlicher Schlüssel eingetragen), gibt es nichts zu prüfen: False.
+    Ist sie aktiv, wirft eine fehlende oder ungültige Unterschrift UpdateError (es wird nichts installiert)."""
+    if not signatur.aktiv():
+        return False
+    sig_url = str(info.get("sig_url") or "")
+    if not sig_url.startswith(DOWNLOAD_PREFIX):
+        raise UpdateError("Für diese Version ist keine digitale Unterschrift veröffentlicht. Bitte das Paket von Hand von der Release-Seite laden.")
+    try:
+        sig = (fetch or coreref.fetch_bytes)(sig_url, 4096, 30)
+    except coreref.RefError as e:
+        raise UpdateError("Die Unterschrift konnte nicht geladen werden: %s" % str(e)[:200])
+    if not signatur.verify("release", data, sig):
+        raise UpdateError("Die digitale Unterschrift des Pakets stimmt nicht. Es wurde nichts verändert.")
+    return True
 
 
 def verify_package(data: bytes, expected_version: str, expected_sha: str) -> List[Tuple[str, zipfile.ZipInfo]]:
@@ -273,6 +297,9 @@ def install(info: Dict[str, Any], root: str, data_dir: str, progress: Optional[C
             raise UpdateError("Für diese Version gibt es kein Paket zum automatischen Laden. Bitte von der Release-Seite laden.")
         step(5, "Lade %s (%s)" % (info.get("name") or "Paket", version))
         data = (fetch or coreref.fetch_bytes)(url, MAX_ZIP, 180)
+        if signatur.aktiv():
+            step(35, "Prüfe die digitale Unterschrift")
+            verify_signature(data, info, fetch)
         step(40, "Prüfe Prüfsumme und Aufbau")
         mem = verify_package(data, version, str(info.get("sha256") or ""))
         z = zipfile.ZipFile(io.BytesIO(data))

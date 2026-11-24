@@ -32,6 +32,23 @@ Alles, was Vertrauen herstellt oder Schaden begrenzt, ist zentral und mit Tests 
 - util.parse_xml liest fremdes XML nur ohne DOCTYPE/ENTITY, bis 3 MB und gibt bei jedem Fehler None statt einer Ausnahme zurück. util.digits akzeptiert nur ASCII-Ziffern.
 - util.mask_secrets schwärzt Zugangsdaten; der Wert ist auf 4096 Zeichen begrenzt, damit die Laufzeit linear bleibt.
 - Der lokale Server prüft Host und Origin, verlangt Sitzungs-Cookie und Kopf X-Claudia, begrenzt die Anfragegröße und gibt Dateien nur aus einer festen Liste aus.
+## g:dashboard | Wie das Dashboard den Verlauf führt
+Nach jeder vollständig durchgelaufenen Prüfung und nach jeder ausgeführten Aktion schreibt CLAUDIA einen kurzen Eintrag in die Datei verlauf.json im Datenordner. Das Dashboard liest nur diese Datei (und auf Wunsch den Bestand an Sicherungen und Quarantäne auf dem Server) und verändert nichts.
+- Gespeichert werden nur Zeit, Seite (Host und Ordner), CMS, Version, Zählstände, die Kurzbezeichnungen der Warnungen und kritischen Funde sowie ausgeführte Aktionen mit Ergebnis. Keine Passwörter, keine Dateiinhalte, keine Übertragung nach außen. Abgebrochene Prüfungen und Prüfungen mit Fehler werden nicht gespeichert.
+- Ein Fund gilt im Vergleich nur dann als behoben, wenn die zugehörige Prüfung beim zweiten Mal wirklich gelaufen ist (Feld ran). Wurde sie nicht gewählt oder übersprungen, steht der Fund unter "nicht geprüft", nicht unter "behoben".
+- Grenzen: 400 Prüfungen und 600 Aktionen insgesamt; je Seite behalten die letzten 12 Prüfungen ihre Fundliste, ältere nur die Zählstände. Eine kaputte oder fremde Datei führt zu einem leeren Verlauf, nie zu einer Ausnahme; Schreiben und Lesen laufen unter einer Sperre.
+- Hinweise: letzte Prüfung älter als 30 Tage, noch keine oder eine alte Sicherung mit CLAUDIA.
+- Nachkontrolle: Nach der letzten erfolgreichen Bereinigung (z. B. Schadcode entfernt, Konten gesperrt) gilt eine Prüfung ab drei Tagen später als Nachkontrolle; die Prüfung direkt danach ist die Erfolgskontrolle. Fehlt sie, erscheint der Hinweis.
+- Sicherung prüfen (verify_backup): nur lesend gzip -t und tar tzf für die Dateien einer Sicherung; der Name muss zu den Sicherungen des Programms passen, sonst wird nichts ausgeführt.
+- Export: export_csv entschärft Zellen, die mit =, +, - oder @ beginnen; der Bericht schreibt alle Texte HTML-sicher. support.build lässt Passwörter, Serveradresse, Benutzernamen, Seitenordner und die Texte der Funde weg.
+- Verwaltung: Sicherung anlegen, alte Sicherungen löschen, Quarantäne zurückholen oder löschen laufen über dieselben, getesteten Aktionen wie "Lösungen auf Knopfdruck" (Vorschau der Befehle, Bestätigung, Ausführung). Eine Vollsicherung wird bewusst nicht automatisch zurückgespielt, weil das den aktuellen Stand der Seite überschreibt und sich nicht rückgängig machen lässt.
+## g:signatur | Digitale Unterschrift für Updates und Wissensdaten
+Programm-Updates und neue Wissensdaten können mit einer Ed25519-Unterschrift geprüft werden. Das Programm kennt nur den öffentlichen Schlüssel (signatur.PUBLIC_KEYS) und kann damit prüfen, aber nichts unterschreiben; der private Schlüssel liegt nur beim Autor (tools/signieren.py).
+- Solange kein öffentlicher Schlüssel eingetragen ist, ist die Prüfung nicht aktiv: Es gilt unverändert die Prüfsumme, es wird nichts zusätzlich geladen, und abgelegte Wissensdaten werden nie benutzt.
+- Ist ein Schlüssel eingetragen, wird ohne gültige Unterschrift nichts installiert und nichts übernommen. Jede Abweichung ist ungültig, auch ein einziges verändertes Zeichen, eine unbekannte Schlüssel-ID oder ein falscher Zweck; verify wirft nie eine Ausnahme.
+- Unterschrieben wird "CLAUDIA-SIG1", der Zweck (release oder wissen) und die Datei. Dadurch gilt eine Unterschrift für ein Paket nie für Wissensdaten und umgekehrt.
+- Programm-Update: Neben CLAUDIA_vX.Y.Z.zip liegt CLAUDIA_vX.Y.Z.zip.sig auf der Release-Seite; geladen wird nur von Adressen dieses Projekts.
+- Wissensdaten: wissen/advisories.json mit wissen/advisories.json.sig im Repository. Eine Fassung wird nur übernommen, wenn sie gültiges JSON mit allen Abschnitten der mitgelieferten Fassung ist und einen neueren Stand hat; beim Lesen wird die Unterschrift jedes Mal erneut geprüft.
 ## g:protokoll | Wie das Statusfenster mitliest
 Während einer Aktion läuft jeder Befehl durch die Hülle Traced. Sie meldet Befehl und Antwort an das Statusfenster, damit du live siehst, was auf dem Server passiert.
 - mask ersetzt Passwörter, Download-Schlüssel und Tokens durch *** (bekannte Geheimnisse und Muster wie key=..., token=...), bevor etwas angezeigt oder im Bericht gespeichert wird.

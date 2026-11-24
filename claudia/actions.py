@@ -563,6 +563,50 @@ echo '@@END'
 """
 SCAN_SCRIPT = SCAN_SCRIPT.replace("@OLD@", OLD_ID)
 
+VERIFY_SCRIPT = r"""
+d="$HOME/@NAME@"
+[ -d "$d" ] && [ ! -L "$d" ] || { echo 'FEHLT'; exit 0; }
+for f in "$d"/*; do
+  [ -f "$f" ] && [ ! -L "$f" ] || continue
+  b=$(basename "$f"); sz=$(stat -c %s "$f" 2>/dev/null || echo 0)
+  case "$b" in
+    *.gz|*.tgz)
+      if [ "$sz" -eq 0 ]; then st=FEHLER; det='Datei ist leer'
+      elif ! gzip -t "$f" 2>/dev/null; then st=FEHLER; det='Gzip-Archiv beschädigt oder abgeschnitten'
+      else
+        case "$b" in
+          *.tgz|*.tar.gz) n=$(tar tzf "$f" 2>/dev/null | wc -l | tr -d ' ')
+            if [ "$n" -gt 0 ]; then st=OK; det="$n Einträge lesbar"; else st=FEHLER; det='Archiv enthält nichts Lesbares'; fi;;
+          *) st=OK; det='Gzip-Archiv vollständig lesbar';;
+        esac
+      fi;;
+    *) if [ "$sz" -gt 0 ]; then st=OK; det='vorhanden'; else st=FEHLER; det='Datei ist leer'; fi;;
+  esac
+  printf 'F\t%s\t%s\t%s\t%s\n' "$b" "$sz" "$st" "$det"
+done
+echo 'ENDE'
+"""
+
+
+def verify_backup(runner: Runner, site_dir: str, name: str) -> Dict[str, Any]:
+    """Prüft nur lesend, ob die Dateien einer Sicherung des Programms lesbar und vollständig sind (gzip -t, tar tzf). Es wird nichts zurückgespielt oder verändert.
+    {'name', 'found': bool, 'files': [{name, size, ok, detail}], 'ok': bool}. Wirft ActionError bei ungültigem Namen oder nicht erreichbarem Server."""
+    if not BACKUP_NAME_RE.match(name or ""):
+        raise ActionError("Ungültiger Name der Sicherung.")
+    try:
+        r = runner.sh(site_dir, VERIFY_SCRIPT.replace("@NAME@", name), 600)
+    except RunnerError as e:
+        raise ActionError("Der Server war nicht erreichbar: %s" % str(e)[:150])
+    out = r.out or ""
+    if "FEHLT" in out.split():
+        return {"name": name, "found": False, "files": [], "ok": False}
+    files = []
+    for ln in out.splitlines():
+        p = ln.split("\t")
+        if len(p) >= 5 and p[0] == "F":
+            files.append({"name": p[1][:120], "size": int(p[2]) if digits(p[2].strip()) else 0, "ok": p[3] == "OK", "detail": p[4][:120]})
+    return {"name": name, "found": True, "files": files, "ok": bool(files) and all(f["ok"] for f in files) and "ENDE" in out}
+
 QUAR_PREFIX = "claudia-quarantaene"
 QUAR_NAME_RE = re.compile(r"^(?:claudia|" + OLD_ID + r")-quarantaene-\d{8}-\d{6}(?:-\d{1,2})?$")
 QUAR_KEY_RE = re.compile(r"^((?:claudia|" + OLD_ID + r")-quarantaene-\d{8}-\d{6}(?:-\d{1,2})?)/(\d{4,6})$")
@@ -918,7 +962,7 @@ def available(results: List[Dict[str, Any]], info: Dict[str, Any], manual: str =
                 continue
             d["params"] = {"pick": cand[:100], "wpcli": wpcli}
         elif aid == "backup_now":
-            if not (jce_ids or shell_files or images_php or tmp_seen or update.get("has_update") or update.get("ext_updates") or any(wp_flags.values())):
+            if not (jce_ids or shell_files or images_php or tmp_seen or update.get("has_update") or update.get("ext_updates") or any(wp_flags.values()) or scan.get("manage")):
                 continue
         elif aid == "clean_tmp":
             dirs = [t for t in (scan.get("tmp") or []) if t["count"] > 0]

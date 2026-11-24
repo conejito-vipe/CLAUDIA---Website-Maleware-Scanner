@@ -32,6 +32,9 @@ BASICS: List[Tuple[str, str, List[Tuple[str, str]]]] = [
     ("programmupdate", "claudia.appupdate", [("claudia.appupdate", "parse_release"), ("claudia.appupdate", "check"), ("claudia.appupdate", "verify_package"),
                                             ("claudia.appupdate", "backup"), ("claudia.appupdate", "restore"), ("claudia.appupdate", "install"), ("claudia.appupdate", "finish_code")]),
     ("haertung", "claudia.util", [("claudia.util", "sq"), ("claudia.util", "parse_xml"), ("claudia.util", "digits"), ("claudia.util", "mask_secrets"), ("claudia.db", "validate_vars")]),
+    ("dashboard", "claudia.verlauf", [("claudia.verlauf", "run_entry"), ("claudia.verlauf", "record_run"), ("claudia.verlauf", "compare"), ("claudia.verlauf", "nachkontrolle"), ("claudia.verlauf", "dashboard"), ("claudia.verlauf", "delete_site"),
+                                              ("claudia.verlauf", "export_csv"), ("claudia.actions", "verify_backup"), ("claudia.support", "build")]),
+    ("signatur", "claudia.signatur", [("claudia.signatur", "verify"), ("claudia.appupdate", "verify_signature"), ("claudia.wissen", "check"), ("claudia.wissen", "load"), ("claudia.wissen", "update")]),
 ]
 
 # Welche Funktionen eine Aktion ausführt (Name im Modul claudia.actions). Aktionen ohne Eintrag laufen direkt in run_action
