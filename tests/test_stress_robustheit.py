@@ -24,6 +24,16 @@ try:
 except ImportError:                                       # pragma: no cover
     HAS_HYP = False
 
+    def _noop(*a, **k):                                   # die Dekoratoren werden beim Definieren der Klasse ausgewertet, auch wenn sie übersprungen wird
+        return lambda f: f
+    given = settings = _noop
+    HealthCheck = ()
+
+    class _Strategien:
+        def __getattr__(self, name):
+            return _noop
+    st = _Strategien()
+
 GEHEIM = "Geh3im-4711"
 
 
