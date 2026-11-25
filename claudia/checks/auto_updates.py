@@ -210,7 +210,7 @@ def _joomla(ctx, res):
             res.add("warn", "Automatische Updates sind in Joomla ausgeschaltet",
                     "Die Einstellung 'Automatische Updates' der Komponente Joomla-Update steht auf Nein (autoupdate = 0). Der Update-Dienst von joomla.org darf dann keine Updates anstoßen. "
                     "Bei Seiten, die von einer älteren Version auf 5.4 oder neuer aktualisiert wurden, ist sie nach Joomla-Angaben zunächst aus.",
-                    ["autoupdate = 0"], "Backend -> System -> Joomla-Aktualisierung -> Optionen -> Reiter 'Automatische Updates' -> Ja. Das Programm ändert diese Einstellung nur mit der Aktion 'Automatische Updates einschalten'.")
+                    ["autoupdate = 0"], "Backend -> System -> Joomla-Aktualisierung -> Optionen -> Reiter 'Automatische Updates' -> Ja. Das Programm ändert diese Einstellung nicht.")
         elif auto == "1":
             enabled = True
             checked.append("Einstellung 'Automatische Updates' ist an")
@@ -248,10 +248,10 @@ def _joomla(ctx, res):
                     miss.append("keine API-Authentifizierung ist eingeschaltet")
                 res.add("crit", "Die Joomla-API ist (teilweise) ausgeschaltet: automatische Updates können nicht laufen",
                         "Der Update-Dienst von joomla.org stößt die Updates über die API deiner Seite an. Ohne die zugehörigen Plugins kommt keine Anfrage an. Häufige Ursache: die API wurde aus Sicherheitsgründen "
-                        "abgeschaltet (auch durch die Aktion 'Joomla-API abschalten' in diesem Programm oder durch eine Sicherheits-Erweiterung). Joomla-Update im Backend funktioniert trotzdem, daher fällt es nicht auf. "
+                        "abgeschaltet (auch durch die Aktion 'Joomla-API (Web-Services) abschalten' in diesem Programm oder durch eine Sicherheits-Erweiterung). Joomla-Update im Backend funktioniert trotzdem, daher fällt es nicht auf. "
                         "Festgestellt: " + "; ".join(miss) + ".",
                         api["items"], "Die Plugins wieder einschalten: Backend -> System -> Plugins -> Filter 'webservices' bzw. 'api-authentication' -> einschalten. "
-                                      "Das Programm kann es mit der Aktion 'Automatische Updates ermöglichen' tun (Sicherung und Rückweg inklusive).")
+                                      "Das Programm kann es mit der Aktion 'API für automatische Joomla-Updates einschalten' tun (Sicherung und Rückweg inklusive).")
         else:
             checked.append("API-Plugins für den Update-Dienst sind eingeschaltet")
 

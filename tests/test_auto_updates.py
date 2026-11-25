@@ -180,7 +180,7 @@ class JoomlaCheck(unittest.TestCase):
         self.assertEqual(res.status, "crit")
         f = res.findings[0]
         self.assertIn("API", f.title)
-        self.assertIn("Joomla-API abschalten", f.detail)           # nennt die naheliegende Ursache
+        self.assertIn("Joomla-API (Web-Services) abschalten", f.detail)           # nennt die naheliegende Ursache
 
     def test_api_off_but_autoupdate_off_not_double_reported(self):
         plugs = [{"folder": "webservices", "element": "content", "enabled": "0"}]
