@@ -22,7 +22,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
-from . import appupdate, lizenz, support, verlauf, wissen, cms as cmsmod, contao, drupal, prestashop, shopware, typo3, APP_NAME, __version__, actionplan, actions, baseline, hoster, joomla, logsave, phpdetect, probe as probe_mod, report, snippets, uninstall, wordpress
+from . import angebot, appupdate, lizenz, support, verlauf, wissen, cms as cmsmod, contao, drupal, prestashop, shopware, typo3, APP_NAME, __version__, actionplan, actions, baseline, hoster, joomla, logsave, phpdetect, probe as probe_mod, report, snippets, uninstall, wordpress
 from .db import DbError
 from .engine import Ctx, Engine, Settings
 from . import helpdocs, i18n
@@ -852,9 +852,9 @@ class App:
         info = u.get("info") or {}
         newer = bool(info.get("newer"))
         return {"current": __version__, "checked": u["checked"], "checking": u["checking"], "ok": u["ok"], "error": u["error"],
-                "info": info if newer else None, "newer": newer,
+                "info": dict(info, notes=appupdate.notes_for_lang(str(info.get("notes") or ""), self.lang)) if newer else None, "newer": newer,
                 "skipped": bool(newer and appupdate.skipped(self.dir, str(info.get("version") or ""))),
-                "installable": bool(newer and info.get("url") and info.get("sha256")), "install": u["install"]}
+                "installable": bool(newer and info.get("url") and info.get("sha256") and not appupdate.FROZEN), "frozen": appupdate.FROZEN, "install": u["install"]}
 
     def selfupd_check(self) -> Dict[str, Any]:
         with self.selfupd_lock:
@@ -1535,7 +1535,7 @@ class App:
         cms = self.cms()
         return {
             "app": APP_NAME, "version": __version__, "stand": self.advisories.get("stand", ""), "cms": cms, "loc": python_lines(),
-            "cms_name": cmsmod.name_of(cms), "license": lizenz.state(self.dir),
+            "cms_name": cmsmod.name_of(cms), "license": lizenz.state(self.dir), "offer": bool(angebot.AKTIV),
             "groups": [{"id": g[0], "title": g[1], "text": g[2]} for g in groups_for(cms)],
             "presets": [{"id": p[0], "title": p[1], "text": p[2]} for p in PRESETS],
             "clusters": cluster_title_defs(cms),
@@ -1704,6 +1704,19 @@ class Handler(BaseHTTPRequestHandler):
             if method == "POST" and path == "/api/license-set":
                 res = lizenz.store(app.dir, str(body.get("key", ""))[:lizenz.MAX_KEY_LEN + 1])
                 return self._json(dict(lizenz.state(app.dir), accepted=bool(res["valid"]), message=_lizenz_msg(res)))
+            if method == "POST" and path == "/api/offer":                    # Vergleich Normal/Pro; ohne Freischaltung nur {"aktiv": false}
+                return self._json(angebot.state(app.dir, str(body.get("code", ""))[:angebot.MAX_CODE_LEN + 1]))
+            if method == "POST" and path == "/api/offer-buy":                # Die Adresse bildet immer der Server aus der festen Vorlage; vom Browser kommt nur der Rabattcode
+                st = angebot.state(app.dir, str(body.get("code", ""))[:angebot.MAX_CODE_LEN + 1])
+                if not st.get("aktiv") or not st.get("kauf_moeglich"):
+                    raise ApiError("Der Kauf ist im Moment nicht möglich.")
+                code = str(body.get("code", "")) if st["rabatt"]["valid"] else ""
+                url = angebot.kauf_url("pro", st["zu_zahlen_cent"], code, st["lizenz_id"])
+                if not url:
+                    raise ApiError("Der Kauf ist im Moment nicht möglich.")
+                import webbrowser
+                webbrowser.open(url)
+                return self._json({"ok": True})
             if method == "POST" and path == "/api/license-remove":
                 lizenz.remove(app.dir)
                 return self._json(dict(lizenz.state(app.dir), removed=True))

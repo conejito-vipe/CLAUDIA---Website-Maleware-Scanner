@@ -81,8 +81,9 @@ def plan(root: str, data_dir: str, reports_dir: str) -> List[Dict[str, Any]]:
         it.update(_size(path) if ex else {"files": 0, "bytes": 0})
         items.append(it)
 
-    add("venv", "Eigene Python-Umgebung mit SSH-Baustein (paramiko) und Fenster-Baustein (pywebview)", os.path.join(root, ".venv"),
-        "Wurde beim ersten Start im Programmordner angelegt (Ordner .venv). Sie enthält nur Python-Bausteine für dieses Programm; sonst auf dem PC nichts." + python_org_hint(data_dir), True)
+    if not frozen():
+        add("venv", "Eigene Python-Umgebung mit SSH-Baustein (paramiko) und Fenster-Baustein (pywebview)", os.path.join(root, ".venv"),
+            "Wurde beim ersten Start im Programmordner angelegt (Ordner .venv). Sie enthält nur Python-Bausteine für dieses Programm; sonst auf dem PC nichts." + python_org_hint(data_dir), True)
     add("cache", "Zwischenspeicher (heruntergeladene Joomla-Referenzpakete)", os.path.join(data_dir, "cache"),
         "Offizielle Joomla-Pakete für den Dateivergleich. Sie werden bei Bedarf neu geladen.", True)
     add("log", "Startprotokoll", os.path.join(data_dir, "launcher.log"), "Protokoll der Startschritte.", True, "file")
@@ -96,7 +97,7 @@ def plan(root: str, data_dir: str, reports_dir: str) -> List[Dict[str, Any]]:
         items.append({"id": "python", "label": "Python (von start.bat per winget installiert)", "path": "winget uninstall %s" % PY_WINGET_ID,
                       "why": "Python wurde auf diesem PC nur für dieses Programm installiert. Bitte nur entfernen, wenn du es sonst nicht brauchst.",
                       "default": False, "exists": True, "personal": False, "kind": "winget", "files": 0, "bytes": 0})
-    if _safe_root(root) and not installed_by_setup(root):
+    if not frozen() and _safe_root(root) and not installed_by_setup(root):
         add("program", "Programmordner dieser Version", root, "Der Ordner mit start.bat bzw. start.command und dem Programmcode. Wird zuletzt gelöscht.", False, "dir", False)
     return items
 
@@ -173,8 +174,16 @@ def write_script(items: List[Dict[str, Any]], pids: List[int], data_dir: str) ->
     return path
 
 
+def frozen() -> bool:
+    """Läuft das Programm als einzelne Programmdatei (.exe / Mac-App)? Dann gibt es weder .venv noch einen Programmordner mit Quelltext."""
+    return bool(getattr(sys, "frozen", False))
+
+
 def window_available() -> bool:
-    """Das Deinstallations-Fenster braucht PySide6 (Python-Umgebung des Programms) oder ersatzweise tkinter."""
+    """Das Deinstallations-Fenster braucht PySide6 (Python-Umgebung des Programms) oder ersatzweise tkinter.
+    Als einzelne Programmdatei gibt es kein Python für ein Zusatzfenster: dann läuft das sichtbare Löschskript (.cmd / .sh)."""
+    if frozen():
+        return False
     if qt_python():
         return True
     try:

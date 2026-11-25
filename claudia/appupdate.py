@@ -89,6 +89,21 @@ def parse_release(data: Dict[str, Any], current: str) -> Dict[str, Any]:
     }
 
 
+FROZEN = bool(getattr(sys, "frozen", False))          # als einzelne Programmdatei (.exe / Mac-App) gebaut: Updates werden dann von der Release-Seite geladen
+
+
+def notes_for_lang(body: str, lang: str) -> str:
+    """Release Notes in der Sprache der Oberfläche. Auf GitHub steht Englisch zuerst, Deutsch folgt im Block <details>...</details>.
+    Zeilen mit der Prüfsumme und die HTML-Marken werden nicht angezeigt."""
+    m = re.search(r"<details>(.*?)</details>", body or "", re.S | re.I)
+    de = re.sub(r"<summary>.*?</summary>", "", m.group(1), flags=re.S | re.I) if m else ""
+    en = re.sub(r"<details>.*?</details>", "", body or "", flags=re.S | re.I)
+    en = re.split(r"^## Files\s*$", en, maxsplit=1, flags=re.M)[0]                 # Dateiliste des Releases (siehe tools/release_body.py) gehört nicht in die Anzeige
+    text = de if (lang == "de" and de.strip()) else en
+    text = "\n".join(x for x in text.splitlines() if not re.search(r"sha-?256", x, re.I))
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
+
+
 def check(current: str = __version__, fetch: Optional[Callable[..., bytes]] = None) -> Dict[str, Any]:
     """Sucht die neueste Version. Wirft nie: {'ok': True, 'info': {...}} oder {'ok': False, 'error': '...'}."""
     if os.environ.get("CLAUDIA_OFFLINE"):
@@ -290,6 +305,8 @@ def install(info: Dict[str, Any], root: str, data_dir: str, progress: Optional[C
     bak = ""
     try:
         version = str(info.get("version") or "")
+        if FROZEN:
+            raise UpdateError("Diese Fassung besteht aus einer einzelnen Programmdatei und aktualisiert sich nicht selbst. Bitte die neue Version von der Release-Seite laden.")
         if not VERSION_RE.match(version) or vcmp(version, current) <= 0:
             raise UpdateError("Keine neuere Version.")
         url = str(info.get("url") or "")

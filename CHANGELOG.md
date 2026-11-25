@@ -2,6 +2,33 @@
 
 Generated from `claudia/docs/aenderungen.en.txt` (do not edit by hand).
 
+## 2.18.0 (2026-11-24) - Single program file and release workflow
+
+### Single program file without Python setup (Windows, Mac)
+- **What:** In addition to the existing package, CLAUDIA is available as a single program file: on Windows as an installer (CLAUDIA-Setup-….exe) or as a portable folder with CLAUDIA.exe, on the Mac as CLAUDIA.app (Apple silicon). Python and all components are included; nothing is set up or downloaded at first start. This build does not update itself: the update display points to the release page, "Install update" is not possible there. On uninstall, the Python environment and the program folder are left out (you delete the file or app yourself); reports, connections and settings can be removed as before.
+- **Why:** Anyone without Python, or who does not want to run a PowerShell script, can open CLAUDIA with a double click. A running program file cannot replace its own program code with an update; an attempt would damage the installation.
+- **How:** PyInstaller (tools/build_exe.py) packs the program code together with the interface, help texts, language files and lists into one package; the source files are included because the chapter "Technik" reads them. The entry point (installer/exe_main.py) redirects missing console output to nowhere and starts the same function as the Python package. "--selftest" checks in the built program that all program data is present. appupdate.FROZEN blocks install() without loading or changing anything. Building is only possible on the respective system (Windows and Mac cannot be built on Linux), see release workflow.
+
+### Release workflow (GitHub Actions)
+- **What:** The workflow "Release" (button only) runs the tests, builds the package, Windows installer, Windows folder and Mac app, checks every program file with the self-test and then creates the GitHub release v<version> directly: release notes as text, all files as attachments, SHA256SUMS.txt and the line "SHA-256: …" for the checksum of the package. If the tag already exists, the files are replaced and the text is updated.
+- **Why:** One run delivers all files with matching checksums; nothing can be forgotten or mixed up by hand. The program only installs an update if the release contains CLAUDIA_v<version>.zip and its SHA-256.
+- **How:** Five jobs (tests, package, windows, mac, release); only the last has write permission (contents: write), all actions are pinned to a commit. tools/release_body.py creates SHA256SUMS.txt and the text and refuses if RELEASE_NOTES.md does not belong to the version or the package is missing. Checksums of other files are only in SHA256SUMS.txt, not in the text, so that a wrong line is never read as the checksum of the package.
+
+### Release notes: English with a switch to German
+- **What:** On GitHub the release notes come first in English; German follows in a collapsible block. In the program the display follows the interface language. The text only says what changed technically and why.
+- **Why:** GitHub has an international audience; the program should still display in the chosen language.
+- **How:** tools/build_release.py writes RELEASE_NOTES.md from the change texts (both languages); appupdate.notes_for_lang cuts out the matching part and hides the checksum line and file list.
+
+### Check: Do automatic updates really run?
+- **What:** New check (Joomla and WordPress). Joomla 5.4 and newer: checks the setting "Automated Updates" and the update source, the API plugins the joomla.org update service needs, the update site, a core update that is available but not installed, offline mode and mail sending, and calls /api of the own site once with and once without a browser identification. Recognizes firewall extensions (e.g. HTProtect, Admin Tools), shows their settings about API, updates and bot filters and entries of their log about /api. WordPress: checks WP-Cron (schedule overdue, wp-cron.php blocked, DISABLE_WP_CRON without cron job) and version control in the folder. New action "Enable API for automatic Joomla updates" (two plugins, with backup and undo file). The action "Disable Joomla API" and the note in the check "API access" now say that this removes automatic core updates from Joomla 5.4 on.
+- **Why:** The previous check "Can the site be updated automatically?" only checks whether an update in the backend succeeds (permissions, space, PHP). A site can be updated by hand without problems and still never by itself: the joomla.org update service triggers updates through the API, and a firewall, a disabled API or a wrong update source prevent that without anything being noticed.
+- **How:** Read-only queries (settings from the extensions table, update sites, activity log) and two calls of /api with the server's curl (only status code, kind of response, server identification). A response counts as "rejected before Joomla" if it is an error code with HTML instead of JSON; if responses with and without browser identification differ, a bot filter is reported. Settings of firewall extensions are filtered by keywords, values related to keys (token, secret, key, license) are not shown. Not checkable from here: access from joomla.org and the registration with the update service.
+
+### Internal
+- **What:** New files installer/exe_main.py, tools/build_exe.py, tools/release_body.py, .github/workflows/release.yml, tests/test_exe_build.py, claudia/checks/auto_updates.py, tests/test_auto_updates.py, tests/test_autoupdate_action.py; installer/claudia.iss now also knows /DFrozenApp=1; the old workflow build-windows.yml is removed (replaced by release.yml).
+- **Why:** One single way to a release instead of two separate ones.
+- **How:** The Inno Setup file stays the same for both builds (same program ID), so an installation over the Python build runs as an update and old start files are removed.
+
 ## 2.17.0 (2026-11-24) - Dashboard and more
 
 ### Dashboard: overview, comparison, management
@@ -201,7 +228,7 @@ Generated from `claudia/docs/aenderungen.en.txt` (do not edit by hand).
 
 ### Interface
 - **What:** Uninstall dialog rebuilt (close button at top right, buttons fixed at the bottom, same size as in the main window, nothing overlaps the scroll bar). Logo flush with the line under the navigation. Link to the guide for the free Safe Browsing key in the start form and in the finding; addresses in findings are clickable. Recommendations for extensions: free first, then paid under its own heading. The help window stays usable and movable during the check. Folders of earlier versions are taken over at startup (renamed, otherwise copied and checked).
-- **Why:** Wish list from Nov 16.
+- **Why:** Consistent sizes, spacing and labels in all windows; the link saves searching for the guide to the Safe Browsing key.
 - **How:** Tested only on Linux in the browser, not yet in the Windows window.
 
 ## 2.4.1 (2026-11-14) - Hardening, integrity, action plan, fewer false alarms
@@ -524,7 +551,7 @@ Generated from `claudia/docs/aenderungen.en.txt` (do not edit by hand).
 
 ### Larger help window, footer, US English
 - **What:** The help window is about twice as large. Footer: "vibecoded by conejito-vipe with love". English is now US English with a US flag.
-- **Why:** Request from use.
+- **Why:** The help text is hard to read in the small window; US English and the flag match the selected language variant.
 - **How:** Window size in app.css, texts in claudia/lang/en.json.
 
 ### Hardening after the code security review

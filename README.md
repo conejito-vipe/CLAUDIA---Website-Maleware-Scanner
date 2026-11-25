@@ -33,6 +33,8 @@ Requirements: Windows 10/11, Python 3.9+ (start.bat downloads and installs it au
 
 **Installer (since 2.14.0):** On Windows you can run `CLAUDIA-Setup-….exe` instead of the ZIP (current user only, no administrator rights, Start menu entry, optional desktop shortcut, listed under "Installed apps"). On the Mac, unpack the ZIP and run `install.command` (target `~/Applications/CLAUDIA`). If CLAUDIA is already installed, the installer asks whether to update; your connections, settings and reports are kept. The installer is not Microsoft-certified either, so the same SmartScreen explanation applies.
 
+**Without Python (since 2.18.0):** The [release page](../../releases) also offers `CLAUDIA-Setup-….exe` (Windows installer, one file), `CLAUDIA_v…_Windows.zip` (portable folder with `CLAUDIA.exe`) and `CLAUDIA_v…_Mac.zip` (`CLAUDIA.app`, Apple silicon). They contain Python and all components; there is no setup at first start and no PowerShell. The Mac app is not notarized: on first start use right-click > Open. These builds do not update themselves; download the new version from the release page (your data in `%APPDATA%\CLAUDIA` or `~/Library/Application Support/CLAUDIA` is kept). Checksums of all files: `SHA256SUMS.txt` in the release.
+
 **Updates (since 2.16.0):** At start CLAUDIA checks GitHub in the background for a newer release and, only after you confirm, downloads it, compares the SHA-256 checksum, backs up the program folder and replaces it (automatic way back on errors). You can skip a version or search yourself with the "Updates" button.
 
 Run from source on any OS:

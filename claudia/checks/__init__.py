@@ -14,6 +14,7 @@ _MODULES = [
     "online",
     "wp",
     "update_ready",
+    "auto_updates",
     "security_ext",
     "joomla_core",
     "php_config",

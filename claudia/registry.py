@@ -24,7 +24,7 @@ GROUPS = [
 CLUSTERS = {
     "umfeld": ("Umfeld erkennen", "Das Programm stellt fest, was auf dem Webspace liegt: Joomla-Version, fremde Dateien im Hauptordner und weitere Webseiten, über die ein Angreifer ebenfalls hineinkommen könnte."),
     "rechte": ("Dateirechte prüfen", "Es wird geprüft, welche Dateien und Ordner für alle beschreibbar sind. Dort kann ein Angreifer Code ablegen."),
-    "update": ("Automatische Updates prüfen", "Es wird geprüft, ob sich die Seite im Backend/Dashboard selbst aktualisieren lässt: Schreibrechte und Besitzer der Kernordner, falsch gesetzte Rechte, Reste abgebrochener Updates, freier Speicher, PHP-Module und die Erreichbarkeit des Update-Servers. Nur wenn nichts im Weg steht, kommt eine Erfolgsmeldung."),
+    "update": ("Automatische Updates prüfen", "Es wird geprüft, ob sich die Seite im Backend/Dashboard selbst aktualisieren lässt (Schreibrechte und Besitzer der Kernordner, falsch gesetzte Rechte, Reste abgebrochener Updates, freier Speicher, PHP-Module, Erreichbarkeit des Update-Servers) und ob die Update-Automatik wirklich laufen kann (Einstellung, Schnittstelle, Update-Quelle, Firewall, Cron). Nur wenn nichts im Weg steht, kommt eine Erfolgsmeldung."),
     "php_shells": ("PHP nach Shells durchsuchen", "Alle PHP-Dateien werden nach typischen Merkmalen von Hintertüren durchsucht (verschleierter Code, Befehle zum Ausführen von Eingaben) und dort, wo kein PHP liegen darf (Uploads, Temp), gemeldet."),
     "js_inject": ("Injection prüfen", "JavaScript-Dateien werden auf eingeschleusten Code durchsucht, der Besucher umleitet oder Fremdcode nachlädt."),
     "versteck": ("Verstecke und Spuren suchen", "Orte, an denen sich Schadcode gern versteckt: node_modules, frisch geänderte Dateien und liegengebliebene Sicherungen oder Datenbank-Dumps."),
@@ -68,7 +68,7 @@ CLUSTER_MEMBERS = {
     "contao_core": "contao_kern", "contao_settings": "contao_kern", "contao_exposed": "contao_kern", "contao_packages": "contao_erweiterungen", "contao_users": "contao_daten", "contao_db_code": "contao_daten",
     "shopware_core": "shopware_kern", "shopware_settings": "shopware_kern", "shopware_exposed": "shopware_kern", "shopware_packages": "shopware_plugins", "shopware_users": "shopware_daten", "shopware_shop": "shopware_daten", "shopware_db_code": "shopware_daten",
     "prestashop_core": "prestashop_kern", "prestashop_settings": "prestashop_kern", "prestashop_exposed": "prestashop_kern", "prestashop_modules": "prestashop_module", "prestashop_users": "prestashop_daten", "prestashop_shop": "prestashop_daten", "prestashop_db_code": "prestashop_daten",
-    "joomla_info": "umfeld", "mail_dns": "umfeld", "dns_changes": "umfeld", "mail_send": "umfeld", "plaintext_creds": "konto", "backup_age": "versteck", "js_libs": "js_inject", "tls_protocols": "besucher", "cookie_flags": "besucher", "threat_intel": "umfeld", "other_installs": "umfeld", "root_files": "umfeld", "perms": "rechte", "update_ready": "update",
+    "joomla_info": "umfeld", "mail_dns": "umfeld", "dns_changes": "umfeld", "mail_send": "umfeld", "plaintext_creds": "konto", "backup_age": "versteck", "js_libs": "js_inject", "tls_protocols": "besucher", "cookie_flags": "besucher", "threat_intel": "umfeld", "other_installs": "umfeld", "root_files": "umfeld", "perms": "rechte", "update_ready": "update", "auto_updates": "update",
     "webshells": "php_shells", "php_in_uploads": "php_shells", "suspicious_names": "php_shells", "malware_patterns": "php_shells", "hidden_structure": "versteck", "compare_runs": "versteck", "skimmer_scan": "js_inject",
     "js_scan": "js_inject",
     "node_modules": "versteck", "recent_changes": "versteck", "backups_in_webroot": "versteck",
@@ -119,7 +119,7 @@ CLUSTER_MEMBERS_WP = {
 # Tests, die für beide Systeme laufen (Pfade und Bezeichnungen kommen aus dem Profil in cms.py)
 BOTH = {"backup_tool", "crontab", "authorized_keys", "processes", "shell_startup", "sessions", "root_files", "perms", "other_installs", "node_modules", "js_scan", "php_in_uploads", "webshells", "suspicious_names",
         "recent_changes", "backups_in_webroot", "htaccess", "php_ini", "access_logs", "local_logs", "web_source", "web_headers", "web_csp", "db_access", "mail_dns", "dns_changes", "mail_send", "plaintext_creds", "backup_age", "js_libs", "tls_protocols", "cookie_flags",
-        "dbx_server", "dbx_codescan", "dbx_anomalies", "update_ready", "security_ext", "php_settings", "safe_browsing", "threat_intel", "malware_patterns", "hidden_structure", "htaccess_structure", "compare_runs", "skimmer_scan", "seo_spam_files", "locked_files"}
+        "dbx_server", "dbx_codescan", "dbx_anomalies", "update_ready", "auto_updates", "security_ext", "php_settings", "safe_browsing", "threat_intel", "malware_patterns", "hidden_structure", "htaccess_structure", "compare_runs", "skimmer_scan", "seo_spam_files", "locked_files"}
 
 # Texte für den WordPress-Bereich der gemeinsamen Tests (Titel, Beschreibung, Vorgehen, Begründung)
 WP_TEXTS = {

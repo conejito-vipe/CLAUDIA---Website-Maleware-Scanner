@@ -99,7 +99,7 @@ class Reihenfolge(unittest.TestCase):
     def test_action_order_list_is_complete_copy(self):
         self.assertEqual(ACTION_ORDER[0], "backup_now")
         self.assertEqual(ACTION_ORDER[-1], "delete_old_backups")
-        self.assertEqual(len(ACTION_ORDER), 33)
+        self.assertEqual(len(ACTION_ORDER), 34)
 
     def test_actions_missing_in_order_go_to_phase_end(self):
         p = build_plan([], [act("delete_quarantine"), act("restore_quarantine"), act("clean_tmp")])

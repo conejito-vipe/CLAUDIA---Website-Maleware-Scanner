@@ -270,9 +270,19 @@ ACTIONS: Dict[str, Dict[str, Any]] = {
         "summary": "Schaltet in der Datenbank die Plugins der Joomla-Programmierschnittstelle aus: alle Web-Services-Plugins, 'Benutzer - Joomla API-Token' und die API-Authentifizierung. "
                    "Danach nimmt die Seite keine Anfragen an /api mehr an. Tokens und Dateien bleiben unverändert.",
         "warning": "Wenn du die API nutzt (Apps, Anbindungen an andere Systeme, Headless-Betrieb), funktionieren diese danach nicht mehr. Normale Seiten und das Backend sind nicht betroffen. "
+                   "Ab Joomla 5.4 laufen danach auch die automatischen Core-Updates nicht mehr: Der Update-Dienst von joomla.org arbeitet über diese Schnittstelle. "
                    "Vorher wird die Tabelle extensions gesichert und geprüft, die genauen Rückgängig-Befehle werden als Datei gespeichert. Gelöscht wird nichts.",
         "risk": "mittel", "backup": False, "needs_php": False,
         "undo": "Datei rueckgaengig.sql im Sicherungsordner enthält die genauen Befehle (UPDATE ... SET enabled = 1), oder im Backend unter System -> Verwalten -> Plugins die Plugins wieder einschalten.",
+    },
+    "enable_autoupdate_api": {
+        "title": "API für automatische Joomla-Updates einschalten",
+        "summary": "Schaltet in der Datenbank genau zwei Plugins ein, die der Update-Dienst von joomla.org für die automatischen Core-Updates braucht, falls sie aus sind: 'Web Services - Joomla-Update' und "
+                   "'API-Authentifizierung - Token'. Sonst wird nichts geändert; die Einstellung 'Automatische Updates' selbst bleibt unverändert (Backend -> System -> Joomla-Aktualisierung -> Optionen).",
+        "warning": "Die Seite nimmt danach wieder Anfragen an /api an (wie vor dem Abschalten). Wurde die API aus Sicherheitsgründen abgeschaltet, ist das ein Zielkonflikt: Ab Joomla 5.4 braucht die Update-Automatik diese Schnittstelle. "
+                   "Es werden keine Tokens angelegt und keine weiteren API-Plugins eingeschaltet. Vorher wird die Tabelle extensions gesichert und geprüft, die genauen Rückgängig-Befehle werden als Datei gespeichert.",
+        "risk": "mittel", "backup": False, "needs_php": False,
+        "undo": "Datei rueckgaengig.sql im Sicherungsordner enthält die genauen Befehle (UPDATE ... SET enabled = 0), oder im Backend unter System -> Verwalten -> Plugins die beiden Plugins wieder ausschalten.",
     },
     "wp_deactivate_plugin": {
         "title": "Verwundbares Plugin ausschalten",
@@ -368,7 +378,7 @@ HARDEN_ACTIONS["harden_perms"] = {
 ACTIONS.update(HARDEN_ACTIONS)
 
 # Empfohlene Reihenfolge, um eine infizierte Seite sicher zu bereinigen (Nummer, kurze Begründung "Warum jetzt?")
-STEP_ORDER = ["backup_now", "fix_update_perms", "wp_remove_maintenance", "deactivate_extension", "wp_deactivate_plugin", "core_update", "wp_update", "update_extensions", "joomla_core_reinstall", "wp_core_reinstall", "remove_jce_profiles", "wp_fix_registration", "remove_db_code", "remove_shells", "block_php_uploads", "reset_htaccess", "clean_tmp",
+STEP_ORDER = ["backup_now", "fix_update_perms", "wp_remove_maintenance", "deactivate_extension", "wp_deactivate_plugin", "core_update", "wp_update", "update_extensions", "enable_autoupdate_api", "joomla_core_reinstall", "wp_core_reinstall", "remove_jce_profiles", "wp_fix_registration", "remove_db_code", "remove_shells", "block_php_uploads", "reset_htaccess", "clean_tmp",
               "block_users", "revoke_tokens", "disable_api", "end_sessions", "wp_salts", "wp_disallow_edit", "install_security", "install_backup", "harden_headers", "harden_listing", "wp_block_xmlrpc", "harden_hsts", "harden_perms", "fix_permissions", "clear_cache", "delete_old_backups"]
 # Welche Sicherung eine Aktion vorher anlegt: voll = Datenbank und alle Dateien, gezielt = nur das, was verändert wird,
 # protokoll = nur die alten Werte werden festgehalten, keine = nichts nötig (mit Grund). Steht in Vorschau, Katalog und MANIFEST.txt.
@@ -407,6 +417,7 @@ SICHERUNG: Dict[str, Tuple[str, str]] = {
     "revoke_tokens": ("gezielt", "Gezielt: Nur die Tabelle mit den Tokens bzw. Anwendungs-Passwörtern wird vorher gesichert."),
     "end_sessions": ("keine", "Keine nötig: Sitzungen sind kurzlebig und werden bei der nächsten Anmeldung neu angelegt."),
     "disable_api": ("gezielt", "Gezielt: Nur die Tabelle extensions wird vorher gesichert, dazu die Datei rueckgaengig.sql."),
+    "enable_autoupdate_api": ("gezielt", "Gezielt: Nur die Tabelle extensions wird vorher gesichert, dazu die Datei rueckgaengig.sql."),
     "deactivate_extension": ("gezielt", "Gezielt: Nur die Tabelle extensions wird vorher gesichert, dazu die Datei rueckgaengig.sql mit den alten Werten."),
     "wp_deactivate_plugin": ("gezielt", "Gezielt: Nur die Tabelle options wird vorher gesichert, dazu die Datei rueckgaengig.txt mit den Befehlen zum Wiedereinschalten."),
 }
@@ -418,7 +429,7 @@ def sicherung_info(aid: str) -> Dict[str, str]:
 
 
 _HDR_ITEM_KEYS = (("nosniff", "X-Content-Type-Options"), ("frame", "Schutz vor Einbettung"), ("referrer", "Referrer-Policy"), ("hsts", "HSTS"))
-JOOMLA_ONLY = {"disable_api", "deactivate_extension", "check_updates", "core_update", "update_extensions", "remove_jce_profiles", "clear_cache", "joomla_core_reinstall"}
+JOOMLA_ONLY = {"disable_api", "enable_autoupdate_api", "deactivate_extension", "check_updates", "core_update", "update_extensions", "remove_jce_profiles", "clear_cache", "joomla_core_reinstall"}
 WP_ONLY = {"harden_listing", "wp_block_xmlrpc", "wp_deactivate_plugin", "wp_update", "wp_core_reinstall", "wp_fix_registration", "wp_salts", "wp_disallow_edit", "wp_remove_maintenance"}
 # Zugeschnittene Texte der gemeinsamen Aktionen für WordPress
 WP_ACTION_TEXT = {
@@ -438,7 +449,8 @@ STEP_WHY = {
     "wp_deactivate_plugin": "Solange das verwundbare Plugin läuft, kann der Angreifer nach dem Aufräumen zurückkommen. Ausschalten schließt die Tür sofort, auch wenn es noch kein Update gibt.",
     "block_users": "Ein vom Angreifer angelegtes Konto ist sein Dauerzugang. Es muss weg, bevor du Passwörter änderst, sonst legt er sich über dieses Konto einen neuen Zugang an.",
     "revoke_tokens": "Tokens und Anwendungs-Passwörter überleben jeden Passwortwechsel. Ohne Widerruf behält der Angreifer seinen Zugang.",
-    "disable_api": "Die API ist ein zweiter Eingang neben dem Backend und arbeitet mit Tokens. Wer sie nicht braucht, schließt sie am besten ganz, nachdem du die Tokens widerrufen hast.",
+    "disable_api": "Die API ist ein zweiter Eingang neben dem Backend und arbeitet mit Tokens. Wer sie nicht braucht, schließt sie am besten ganz, nachdem du die Tokens widerrufen hast. Ab Joomla 5.4 verzichtest du damit auf die automatischen Core-Updates.",
+    "enable_autoupdate_api": "Ohne diese Plugins erreicht der Update-Dienst von joomla.org die Seite nicht: Joomla-Updates im Backend laufen, die Automatik nicht. Die Seite bleibt dann unbemerkt auf einem verwundbaren Stand.",
     "end_sessions": "Erst wenn alle Sitzungen beendet sind, ist ein Passwortwechsel wirksam: Ein erbeutetes Cookie bleibt sonst gültig.",
     "fix_update_perms": "Ohne Schreibrecht kann ein Update die Dateien nicht ersetzen und bricht mittendrin ab. Das muss vor jedem Update stimmen.",
     "wp_remove_maintenance": "Solange die Datei liegt, zeigt die Seite 'Wartungsarbeiten' und weitere Updates werden verweigert.",
@@ -755,6 +767,7 @@ def available(results: List[Dict[str, Any]], info: Dict[str, Any], manual: str =
     older_known = False
     sec_missing = False
     api_on = False
+    autoupd_api_off = False
     backup_missing = False
     hdr_missing: List[str] = []
     hsts_missing = False
@@ -867,6 +880,8 @@ def available(results: List[Dict[str, Any]], info: Dict[str, Any], manual: str =
                 sec_missing = True
             if r.get("id") == "joomla_api" and (title.startswith("Web-Services aktiv") or title.endswith("API-Zugang aktiv")):
                 api_on = True
+            if r.get("id") == "auto_updates" and title.startswith("Die Joomla-API ist (teilweise) ausgeschaltet"):
+                autoupd_api_off = True
             if r.get("id") == "backup_tool" and title.startswith("Kein Sicherungs-Tool"):
                 backup_missing = True
     choices = php_choices(info, manual)
@@ -950,6 +965,10 @@ def available(results: List[Dict[str, Any]], info: Dict[str, Any], manual: str =
             d["params"] = {"cms": "wordpress" if cms == "wordpress" else "joomla", "pick": cand[:100]}
         elif aid == "disable_api":
             if not api_on:
+                continue
+            d["params"] = {"cms": "joomla"}
+        elif aid == "enable_autoupdate_api":
+            if not autoupd_api_off:
                 continue
             d["params"] = {"cms": "joomla"}
         elif aid == "end_sessions":
@@ -1531,6 +1550,12 @@ def commands_preview(aid: str, params: Dict[str, Any], choices: List[Dict[str, A
             return ["SELECT COUNT(*) FROM <Präfix>usermeta WHERE meta_key = 'session_tokens';   (so viele Sitzungen gibt es jetzt)",
                     "DELETE FROM <Präfix>usermeta WHERE meta_key = 'session_tokens';", "-- Kontrolle: Anzahl = 0"]
         return ["SELECT COUNT(*) FROM #__session;   (so viele Sitzungen gibt es jetzt)", "DELETE FROM #__session;", "-- Kontrolle: Anzahl = 0"]
+    if aid == "enable_autoupdate_api":
+        return ["SELECT extension_id, folder, element, enabled FROM #__extensions WHERE type = 'plugin' AND enabled = 0 AND (%s);" % AUTOUPDATE_PLUGIN_SQL,
+                "Sicherung: mysqldump <Datenbank> <Präfix>extensions | gzip > ~/claudia-sicherung-api-<datum>/extensions.sql.gz   (wird geprüft)",
+                "rueckgaengig.sql schreiben: UPDATE #__extensions SET enabled = 0 WHERE extension_id IN (<die jetzt ausgeschalteten>);",
+                "UPDATE #__extensions SET enabled = 1 WHERE extension_id IN (<geprüfte Auswahl>);",
+                "-- Kontrolle: Anzahl noch ausgeschalteter = 0"]
     if aid == "disable_api":
         return ["SELECT extension_id, folder, element, enabled FROM #__extensions WHERE type = 'plugin' AND enabled = 1 AND (%s);" % API_PLUGIN_SQL,
                 "Sicherung: mysqldump <Datenbank> <Präfix>extensions | gzip > ~/claudia-sicherung-api-<datum>/extensions.sql.gz   (wird geprüft)",
@@ -1865,6 +1890,9 @@ def run_action(runner: Runner, site_dir: str, aid: str, params: Dict[str, Any], 
             return finish(result)
         if aid == "disable_api":
             _run_disable_api(runner, site_dir, log, result)
+            return finish(result)
+        if aid == "enable_autoupdate_api":
+            _run_enable_autoupdate_api(runner, site_dir, log, result)
             return finish(result)
         if aid == "deactivate_extension":
             _run_deactivate_joomla(runner, site_dir, params, log, result)
@@ -3503,6 +3531,7 @@ RECHECK: Dict[str, Dict[str, List[str]]] = {
     "revoke_tokens": {"joomla": ["joomla_api"], "wordpress": ["wp_db_users"]},
     "end_sessions": {"joomla": ["sessions"], "wordpress": ["sessions"]},
     "disable_api": {"joomla": ["joomla_api"]},
+    "enable_autoupdate_api": {"joomla": ["auto_updates"]},
     "deactivate_extension": {"joomla": ["extensions_fs"]},
     "wp_deactivate_plugin": {"wordpress": ["wp_plugins"]},
     "wp_fix_registration": {"wordpress": ["wp_db_options"]},
@@ -3731,6 +3760,39 @@ def _run_end_sessions(runner, site_dir: str, log, result: Dict[str, Any]) -> Non
 
 
 API_PLUGIN_SQL = "folder = 'webservices' OR (folder = 'user' AND element = 'token') OR folder = 'api-authentication'"
+
+
+AUTOUPDATE_PLUGIN_SQL = "(folder = 'webservices' AND element = 'joomlaupdate') OR (folder = 'api-authentication' AND element = 'token')"
+
+
+def _run_enable_autoupdate_api(runner, site_dir: str, log, result: Dict[str, Any]) -> None:
+    """Die zwei Plugins einschalten, die der Update-Dienst von joomla.org braucht (nur falls aus). Mit Sicherung und rueckgaengig.sql."""
+    cfg, cms = _read_cfg_site(runner, site_dir)
+    if cms == "wordpress":
+        raise ActionError("Diese Aktion gibt es nur für Joomla.")
+    pw = str(cfg.get("password", "")) + "\n"
+    prefix = str(cfg.get("dbprefix", "jos_"))
+    rows = _sql_rows(runner, site_dir, cfg, pw, "SELECT extension_id, IFNULL(folder, ''), element FROM #__extensions WHERE type = 'plugin' AND enabled = 0 AND (%s)" % AUTOUPDATE_PLUGIN_SQL)
+    todo = [(int(x[0]), "%s/%s" % (x[1], x[2])) for x in rows if len(x) >= 3 and digits(x[0])]
+    log("Ausgeschaltete Plugins für die Update-Automatik suchen", True, ", ".join("%s (#%d)" % (n, i) for i, n in todo) or "keine")
+    if not todo:
+        result["ok"] = True
+        result["message"] = "Es gibt nichts einzuschalten: Die beiden Plugins sind schon an."
+        return
+    ids = [i for i, _ in todo]
+    out = _dump_for_change(runner, site_dir, cfg, pw, "api", [prefix + "extensions"], "extensions.sql.gz", log)
+    result["backup_dir"] = out
+    r = runner.sh(site_dir, "cat > %s/rueckgaengig.sql" % sq(out), 30,
+                  stdin="-- CLAUDIA: schaltet die Plugins wieder aus (mit mysql oder phpMyAdmin ausführen)\nUPDATE %sextensions SET enabled = 0 WHERE extension_id IN (%s);\n" % (prefix, _sql_ints(ids)))
+    log("Rückgängig-Datei schreiben", r.rc == 0, "rueckgaengig.sql im Sicherungsordner")
+    if r.rc != 0:
+        raise ActionError("Die Rückgängig-Datei konnte nicht geschrieben werden. Es wurde nichts geändert.")
+    _sql_exec(runner, site_dir, cfg, pw, "UPDATE #__extensions SET enabled = 1 WHERE extension_id IN (%s)" % _sql_ints(ids), log, "Plugins einschalten")
+    rest = _sql_rows(runner, site_dir, cfg, pw, "SELECT COUNT(*) FROM #__extensions WHERE extension_id IN (%s) AND enabled = 0" % _sql_ints(ids))
+    ok = bool(rest and rest[0] and rest[0][0] == "0")
+    log("Kontrolle", ok, "Noch ausgeschaltet: %s" % (rest[0][0] if rest and rest[0] else "?"))
+    result["ok"] = ok
+    result["message"] = ("%d Plugin(s) eingeschaltet. Prüfe danach im Backend unter System -> Joomla-Aktualisierung -> Optionen, dass 'Automatische Updates' auf Ja steht, und leere ggf. den Cache. Rückgängig: rueckgaengig.sql in %s" % (len(ids), out)) if ok else ""
 
 
 def _run_disable_api(runner, site_dir: str, log, result: Dict[str, Any]) -> None:

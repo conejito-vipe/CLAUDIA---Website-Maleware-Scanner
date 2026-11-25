@@ -135,7 +135,7 @@ class CleanSite(unittest.TestCase):
 
     def test_only_expected_warnings(self):
         warn = {k: titles(v, "warn") for k, v in self.r.items() if titles(v, "warn")}
-        self.assertEqual(set(warn), {"other_installs", "backup_tool"}, warn)   # backup_tool: Sicherungs-Erweiterung ohne Archiv am üblichen Ort
+        self.assertEqual(set(warn), {"other_installs", "backup_tool", "auto_updates"}, warn)   # backup_tool: Sicherungs-Erweiterung ohne Archiv am üblichen Ort; auto_updates: im Testkonto ist kein Mailversand eingerichtet
 
 
 class DbFallback(unittest.TestCase):

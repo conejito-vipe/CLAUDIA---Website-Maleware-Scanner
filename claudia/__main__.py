@@ -19,6 +19,24 @@ from .server import make_server
 from . import window
 
 
+RESOURCES = ("web/index.html", "web/app.js", "lang/de.json", "lang/en.json", "docs/handbuch.de.txt", "docs/handbuch.en.txt", "docs/technik.de.txt",
+             "docs/aenderungen.en.txt", "advisories.json", "icons.json", "loc.json", "security_tools.json", "backup_tools.json", "known_tools.json", "assets/claudia.ico")
+
+
+def resources_ok():
+    """Liegen alle Programmdaten (Oberfläche, Hilfetexte, Sprachen, Listen) neben dem Programmcode? Wichtig für die einzelne Programmdatei: fehlt hier etwas, fehlt es im Paket.
+    Das Kapitel 'Technik' liest außerdem den echten Quelltext; auch das wird geprüft."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    missing = [r for r in RESOURCES if not os.path.isfile(os.path.join(here, *r.split("/")))]
+    try:
+        from . import techdoc
+        if not techdoc.payload("de"):
+            missing.append("Technik-Kapitel")
+    except Exception as e:                                          # noqa: BLE001  (Selbsttest soll melden, nicht abstürzen)
+        missing.append("Technik-Kapitel (%s)" % type(e).__name__)
+    return not missing, missing
+
+
 def selftest() -> int:
     import os
     import platform
@@ -37,6 +55,11 @@ def selftest() -> int:
     n = len(ordered())
     print("Tests:       %d geladen" % n)
     ok = ok and n > 0
+    if getattr(sys, "frozen", False):
+        print("Fassung:     einzelne Programmdatei (ohne Python-Einrichtung)")
+    res_ok, missing = resources_ok()
+    print("Programmdaten: %s" % ("vollständig" if res_ok else "FEHLEN: " + ", ".join(missing)))
+    ok = ok and res_ok
     for label, d in (("Profile", data_dir()), ("Berichte", reports_dir())):
         try:
             os.makedirs(d, exist_ok=True)

@@ -43,7 +43,7 @@ _ACTIONS_BY_PHASE = {
                  "joomla_core_reinstall", "wp_core_reinstall", "remove_jce_profiles", "restore_quarantine",
                  "delete_quarantine"],
     "zugaenge": ["block_users", "revoke_tokens", "disable_api", "end_sessions", "wp_salts", "wp_fix_registration"],
-    "luecken": ["fix_update_perms", "wp_remove_maintenance", "core_update", "wp_update", "update_extensions",
+    "luecken": ["fix_update_perms", "wp_remove_maintenance", "core_update", "wp_update", "update_extensions", "enable_autoupdate_api",
                 "deactivate_extension", "wp_deactivate_plugin"],
     "haertung": ["harden_headers", "harden_listing", "wp_block_xmlrpc", "harden_hsts", "harden_perms",
                  "fix_permissions", "wp_disallow_edit", "install_security"],
@@ -52,7 +52,7 @@ _ACTIONS_BY_PHASE = {
 ACTION_TO_PHASE = {aid: pid for pid, ids in _ACTIONS_BY_PHASE.items() for aid in ids}
 
 # Kopie von STEP_ORDER aus CLAUDIA
-ACTION_ORDER = ["backup_now", "fix_update_perms", "wp_remove_maintenance", "deactivate_extension", "wp_deactivate_plugin", "core_update", "wp_update", "update_extensions", "joomla_core_reinstall", "wp_core_reinstall", "remove_jce_profiles", "wp_fix_registration", "remove_db_code", "remove_shells", "block_php_uploads", "reset_htaccess", "clean_tmp", "block_users", "revoke_tokens", "disable_api", "end_sessions", "wp_salts", "wp_disallow_edit", "install_security", "install_backup", "harden_headers", "harden_listing", "wp_block_xmlrpc", "harden_hsts", "harden_perms", "fix_permissions", "clear_cache", "delete_old_backups"]
+ACTION_ORDER = ["backup_now", "fix_update_perms", "wp_remove_maintenance", "deactivate_extension", "wp_deactivate_plugin", "core_update", "wp_update", "update_extensions", "enable_autoupdate_api", "joomla_core_reinstall", "wp_core_reinstall", "remove_jce_profiles", "wp_fix_registration", "remove_db_code", "remove_shells", "block_php_uploads", "reset_htaccess", "clean_tmp", "block_users", "revoke_tokens", "disable_api", "end_sessions", "wp_salts", "wp_disallow_edit", "install_security", "install_backup", "harden_headers", "harden_listing", "wp_block_xmlrpc", "harden_hsts", "harden_perms", "fix_permissions", "clear_cache", "delete_old_backups"]
 
 NEVER_IN_PLAN = ("check_updates",)
 

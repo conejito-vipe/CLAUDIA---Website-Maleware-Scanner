@@ -20,13 +20,15 @@ class InstallerTests(unittest.TestCase):
     def test_iss_keeps_user_data(self):
         s = rd("installer", "claudia.iss")
         inst = s.split("[InstallDelete]")[1].split("[Files]")[0]
+        inst = re.sub(r"#ifdef FrozenApp.*?#endif", "", inst, flags=re.S)          # nur beim Wechsel auf die einzelne Programmdatei wird die alte .venv entfernt
         self.assertNotIn(".venv\"", inst)
         self.assertNotIn("{userappdata}", s)
 
     def test_workflow_manual(self):
-        s = rd(".github", "workflows", "build-windows.yml")
+        s = rd(".github", "workflows", "release.yml")
         self.assertIn("workflow_dispatch", s)
         self.assertIn("claudia.iss", s)
+        self.assertFalse(os.path.exists(os.path.join(ROOT, ".github", "workflows", "build-windows.yml")))        # ersetzt durch release.yml
 
     def test_mac_script(self):
         s = rd("install.command")

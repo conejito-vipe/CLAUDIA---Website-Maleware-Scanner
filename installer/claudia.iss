@@ -3,11 +3,14 @@
 ; Beim ersten Start richtet start.bat Python und die Bausteine selbst ein (Ordner .venv im Programmordner).
 ; Persönliche Daten (Verbindungen, Einstellungen, Berichte) liegen in %APPDATA%\CLAUDIA und werden bei Update
 ; und Deinstallation nie angefasst. Die Funktion "CLAUDIA deinstallieren" im Programm bleibt für die Datenbereinigung.
+; Zwei Arten (der Workflow .github/workflows/release.yml baut die zweite):
+;   - ohne Angabe:           Release-Paket (dist\CLAUDIA), start.bat richtet Python beim ersten Start selbst ein
+;   - mit /DFrozenApp=1:     einzelne Programmdatei CLAUDIA.exe samt Bausteinen (dist-exe\_work\dist\CLAUDIA), keine Python-Einrichtung
 ; Hinweis: SmartScreen zeigt einen Herausgeber nur bei signierten Dateien (siehe README).
 
 #define AppShortName "CLAUDIA"
 #ifndef AppVersion
-  #define AppVersion "2.17.0"
+  #define AppVersion "2.18.0"
 #endif
 #define AuthorName "conejito-vipe"
 
@@ -34,7 +37,11 @@ OutputBaseFilename=CLAUDIA-Setup-{#AppVersion}
 LicenseFile=..\LICENSE
 SetupIconFile=..\claudia\assets\claudia.ico
 UninstallDisplayName={#AppShortName}
+#ifdef FrozenApp
+UninstallDisplayIcon={app}\CLAUDIA.exe
+#else
 UninstallDisplayIcon={app}\claudia\assets\claudia.ico
+#endif
 CloseApplications=no
 
 [Languages]
@@ -49,16 +56,37 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; Flags: unchecked
 Type: filesandordirs; Name: "{app}\claudia"
 Type: filesandordirs; Name: "{app}\tests"
 Type: filesandordirs; Name: "{app}\tools"
+#ifdef FrozenApp
+; Wechsel von der Python-Fassung: alte Startdateien und die eigene Python-Umgebung entfernen (Nutzerdaten liegen in %APPDATA%\CLAUDIA)
+Type: filesandordirs; Name: "{app}\.venv"
+Type: files; Name: "{app}\start.bat"
+Type: files; Name: "{app}\start.command"
+Type: files; Name: "{app}\install.command"
+Type: files; Name: "{app}\pruefen.bat"
+#endif
 
 [Files]
+#ifdef FrozenApp
+Source: "..\dist-exe\_work\dist\CLAUDIA\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+#else
 Source: "..\dist\CLAUDIA\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+#endif
 
 [Icons]
+#ifdef FrozenApp
+Name: "{autoprograms}\{#AppShortName}"; Filename: "{app}\CLAUDIA.exe"; WorkingDir: "{app}"
+Name: "{autodesktop}\{#AppShortName}"; Filename: "{app}\CLAUDIA.exe"; WorkingDir: "{app}"; Tasks: desktopicon
+#else
 Name: "{autoprograms}\{#AppShortName}"; Filename: "{app}\start.bat"; WorkingDir: "{app}"; IconFilename: "{app}\claudia\assets\claudia.ico"
 Name: "{autodesktop}\{#AppShortName}"; Filename: "{app}\start.bat"; WorkingDir: "{app}"; IconFilename: "{app}\claudia\assets\claudia.ico"; Tasks: desktopicon
+#endif
 
 [Run]
+#ifdef FrozenApp
+Filename: "{app}\CLAUDIA.exe"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#AppShortName}}"; Flags: nowait postinstall skipifsilent
+#else
 Filename: "{app}\start.bat"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#AppShortName}}"; Flags: nowait postinstall skipifsilent shellexec
+#endif
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\.venv"

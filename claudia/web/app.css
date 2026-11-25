@@ -550,3 +550,9 @@ details.cw > summary:focus-visible { outline: 3px solid #9fe3b3; outline-offset:
 .dash-site details{margin:6px 0;font-size:13px}
 .dash-tab{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}
 .dash-tab th,.dash-tab td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+.offer-table{width:100%;border-collapse:collapse;margin:6px 0 12px}
+.offer-table th,.offer-table td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+.offer-table th:nth-child(n+2),.offer-table td.offer-mark{text-align:center;width:72px}
+.offer-price{font-size:20px;margin:4px 0 10px}
+.offer-code{display:flex;gap:8px;margin:4px 0 10px}
+.offer-input{flex:1;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--card);color:var(--ink);font-family:ui-monospace,Consolas,monospace;font-size:12px}

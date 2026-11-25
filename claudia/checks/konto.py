@@ -610,8 +610,9 @@ def joomla_api_check(ctx, res):
         return
     if tok_on and n:
         res.add("warn", "%d Benutzer mit API-Token, API-Zugang aktiv" % n, "Mit dem Token erreicht man die Schnittstelle ohne Passwort. Unbekannte Tokens sind ein Dauerzugang.", items,
-                "Backend -> Benutzer -> Benutzer bearbeiten -> Reiter 'Joomla API Token': Token neu erzeugen oder das Plugin 'Benutzer - Joomla API-Token' ausschalten, wenn du die API nicht brauchst.")
+                "Backend -> Benutzer -> Benutzer bearbeiten -> Reiter 'Joomla API Token': Token neu erzeugen oder das Plugin 'Benutzer - Joomla API-Token' ausschalten, wenn du die API nicht brauchst. "
+                "Achtung: Ab Joomla 5.4 nutzt auch die automatische Update-Funktion die API; ganz abschalten heißt, auf die Automatik zu verzichten.")
     elif web_on:
-        res.add("info", "Web-Services aktiv, aber kein API-Token gefunden", "Die Schnittstelle ist an. Ohne Token ist sie nur mit Anmeldedaten nutzbar. Wenn du sie nicht brauchst, die Plugins ausschalten.", items)
+        res.add("info", "Web-Services aktiv, aber kein API-Token gefunden", "Die Schnittstelle ist an. Ohne Token ist sie nur mit Anmeldedaten nutzbar. Wenn du sie nicht brauchst, die Plugins ausschalten (ab Joomla 5.4 gilt das auch für die automatischen Core-Updates: sie brauchen die API).", items)
     else:
         res.add("ok", "Keine aktive API mit Token", "Es sind keine Web-Services-Plugins aktiv oder kein Benutzer hat ein Token.", items)

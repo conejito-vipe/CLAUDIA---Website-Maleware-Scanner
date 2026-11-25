@@ -2,6 +2,33 @@
 
 Erzeugt aus `claudia/docs/aenderungen.de.txt` (nicht von Hand ändern).
 
+## 2.18.0 (2026-11-24) - Einzelne Programmdatei und Release-Workflow
+
+### Einzelne Programmdatei ohne Python-Einrichtung (Windows, Mac)
+- **Was:** Zusätzlich zum bisherigen Paket gibt es CLAUDIA als einzelne Programmdatei: unter Windows als Installer (CLAUDIA-Setup-….exe) oder als tragbarer Ordner mit CLAUDIA.exe, auf dem Mac als CLAUDIA.app (Apple Silicon). Python und alle Bausteine sind enthalten; beim ersten Start wird nichts eingerichtet oder geladen. Diese Fassung aktualisiert sich nicht selbst: die Update-Anzeige verweist auf die Release-Seite, "Update installieren" ist dort nicht möglich. Bei der Deinstallation entfallen die Python-Umgebung und der Programmordner (die Datei bzw. App löscht man selbst); Berichte, Verbindungen und Einstellungen lassen sich wie bisher entfernen.
+- **Warum:** Wer kein Python hat oder kein PowerShell-Skript starten möchte, kann CLAUDIA mit einem Doppelklick öffnen. Eine laufende Programmdatei kann ihren eigenen Programmcode nicht durch ein Update ersetzen; ein Versuch würde die Installation beschädigen.
+- **Wie:** PyInstaller (tools/build_exe.py) packt den Programmcode samt Oberfläche, Hilfetexten, Sprachdateien und Listen in ein Paket; die Quelltexte liegen mit im Paket, weil das Kapitel "Technik" sie liest. Der Einstieg (installer/exe_main.py) lenkt fehlende Konsolenausgabe ins Leere und startet dieselbe Funktion wie das Python-Paket. "--selftest" prüft im gebauten Programm, ob alle Programmdaten vorhanden sind. appupdate.FROZEN sperrt install() ohne etwas zu laden oder zu ändern. Gebaut wird nur auf dem jeweiligen System (Windows und Mac lassen sich nicht auf Linux bauen), siehe Release-Workflow.
+
+### Release-Workflow (GitHub Actions)
+- **Was:** Der Workflow "Release" (nur auf Knopfdruck) führt die Tests aus, baut Paket, Windows-Installer, Windows-Ordner und Mac-App, prüft jede Programmdatei mit dem Selbsttest und legt dann direkt den GitHub-Release v<Version> an: Release Notes als Text, alle Dateien als Anhang, SHA256SUMS.txt und die Zeile "SHA-256: …" für die Prüfsumme des Pakets. Existiert das Tag schon, werden die Dateien ersetzt und der Text aktualisiert.
+- **Warum:** Ein Lauf liefert alle Dateien mit zueinander passenden Prüfsummen; von Hand kann dabei nichts vergessen oder vertauscht werden. Das Programm installiert ein Update nur, wenn der Release CLAUDIA_v<Version>.zip und dessen SHA-256 enthält.
+- **Wie:** Fünf Jobs (tests, package, windows, mac, release); nur der letzte hat Schreibrecht (contents: write), alle Aktionen sind auf einen Commit festgelegt. tools/release_body.py erzeugt SHA256SUMS.txt und den Text und lehnt ab, wenn RELEASE_NOTES.md nicht zur Version gehört oder das Paket fehlt. Prüfsummen weiterer Dateien stehen nur in SHA256SUMS.txt, nicht im Text, damit nie eine falsche Zeile als Prüfsumme des Pakets gelesen wird.
+
+### Release Notes: Englisch mit Umschaltung auf Deutsch
+- **Was:** Die Release Notes stehen auf GitHub zuerst auf Englisch, Deutsch folgt in einem aufklappbaren Block. Im Programm richtet sich die Anzeige nach der Sprache der Oberfläche. Der Text nennt nur, was technisch geändert wurde und warum.
+- **Warum:** Auf GitHub liest eine internationale Leserschaft; das Programm soll trotzdem in der gewählten Sprache anzeigen.
+- **Wie:** tools/build_release.py schreibt RELEASE_NOTES.md aus den Änderungstexten (beide Sprachen); appupdate.notes_for_lang schneidet den passenden Teil heraus und blendet Prüfsummenzeile und Dateiliste aus.
+
+### Prüfung: Laufen die automatischen Updates wirklich?
+- **Was:** Neue Prüfung (Joomla und WordPress). Joomla ab 5.4: prüft die Einstellung "Automatische Updates" und die Update-Quelle, die API-Plugins, die der Update-Dienst von joomla.org braucht, die Update-Quelle, ein bereitliegendes, aber nicht installiertes Kern-Update, Offline-Modus und Mailversand und ruft /api der eigenen Seite einmal mit und einmal ohne Browser-Kennung auf. Erkennt Firewall-Erweiterungen (z. B. HTProtect, Admin Tools), zeigt ihre Einstellungen zu API, Updates und Bot-Filtern und Einträge ihres Protokolls zu /api. WordPress: prüft WP-Cron (Zeitplan überfällig, wp-cron.php gesperrt, DISABLE_WP_CRON ohne Cronjob) und Versionsverwaltung im Ordner. Neue Aktion "API für automatische Joomla-Updates einschalten" (zwei Plugins, mit Sicherung und Rückgängig-Datei). Die Aktion "Joomla-API abschalten" und der Hinweis in der Prüfung "API-Zugang" nennen jetzt, dass damit die automatischen Core-Updates ab Joomla 5.4 entfallen.
+- **Warum:** Die bisherige Prüfung "Lässt sich die Seite automatisch aktualisieren?" prüft nur, ob ein Update im Backend gelingt (Rechte, Platz, PHP). Eine Seite kann sich so problemlos von Hand aktualisieren lassen und trotzdem nie von selbst: Der Update-Dienst von joomla.org stößt die Updates über die API an, und eine Firewall, ein abgeschalteter API-Zugang oder eine falsche Update-Quelle verhindern das, ohne dass etwas auffällt.
+- **Wie:** Rein lesende Abfragen (Einstellungen aus der Erweiterungstabelle, Update-Quellen, Aktivitätsprotokoll) und zwei Aufrufe von /api über curl des Servers (nur Statuscode, Antwortart, Server-Kennung). Eine Antwort gilt als "vor Joomla abgewiesen", wenn sie ein Fehlercode mit HTML statt JSON ist; unterscheiden sich die Antworten mit und ohne Browser-Kennung, wird ein Bot-Filter gemeldet. Einstellungen von Firewall-Erweiterungen werden nach Stichworten gefiltert, Werte mit Schlüssel-Bezug (token, secret, key, license) nicht angezeigt. Nicht prüfbar von hier: Zugriff von joomla.org und die Anmeldung beim Update-Dienst.
+
+### Intern
+- **Was:** Neue Dateien installer/exe_main.py, tools/build_exe.py, tools/release_body.py, .github/workflows/release.yml, tests/test_exe_build.py, claudia/checks/auto_updates.py, tests/test_auto_updates.py, tests/test_autoupdate_action.py; installer/claudia.iss kennt jetzt zusätzlich /DFrozenApp=1; der alte Workflow build-windows.yml entfällt (ersetzt durch release.yml).
+- **Warum:** Ein einziger Weg zum Release statt zwei getrennter.
+- **Wie:** Die Inno-Setup-Datei bleibt für beide Fassungen dieselbe (gleiche Programm-ID), damit eine Installation von der Python-Fassung auf die Programmdatei als Update läuft und alte Startdateien entfernt werden.
+
 ## 2.17.0 (2026-11-24) - Dashboard und mehr
 
 ### Dashboard: Übersicht, Vergleich, Verwaltung
@@ -201,7 +228,7 @@ Erzeugt aus `claudia/docs/aenderungen.de.txt` (nicht von Hand ändern).
 
 ### Oberfläche
 - **Was:** Deinstallations-Dialog neu aufgebaut (Schließen-Knopf oben rechts, Knöpfe unten fest, gleiche Größe wie im Hauptfenster, nichts ragt über die Bildlaufleiste). Logo bündig mit der Linie unter der Navigation. Link zur Anleitung für den kostenlosen Safe-Browsing-Schlüssel im Startformular und im Befund; Adressen in Befunden sind anklickbar. Empfehlungen für Erweiterungen: erst kostenlos, dann unter eigener Überschrift kostenpflichtig. Das Hilfefenster bleibt während der Prüfung bedienbar und verschiebbar. Ordner früherer Versionen werden beim Start übernommen (umbenannt, sonst kopiert und geprüft).
-- **Warum:** Wunschliste vom 16.11.
+- **Warum:** Einheitliche Größen, Abstände und Beschriftungen in allen Fenstern; der Link spart die Suche nach der Anleitung für den Safe-Browsing-Schlüssel.
 - **Wie:** Nur unter Linux im Browser getestet, noch nicht im Windows-Fenster.
 
 ## 2.4.1 (2026-11-14) - Härtung, Integrität, Maßnahmenplan, weniger Fehlalarme
@@ -524,7 +551,7 @@ Erzeugt aus `claudia/docs/aenderungen.de.txt` (nicht von Hand ändern).
 
 ### Größeres Hilfefenster, Fußzeile, US-Englisch
 - **Was:** Das Hilfefenster ist etwa doppelt so groß. Fußzeile: "vibecoded by conejito-vipe with love". Englisch ist jetzt US-Englisch mit US-Flagge.
-- **Warum:** Wunsch aus der Nutzung.
+- **Warum:** Der Hilfetext ist im kleinen Fenster schwer lesbar; US-Englisch und Flagge entsprechen der gewählten Sprachvariante.
 - **Wie:** Fenstergröße in app.css, Texte in claudia/lang/en.json.
 
 ### Härtung nach Sicherheitsprüfung des Codes

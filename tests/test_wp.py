@@ -54,7 +54,7 @@ class Registry(unittest.TestCase):
     def test_joomla_unchanged_and_wordpress_separate(self):
         j = [c.id for c in ordered("joomla")]
         w = [c.id for c in ordered("wordpress")]
-        self.assertEqual(len(j), 73)
+        self.assertEqual(len(j), 74)
         self.assertFalse([i for i in j if i.startswith("wp_")])
         self.assertEqual(w[0], "wp_info")
         self.assertIn("wp_core", w)
@@ -368,7 +368,7 @@ class ServerPayload(unittest.TestCase):
         app = App(tempfile.mkdtemp(prefix="wp_srv_"))
         p = app.init_payload()
         self.assertEqual(p["cms"], "joomla")
-        self.assertEqual(len(p["checks"]), 73)
+        self.assertEqual(len(p["checks"]), 74)
         app.info = {"cms": "wordpress", "wordpress": "6.8.3"}
         p = app.init_payload()
         self.assertEqual(p["cms"], "wordpress")

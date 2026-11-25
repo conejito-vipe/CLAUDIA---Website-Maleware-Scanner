@@ -1892,7 +1892,7 @@ function renderUpdate(st) {
     h("p", { "data-nt": "1", text: tr("Version %s ist verfügbar. Installiert ist Version %s.").replace("%s", i.version).replace("%s", st.current) + (i.published ? " (" + i.published + ")" : "") }),
     i.notes ? h("div", { class: "upd-notes", "data-nt": "1", text: i.notes }) : null,
     h("p", { class: "hint", text: "Beim Installieren wird das Paket geladen und mit der veröffentlichten Prüfsumme verglichen, der bisherige Programmordner wird gesichert und bei einem Fehler automatisch wiederhergestellt. Danach startet CLAUDIA neu. Deine Verbindungen, Einstellungen und Berichte bleiben unverändert." }),
-    st.installable ? null : h("p", { class: "hint", text: "Für diese Version gibt es kein Paket mit veröffentlichter Prüfsumme. Bitte von der Release-Seite laden." }),
+    st.installable ? null : h("p", { class: "hint", text: st.frozen ? "Diese Fassung besteht aus einer einzelnen Programmdatei und aktualisiert sich nicht selbst. Bitte die neue Version von der Release-Seite laden." : "Für diese Version gibt es kein Paket mit veröffentlichter Prüfsumme. Bitte von der Release-Seite laden." }),
     S.running ? h("p", { class: "hint", text: "Bitte warten, bis die Prüfung beendet ist." }) : null,
     i.page ? h("p", {}, h("a", { href: i.page, text: "Release-Seite im Browser öffnen" })) : null],
     h("div", { class: "dlg-actions" }, close, skip, go));
@@ -2122,7 +2122,40 @@ function renderLicense(st, note) {
   const del = h("button", { class: "btn ghost", type: "button", disabled: !st.has_key, onclick: async () => {
     try { const r = await api("/api/license-remove", {}); renderLicense(r, { ok: true, text: "Der Schlüssel wurde entfernt." }); if (S.init) S.init.license = r; } catch (e) { /* egal */ }
   } }, "Schlüssel entfernen");
-  licFrame("Lizenz", h("div", {}, ...kids), h("div", { class: "actions" }, set, del));
+  const offer = S.init.offer ? h("button", { class: "btn ghost", type: "button", onclick: () => openOffer("") }, st.has_key ? "Lizenz verlängern" : "Normal und Pro vergleichen") : null;
+  licFrame("Lizenz", h("div", {}, ...kids), h("div", { class: "actions" }, set, del, offer));
+}
+/* Vergleich Normal/Pro, Kauf und Rabattcode. Nur erreichbar, wenn der Server das Angebot freigeschaltet hat (S.init.offer); sonst ist nichts davon sichtbar. */
+function euro(cent, cur) { return (cent / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + (cur || "EUR"); }
+async function openOffer(code, note) {
+  let st;
+  try { st = await api("/api/offer", { code: code || "" }); } catch (e) { licFrame("Normal und Pro", h("p", { text: e.error || "Nicht möglich." })); return; }
+  if (!st.aktiv) { licFrame("Normal und Pro", h("p", { text: "Dieses Angebot ist im Moment nicht verfügbar." })); return; }
+  const kids = [];
+  if (note) kids.push(h("div", { class: "notice " + (note.ok ? "ok" : "err") }, h("div", { text: note.text })));
+  const mark = v => h("td", { class: "offer-mark", text: v ? "\u2713" : "\u2013", "aria-label": v ? "ja" : "nein" });
+  kids.push(h("table", { class: "offer-table" },
+    h("thead", {}, h("tr", {}, h("th", { text: "Funktion" }), h("th", { text: "Normal" }), h("th", { text: "Pro" }))),
+    h("tbody", {}, st.features.map(f => h("tr", {}, h("td", { text: f.text }), mark(f.normal), mark(f.pro))))));
+  if (st.preis_cent > 0) {
+    const price = h("div", { class: "offer-price" }, h("strong", { text: euro(st.zu_zahlen_cent, st.waehrung) }),
+      st.rabatt.valid ? h("span", { class: "small", text: " statt " + euro(st.preis_cent, st.waehrung) + " (" + st.rabatt.prozent + " % Rabatt)" }) : null);
+    kids.push(h("p", {}, h("strong", { text: st.verlaengerung ? "Verlängerung" : "Pro-Lizenz" }), " für " + st.laufzeit_tage + " Tage"), price);
+  }
+  if (st.verlaengerung && st.lizenz_bis) kids.push(h("p", { class: "small", text: "Deine Lizenz gilt bis " + st.lizenz_bis + (st.tage_uebrig != null ? " (noch " + st.tage_uebrig + " Tage)." : ".") }));
+  kids.push(h("div", { class: "notice ok" }, h("div", { text: st.ngo })));
+  const ta = h("input", { class: "offer-input", id: "offercode", type: "text", placeholder: "Rabattcode (beginnt mit RB1.)", spellcheck: "false", value: code || "" });
+  const apply = h("button", { class: "btn ghost", type: "button", onclick: () => openOffer(ta.value, null) }, "Code anwenden");
+  kids.push(h("label", { for: "offercode", class: "small", text: "Rabattcode" }), h("div", { class: "offer-code" }, ta, apply));
+  if (code && !st.rabatt.valid) kids.push(h("div", { class: "notice err" }, h("div", { text: "Der Rabattcode gilt nicht (" + st.rabatt.reason + ")." })));
+  kids.push(h("h3", { text: "Nutzungsbedingungen" }), h("ul", { class: "lic-free" }, st.bedingungen.map(t => h("li", { text: t }))), h("p", { class: "small", text: st.hinweis }),
+    h("p", { class: "small", text: "Bezahlt wird bei PayPal im Browser. Das Programm sendet nichts und speichert keine Zahlungsdaten; den Lizenzschlüssel erhältst du nach der Zahlung vom Autor." }));
+  const buy = h("button", { class: "btn primary", type: "button", disabled: !st.kauf_moeglich, onclick: async () => {
+    try { await api("/api/offer-buy", { code: st.rabatt.valid ? code : "" }); openOffer(code, { ok: true, text: "PayPal wurde im Browser geöffnet." }); }
+    catch (e) { openOffer(code, { ok: false, text: e.error || "Nicht möglich." }); }
+  } }, st.verlaengerung ? "Lizenz verlängern (PayPal)" : "Pro kaufen (PayPal)");
+  const back = h("button", { class: "btn ghost", type: "button", onclick: () => openLicense() }, "Zurück zur Lizenz");
+  licFrame("Normal und Pro", h("div", {}, ...kids), h("div", { class: "actions" }, buy, back));
 }
 
 /* ------------------------------------------------------------------ Start */
@@ -2133,7 +2166,7 @@ function renderLicense(st, note) {
   $("#help").addEventListener("click", openHelp);
   $("#updbtn").addEventListener("click", () => openUpdate(true));
   $("#licbtn").addEventListener("click", () => openLicense());
-  { const lic = S.init.license || {}; $("#licbtn").hidden = !(lic.public_key_set || lic.has_key || (lic.gesperrt_ohne_lizenz || []).length); }   // unsichtbar, solange es keinen öffentlichen Schlüssel und keine Sperre gibt
+  { const lic = S.init.license || {}; $("#licbtn").hidden = !(S.init.offer || lic.public_key_set || lic.has_key || (lic.gesperrt_ohne_lizenz || []).length); }   // unsichtbar, solange es keinen öffentlichen Schlüssel und keine Sperre gibt
   $("#dashbtn").addEventListener("click", () => openDashboard());
   autoUpdateCheck();
   $("#uninstall").addEventListener("click", openUninstall);

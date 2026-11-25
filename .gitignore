@@ -29,3 +29,8 @@ installer/Output/
 *.pem
 lizenz_privat*
 lizenzen_ausgestellt.csv
+# Verwaltungstool fuer Lizenzen (lokal beim Autor, nie auf GitHub)
+verwaltungstool/
+CLAUDIA_Verwaltung/
+lizenz_privat*
+*.pem

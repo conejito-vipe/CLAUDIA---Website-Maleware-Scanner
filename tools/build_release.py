@@ -35,10 +35,25 @@ def changelog_md(lang: str = "en") -> str:
     return "\n".join(out) + "\n"
 
 
-def release_notes(lang: str = "en") -> str:
+def _notes_list(lang: str) -> str:
     rel = helpdocs.changelog(lang)[0]
+    why = "Why" if lang == "en" else "Warum"
     head = "# CLAUDIA %s" % rel["version"] + (" - " + rel["title"] if rel["title"] else "")
-    return head + "\n\n" + "\n".join("- **%s**: %s" % (i["title"], i["what"]) for i in rel["items"]) + "\n"
+    rows = []
+    for i in rel["items"]:
+        row = "- **%s**: %s" % (i["title"], i["what"])
+        if i.get("why"):
+            row += " %s: %s" % (why, i["why"])
+        rows.append(row)
+    return head + "\n\n" + "\n".join(rows) + "\n"
+
+
+def release_notes(lang: str = "en") -> str:
+    """English first; the German text follows in a collapsed block (GitHub shows it as a switch). Only what changed technically and why."""
+    en = _notes_list("en")
+    if lang != "en":
+        return _notes_list(lang)
+    return en + "\n<details>\n<summary>Deutsch</summary>\n\n" + _notes_list("de") + "\n</details>\n"
 
 
 def files() -> List[str]:

@@ -51,6 +51,7 @@ ACTION_FUNCS: Dict[str, List[str]] = {
     "revoke_tokens": ["_run_revoke_tokens", "_picked_ids", "_dump_for_change"],
     "end_sessions": ["_run_end_sessions", "_sql_rows", "_sql_exec"],
     "disable_api": ["_run_disable_api", "_dump_for_change", "_sql_rows", "_sql_exec"],
+    "enable_autoupdate_api": ["_run_enable_autoupdate_api", "_dump_for_change", "_sql_rows", "_sql_exec"],
     "deactivate_extension": ["_run_deactivate_joomla", "_picked", "_protected_tool_names", "_dump_for_change"],
     "wp_deactivate_plugin": ["_run_deactivate_wp", "_picked", "_protected_tool_names", "_dump_for_change"],
     "clean_tmp": ["_run_clean_tmp"],
