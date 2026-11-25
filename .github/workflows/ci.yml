@@ -1,7 +1,11 @@
 name: CI
-# Nur auf Knopfdruck (Actions > CI > Run workflow), damit das Freikontingent nicht verbraucht wird: Windows zählt doppelt, macOS zehnfach.
-# Empfehlung: einmal vor jedem großen Release starten (kostet ca. 60 gezählte Minuten). Die Linux-Tests laufen vorher lokal.
+# Läuft bei jedem Push auf main, bei Pull Requests und auf Knopfdruck (Actions > CI > Run workflow).
+# Das Repository ist öffentlich: Standard-Rechner (Linux, Windows, macOS) kosten kein Freikontingent.
+# Commits nur mit Dokumentation oder Prüfsummen: "[skip ci]" in den Commit-Text schreiben, dann läuft die CI nicht.
 on:
+  push:
+    branches: [main]
+  pull_request:
   workflow_dispatch:
 concurrency:
   group: ci-${{ github.ref }}
@@ -53,7 +57,7 @@ jobs:
         env: { PYTHONPATH: "fake_paramiko;.." }
         run: python -W ignore -m unittest $(tr -d '\r' < windows_tests.txt)
   # macOS: nur die Tests, die Mac-Seite und plattformunabhängige Teile prüfen (Startdatei unter bash 3.2, Speicherorte, Fenster, Paket).
-  # Liste: tests/mac_tests.txt. macOS-Rechner zählen bei privaten Repositories mehrfach auf das Freikontingent; deshalb nur diese Auswahl.
+  # Liste: tests/mac_tests.txt. Nur diese Auswahl, weil die übrigen Tests einen Linux-Server nachbauen.
   test-macos:
     runs-on: macos-latest
     steps:

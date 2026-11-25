@@ -6,16 +6,17 @@ name: Release
 #   - CLAUDIA_v<Version>_Mac.zip        Mac-Programm CLAUDIA.app (Apple Silicon), ohne Python
 #   - SHA256SUMS.txt                    Prüfsummen aller Dateien (plus Zeile "SHA-256: ..." im Text für die Aktualisierung im Programm)
 # Der Text des Releases ist RELEASE_NOTES.md (Englisch, Deutsch als Block zum Umschalten). Das Tag v<Version> kommt aus claudia/__init__.py.
-# Kosten: Windows zählt doppelt, macOS zehnfach im Freikontingent (ca. 25 gezählte Minuten insgesamt). Die Tests laufen vorher (Linux).
+# Das Repository ist öffentlich: die Rechner kosten kein Freikontingent. Die Tests laufen vorher (Linux).
+# Ohne Häkchen entsteht ein normales, sofort öffentliches Release.
 on:
   workflow_dispatch:
     inputs:
       draft:
-        description: "Als Entwurf anlegen (nicht öffentlich, zum Prüfen vor dem Veröffentlichen)"
+        description: "Nur als Entwurf anlegen (nicht öffentlich, zum Prüfen). Leer lassen = sofort öffentliches Release"
         type: boolean
         default: false
       prerelease:
-        description: "Als Vorabversion markieren"
+        description: "Als Vorabversion markieren. Leer lassen = normales Release"
         type: boolean
         default: false
 concurrency:
