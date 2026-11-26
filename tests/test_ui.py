@@ -420,7 +420,7 @@ class UiFlow(unittest.TestCase):
         pg.evaluate("() => { const d = document.getElementById('unidlg'); document.getElementById('uni-body').textContent = 'x'; d.showModal(); }")
         dbg = pg.locator("#unidlg").evaluate("e => getComputedStyle(e).backgroundColor")
         mbg = pg.evaluate("() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()")
-        self.assertEqual(dbg, "rgb(231, 237, 240)")                                              # gleicher Ton wie die Hauptseiten (--bg)
+        self.assertEqual(dbg, "rgb(237, 242, 247)")                                              # gleicher Ton wie die Hauptseiten (--bg)
         pg.evaluate("() => document.getElementById('unidlg').close()")
 
 

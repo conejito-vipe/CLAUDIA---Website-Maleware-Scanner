@@ -1,3 +1,12 @@
+## 3.0.0 | 2026-11-26 | New interface: sidebar with logo, footer bar and the blue of the logo
+### New interface
+Was: The interface now looks like a program instead of a website. On the left is a sidebar with the logo, the four steps (connection, select checks, check, result) and, at the bottom, Updates, Dashboard and Help. A fixed footer bar at the bottom shows the connection status, the language choice and the version; the previous notice text sits below the content. The colors come from the logo (the blue of the magnifier as accent, dark navy in dark mode, light blue in light mode). Nothing changes in functions, checks or reports.
+Why: The design "Leitstand Blau" was chosen because it can be used like a desktop program and keeps the dashboard and help always reachable.
+How: Pure change to app.css and index.html (sidebar as fixed column, footer bar as its own element), a small adjustment in app.js for footer bar and version. On narrow windows (below 760 px) the sidebar moves back to the top.
+### Version number
+Was: The first digit rises to 3 because the look of the program changes noticeably.
+Why: Users can see that it is a bigger step.
+How: Version in claudia/__init__.py, pyproject.toml and installer/claudia.iss.
 ## 2.20.0 | 2026-11-26 | External mode: check from the outside only, without server access (all seven systems)
 ### External mode
 Was: The start page has "External mode: check from outside only (no server access)". Only the address of the website is needed. CLAUDIA detects the system itself (Joomla, WordPress, Drupal, TYPO3, Contao, PrestaShop, Shopware) and shows only the checks that are possible from outside: 10 to 11 per system (page source, security headers, CSP, cookies, TLS, blocklist, threat situation, open interfaces and files of the system, plus the three new checks below). The report notes the external mode.

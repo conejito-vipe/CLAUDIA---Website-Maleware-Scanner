@@ -352,6 +352,7 @@ function renderFrame() {
   renderLangs();
   $("#ver").textContent = tr("Version") + " " + S.init.version;
   $("#tb-ver").textContent = S.init.version;
+  $("#foot-ver").textContent = S.init.version;
   const ub = $("#uninstall"), bar = $("#uni-bar");
   if (ub.parentElement !== bar) bar.append(ub);                     // aus der Verbindungsansicht zurückholen, bevor diese abgebaut wird
   bar.hidden = S.step !== "result";
@@ -360,6 +361,7 @@ function renderFrame() {
     c.hidden = false;
     $("#conn-text").textContent = connLabel();
   } else c.hidden = true;
+  $("#foot-off").hidden = !c.hidden;
   const order = STEPS.map(s => s[0]);
   const cur = order.indexOf(S.step);
   const reach = { connect: true, tests: !!S.conn, run: S.running || S.results.length > 0, result: !S.running && S.results.length > 0 };

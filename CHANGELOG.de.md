@@ -2,6 +2,18 @@
 
 Erzeugt aus `claudia/docs/aenderungen.de.txt` (nicht von Hand ändern).
 
+## 3.0.0 (2026-11-26) - Neue Oberfläche: Seitenleiste mit Logo, Fußleiste und das Blau des Logos
+
+### Neue Oberfläche
+- **Was:** Die Oberfläche wirkt jetzt wie ein Programm statt wie eine Webseite. Links steht eine Seitenleiste mit dem Logo, den vier Schritten (Verbindung, Tests auswählen, Prüfung, Ergebnis) und unten Updates, Dashboard und Hilfe. Unten steht eine feste Fußleiste mit dem Verbindungsstatus, der Sprachwahl und der Version; der bisherige Hinweistext steht unter dem Inhalt. Die Farben stammen aus dem Logo (Blau der Lupe als Akzent, dunkles Marineblau im dunklen Modus, helles Blau im hellen Modus). Ändert sich nichts an Funktionen, Prüfungen und Berichten.
+- **Warum:** Der Entwurf "Leitstand Blau" wurde gewählt, weil er sich wie ein Desktop-Programm bedienen lässt und das Dashboard und die Hilfe immer erreichbar bleiben.
+- **Wie:** Reine Änderung an app.css und index.html (Seitenleiste als feste Spalte, Fußleiste als eigenes Element), kleine Anpassung in app.js für Fußleiste und Version. Auf schmalen Fenstern (unter 760 px) rutscht die Seitenleiste wieder nach oben.
+
+### Versionsnummer
+- **Was:** Die erste Ziffer steigt auf 3, weil sich das Aussehen des Programms deutlich ändert.
+- **Warum:** Nutzer erkennen so, dass es ein größerer Schritt ist.
+- **Wie:** Version in claudia/__init__.py, pyproject.toml und installer/claudia.iss.
+
 ## 2.20.0 (2026-11-26) - Externer Modus: Prüfung nur von außen, ohne Serverzugang (alle sieben Systeme)
 
 ### Externer Modus

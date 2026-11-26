@@ -81,11 +81,21 @@ class Ui(unittest.TestCase):
         self.assertTrue(href.startswith("https://"), href)
         pg.close()
 
-    def test_logo_sits_on_line_under_navigation(self):
-        """Seit 2.15.0: Das Logo hat unten genauso viel Abstand zur Linie wie oben zum Fensterrand (und ist etwas kleiner)."""
+    def test_logo_in_sidebar_has_margin_to_edges(self):
+        """Seit 3.0.0: Das Logo steht in der Seitenleiste mit Abstand zu allen Rändern; Seitenleiste mindestens 140 px breit."""
         pg = self.page()
         logo, top = self.box(pg, ".brand-mark"), self.box(pg, ".top")
-        self.assertAlmostEqual(logo["t"] - top["t"], top["b"] - logo["b"], delta=3)
+        self.assertGreaterEqual(top["r"] - top["l"], 140)
+        self.assertGreaterEqual(logo["t"] - top["t"], 20)
+        self.assertGreaterEqual(logo["l"] - top["l"], 14)
+        self.assertGreaterEqual(top["r"] - logo["r"], 14)
+        pg.close()
+
+    def test_footer_bar_is_fixed_at_bottom(self):
+        pg = self.page()
+        bar = self.box(pg, ".sbar")
+        self.assertAlmostEqual(bar["b"], pg.evaluate("window.innerHeight"), delta=10)
+        self.assertGreater(bar["r"] - bar["l"], 600)
         pg.close()
 
 

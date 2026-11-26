@@ -28,13 +28,7 @@
       <span class="brand-ver" id="ver"></span>
     </div>
     <div class="top-r">
-      <div class="conn" id="conn" hidden>
-        <span class="conn-dot" aria-hidden="true"></span>
-        <span id="conn-text"></span>
-        <button class="link" id="conn-off" type="button">Trennen</button>
-      </div>
       <div class="top-tools">
-        <div class="langs" id="langs" role="group" aria-label="Sprache / Language" hidden></div>
         <button class="link" id="updbtn" type="button" title="Nach einer neuen Programmversion suchen">Updates</button>
         <button class="link" id="dashbtn" type="button" title="Verlauf, Vergleich und Verwaltung der Sicherungen">Dashboard</button>
         <button class="link" id="licbtn" type="button" hidden title="Lizenzschlüssel eintragen und ansehen">Lizenz</button>
@@ -46,6 +40,19 @@
 </header>
 
 <main id="view" tabindex="-1"></main>
+
+<div class="sbar" id="sbar">
+  <div class="conn" id="conn" hidden>
+    <span class="conn-dot" aria-hidden="true"></span>
+    <span id="conn-text"></span>
+    <button class="link" id="conn-off" type="button">Trennen</button>
+  </div>
+  <span class="foot-off" id="foot-off">Nicht verbunden</span>
+  <span class="foot-space"></span>
+  <div class="langs" id="langs" role="group" aria-label="Sprache / Language" hidden></div>
+  <span class="foot-ver">CLAUDIA <span id="foot-ver"></span></span>
+</div>
+
 
 <dialog id="helpdlg" data-nt="1"><div id="help-body"></div></dialog>
 
