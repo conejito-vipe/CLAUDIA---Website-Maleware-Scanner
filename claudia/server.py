@@ -22,7 +22,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
-from . import angebot, appupdate, lizenz, support, verlauf, wissen, cms as cmsmod, contao, drupal, prestashop, shopware, typo3, APP_NAME, __version__, actionplan, actions, baseline, hoster, joomla, logsave, phpdetect, probe as probe_mod, report, snippets, uninstall, wordpress
+from . import angebot, appupdate, lizenz, schalt, support, verlauf, wissen, cms as cmsmod, contao, drupal, prestashop, shopware, typo3, APP_NAME, __version__, actionplan, actions, baseline, hoster, joomla, logsave, phpdetect, probe as probe_mod, report, snippets, uninstall, wordpress
 from .db import DbError
 from .engine import Ctx, Engine, Settings
 from . import helpdocs, i18n
@@ -406,6 +406,7 @@ class App:
     def __init__(self, directory: str, demo_world: Optional[Dict[str, str]] = None):
         self.dir = directory
         os.makedirs(self.dir, exist_ok=True)
+        schalt.apply(self.dir)                                   # gespeicherte Schaltdatei (Lizenzpflicht, Sperrliste) übernehmen
         self.profiles = ProfileStore(os.path.join(self.dir, "profile.json"))
         self.known = KnownHosts(os.path.join(self.dir, "bekannte_server.json"))
         self.demo_world = demo_world
@@ -509,9 +510,7 @@ class App:
     def connect(self, c: Dict[str, Any], job: Optional["ConnectJob"] = None) -> Dict[str, Any]:
         """Verbindung herstellen und prüfen (blockierend). Mit 'job' werden Fortschritt und Zeitgrenze gemeldet."""
         if c.get("mode") == "none":
-            self.disconnect()
-            self.conn, self.info = {"mode": "none"}, {"mode": "none"}
-            return {"ok": True, "mode": "none"}
+            return self._connect_external(c)
         self._validate_conn(c)
         self._login_gate()
         job = job or ConnectJob(CONNECT_LIMIT)
@@ -560,6 +559,32 @@ class App:
                 raise ApiError("Abgebrochen.", 408, kind="timeout")
             self.runner, self.conn, self.info = runner, dict(c), info
         return {"ok": True, "info": info}
+
+    def _connect_external(self, c: Dict[str, Any]) -> Dict[str, Any]:
+        """Externer Modus: kein Server, keine SSH-Verbindung. Nur die Adresse; das System wird von außen erkannt (oder vom Nutzer gewählt)."""
+        from .checks import extern
+        url = str(c.get("url") or "").strip()
+        self.disconnect()
+        info: Dict[str, Any] = {"mode": "none", "external": True, "url": "", "host": ""}
+        if url:
+            from . import secure
+            from urllib.parse import urlparse
+            https, _ = secure.to_https(url)
+            host = (urlparse(https).hostname or "").strip()
+            if not host:
+                raise ApiError("Die Adresse der Webseite ist nicht lesbar.")
+            info.update({"url": https, "host": host})
+            if not os.environ.get("CLAUDIA_OFFLINE"):
+                d = extern.detect_site(https)
+                info["detected"] = {k: d.get(k) for k in ("cms", "name", "version", "evidence", "reachable")}
+                if d.get("cms"):
+                    info["cms"] = d["cms"]
+        chosen = str(c.get("cms") or "").strip().lower()
+        if chosen in cmsmod.PROFILES:
+            info["cms"] = chosen
+        info["cms_name"] = cmsmod.name_of(cmsmod.known(str(info.get("cms") or "joomla")))
+        self.conn, self.info = {"mode": "none", "external": True, "url": info["url"], "host": info["host"]}, info
+        return {"ok": True, "mode": "none", "info": info}
 
     def connect_start(self, c: Dict[str, Any]) -> Dict[str, Any]:
         if c.get("mode") == "none":
@@ -669,7 +694,7 @@ class App:
             self.ensure_connected()
             settings = Settings(
                 site_dir=(s.get("site_dir") or self.conn.get("site_dir") or ".").strip() or ".",
-                url=(s.get("url") or "").strip(), log_dir=(s.get("log_dir") or "").strip(),
+                url=(s.get("url") or self.conn.get("url") or "").strip(), extern=bool(self.conn.get("external")), log_dir=(s.get("log_dir") or "").strip(),
                 local_log=(s.get("local_log") or "").strip(),
                 allow_hosts=split_allow(s.get("allow_hosts") or "") if isinstance(s.get("allow_hosts"), str)
                 else list(s.get("allow_hosts") or []),
@@ -689,7 +714,7 @@ class App:
                 "site_dir": settings.site_dir, "url": settings.url, "log_dir": settings.log_dir,
                 "local_log": settings.local_log, "allow_hosts": settings.allow_hosts,
                 "mask_ips": settings.mask_ips, "opts": public_opts,
-                "eigene_datenbankverbindung": bool(settings.db),
+                "eigene_datenbankverbindung": bool(settings.db), "externer_modus": bool(settings.extern),
             }
             self.cancel = threading.Event()
             self.running = True
@@ -1702,6 +1727,11 @@ class Handler(BaseHTTPRequestHandler):
             if method == "GET" and path == "/api/license":
                 return self._json(lizenz.state(app.dir))
             if method == "POST" and path == "/api/license-set":
+                txt = str(body.get("key", ""))[:schalt.MAX_LEN + 1].strip()
+                if txt.startswith(schalt.PREFIX + "."):              # Schaltdatei (SW1) statt Lizenzschlüssel
+                    why = schalt.accept(app.dir, txt)
+                    return self._json(dict(lizenz.state(app.dir), accepted=not why,
+                                           message="Schaltdatei angenommen." if not why else "Die Schaltdatei wurde nicht angenommen (%s)." % why))
                 res = lizenz.store(app.dir, str(body.get("key", ""))[:lizenz.MAX_KEY_LEN + 1])
                 return self._json(dict(lizenz.state(app.dir), accepted=bool(res["valid"]), message=_lizenz_msg(res)))
             if method == "POST" and path == "/api/offer":                    # Vergleich Normal/Pro; ohne Freischaltung nur {"aktiv": false}

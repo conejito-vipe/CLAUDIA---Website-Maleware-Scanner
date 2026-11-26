@@ -34,6 +34,8 @@ BASICS: List[Tuple[str, str, List[Tuple[str, str]]]] = [
     ("haertung", "claudia.util", [("claudia.util", "sq"), ("claudia.util", "parse_xml"), ("claudia.util", "digits"), ("claudia.util", "mask_secrets"), ("claudia.db", "validate_vars")]),
     ("dashboard", "claudia.verlauf", [("claudia.verlauf", "run_entry"), ("claudia.verlauf", "record_run"), ("claudia.verlauf", "compare"), ("claudia.verlauf", "nachkontrolle"), ("claudia.verlauf", "dashboard"), ("claudia.verlauf", "delete_site"),
                                               ("claudia.verlauf", "export_csv"), ("claudia.actions", "verify_backup"), ("claudia.support", "build")]),
+    ("extern", "claudia.checks.extern", [("claudia.checks.extern", "detect"), ("claudia.checks.extern", "parse_version"), ("claudia.checks.extern", "is_real_hit"), ("claudia.checks.extern", "gather"),
+                                         ("claudia.checks.extern", "judge_version"), ("claudia.server", "App._connect_external")]),
     ("signatur", "claudia.signatur", [("claudia.signatur", "verify"), ("claudia.appupdate", "verify_signature"), ("claudia.wissen", "check"), ("claudia.wissen", "load"), ("claudia.wissen", "update")]),
 ]
 

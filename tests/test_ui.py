@@ -273,7 +273,7 @@ class UiFlow(unittest.TestCase):
         self.assertNotIn("claudia-token", page)
         # mit Sitzung
         data = json.load(urllib.request.urlopen(urllib.request.Request(base + "api/init", headers=ok)))
-        self.assertEqual(len(data["checks"]), 74)
+        self.assertEqual(len(data["checks"]), 77)
 
     def test_4_profile_has_no_password(self):
         path = os.path.join(self.base, "data", "profile.json")

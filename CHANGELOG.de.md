@@ -2,6 +2,38 @@
 
 Erzeugt aus `claudia/docs/aenderungen.de.txt` (nicht von Hand ändern).
 
+## 2.20.0 (2026-11-26) - Externer Modus: Prüfung nur von außen, ohne Serverzugang (alle sieben Systeme)
+
+### Externer Modus
+- **Was:** Auf der Startseite gibt es "Externer Modus: nur von außen prüfen (ohne Serverzugang)". Nötig ist nur die Adresse der Webseite. CLAUDIA erkennt das System selbst (Joomla, WordPress, Drupal, TYPO3, Contao, PrestaShop, Shopware) und zeigt nur die Prüfungen, die von außen möglich sind: 10 bis 11 je System (Quelltext, Sicherheits-Header, CSP, Cookies, TLS, Sperrliste, Bedrohungslage, offene Schnittstellen und Dateien des Systems plus die drei neuen Prüfungen unten). Der Bericht vermerkt den externen Modus.
+- **Warum:** Wer kein SSH hat (Kundenseite, fremde Seite, Erstkontakt) bekam bisher nur eine kleine Auswahl und musste wissen, welche. Jetzt reicht die Adresse, und es ist klar, was geprüft wurde und was ohne Serverzugang nicht geprüft werden kann.
+- **Wie:** CheckDef kennt "extern"; Settings.extern lässt die Engine alle anderen Prüfungen auslassen (Prüfungen mit lokaler Protokolldatei bleiben möglich). Beim Verbinden ruft App._connect_external Startseite und einige Standardadressen ab und wählt das System; es lässt sich auch von Hand wählen. Es entsteht keine SSH-Verbindung (runner ist None).
+
+### Neue Prüfung: System und Version von außen (alle Systeme)
+- **Was:** ext_fingerprint erkennt das System an Generator-Angabe, Ordnern, Kopfzeilen, Cookies und Anmeldeseiten und liest die Version, wo sie sichtbar ist: WordPress (Generator, Feed, readme.html), Joomla (Manifest, Sprachdatei), Drupal (CHANGELOG.txt, sonst nur die Hauptversion), TYPO3 (Anmeldeseite), Shopware (/api/_info/version). Bei Contao und PrestaShop ist die Version von außen nicht verlässlich lesbar; das steht offen im Bericht. Die Version wird online bewertet (WordPress stable-check, Joomla-Updateliste, Drupal-Releases, Packagist-Meldungen für TYPO3, Contao, PrestaShop, Shopware).
+- **Warum:** Die Version entscheidet, ob bekannte Lücken offen sind. Was von außen lesbar ist, sieht auch ein Angreifer.
+- **Wie:** Reine Funktionen detect() (gewichtete Merkmale, Mindestabstand zum Zweiten, sonst "nicht erkannt") und parse_version() in claudia/checks/extern.py. Aufrufe, die dieselbe Seite wie eine Fehlerseite liefern ("weiche 404"), zählen nicht.
+
+### Neue Prüfung: sichtbare Erweiterungen (alle Systeme)
+- **Was:** ext_components liest aus dem Quelltext, welche Plugins, Themes, Module, Komponenten, Erweiterungen oder Pakete eingebunden sind. WordPress: Version über readme.txt und Vergleich mit api.wordpress.org (veraltete Plugins werden gemeldet). PrestaShop: Version über config.xml der Module. Kernpakete (z. B. Contao-Kern, Shopware-Storefront) werden nicht aufgelistet.
+- **Warum:** Erweiterungen sind der häufigste Einstieg; ihre Namen sind für jeden Besucher lesbar.
+- **Wie:** Muster je System in claudia/checks/extern.py; höchstens 25 Zusatzabrufe, nur öffentliche Dateien.
+
+### Neue Prüfung: vergessene und sensible Dateien (alle Systeme)
+- **Was:** ext_files ruft typische Fundorte ab: .env, .git, Konfigurations-Sicherungen (wp-config.php.bak, configuration.php.bak, settings.php.bak, LocalConfiguration.php.bak u. a.), Datenbank-Dumps, ZIP-Sicherungen, Protokolle, Installationsordner, Verzeichnislisten, den privaten JWT-Schlüssel bei Shopware. Je System kommen eigene Pfade dazu (insgesamt über 70).
+- **Warum:** Vergessene Sicherungen enthalten oft Zugangsdaten und werden täglich automatisch gesucht.
+- **Wie:** Ein Treffer zählt nur bei Status 200, abweichender Fehlerseite und passendem Inhalt (Signatur je Datei). Inhalte werden nie gespeichert oder gemeldet, nur der Pfad.
+
+### Schaltdatei: Freischaltung ohne neues Release (Vorbereitung)
+- **Was:** CLAUDIA kann eine signierte Schaltdatei (SW1) annehmen, die Freischaltung und Sperren steuert. Sie wird im Fenster "Lizenz" in das Eingabefeld eingefügt und beim Start gelesen. Prüfung, Verbindung, Hilfe, Updates und der Rückweg bleiben immer frei. Es ist noch kein öffentlicher Schlüssel eingetragen: bis dahin wird jede Schaltdatei verworfen und es ändert sich nichts.
+- **Warum:** Einstellungen lassen sich später ändern, ohne dass alle Nutzer ein neues Programm einspielen müssen.
+- **Wie:** claudia/schalt.py prüft eine Ed25519-Unterschrift mit eigenem Zweck, die Schlüsselkennung und eine laufende Nummer, die nie sinken darf. Ungültige oder ältere Dateien ändern nichts. Der Abruf per Adresse (nur https, ohne Weiterleitung) ist vorhanden, aber abgeschaltet (SCHALT_URL leer); CLAUDIA bleibt vollständig offline.
+
+### Intern
+- **Was:** Neue Datei claudia/checks/extern.py, tests/test_extern.py (35 Tests); die Menge EXTERN_IDS in registry.py markiert die schon vorhandenen externen Prüfungen.
+- **Warum:** Eine Liste an einer Stelle statt Markierungen in 14 Dateien.
+- **Wie:** check(..., extern=True) oder Aufnahme in EXTERN_IDS; die drei neuen Kennungen stehen in common_checks der Systeme.
+
 ## 2.19.0 (2026-11-26) - Automatische Updates: jetzt auch für Drupal, TYPO3, Contao, PrestaShop, Shopware und WooCommerce
 
 ### Prüfung: Laufen die automatischen Updates wirklich? (alle Systeme)

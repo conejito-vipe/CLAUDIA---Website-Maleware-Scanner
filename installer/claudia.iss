@@ -10,7 +10,7 @@
 
 #define AppShortName "CLAUDIA"
 #ifndef AppVersion
-  #define AppVersion "2.19.0"
+  #define AppVersion "2.20.0"
 #endif
 #define AuthorName "conejito-vipe"
 

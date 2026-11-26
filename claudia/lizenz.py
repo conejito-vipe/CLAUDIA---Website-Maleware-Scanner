@@ -28,6 +28,9 @@ PUBLIC_KEYS: Dict[str, str] = {}
 
 # Gesperrte Lizenz-IDs (z. B. weitergegebene Schlüssel). Kommt mit Programm-Updates, es gibt keine Rückfrage ins Netz.
 REVOKED: Tuple[str, ...] = ()
+# Kommt aus der signierten Schaltdatei (siehe schalt.py): zusätzliche Sperren und der Schalter "Lizenzpflicht an"
+REVOKED_EXTRA: Tuple[str, ...] = ()
+SCHALT_AKTIV = False
 
 # Alle Bereiche, die sich sperren lassen (Name -> Anzeigetext). Nur Bereiche, die der Server wirklich durchsetzt (siehe AREA_OF in server.py); weitere kommen erst mit ihrer Durchsetzung dazu.
 BEREICHE: Dict[str, str] = {
@@ -112,11 +115,16 @@ def parse(key: Any, today: Optional[date] = None) -> Dict[str, Any]:
     days_left = (until - now).days
     out = {"valid": True, "reason": "", "id": lid, "name": clean_line(name), "art": art, "until": bis, "days_left": days_left, "expired": days_left < 0,
            "areas": "alle" if bereiche == "alle" else list(bereiche), "seats": data.get("plaetze") if isinstance(data.get("plaetze"), int) else 0}
-    if lid in REVOKED:
+    if lid in REVOKED or lid in REVOKED_EXTRA:
         out.update(valid=False, reason="gesperrt")
     elif days_left < 0:
         out.update(valid=False, reason="abgelaufen")
     return out
+
+
+def gesperrt_bereiche() -> Tuple[str, ...]:
+    """Bereiche ohne Lizenz gesperrt: fest im Code oder, wenn die Schaltdatei die Lizenzpflicht einschaltet, alle sperrbaren Bereiche."""
+    return tuple(BEREICHE) if SCHALT_AKTIV else GESPERRT_OHNE_LIZENZ
 
 
 def path(base: str) -> str:
@@ -153,10 +161,10 @@ def state(base: str, today: Optional[date] = None) -> Dict[str, Any]:
     key = load(base)
     res = parse(key, today) if key else {"valid": False, "reason": ""}
     covered = BEREICHE.keys() if res.get("valid") and res.get("areas") == "alle" else (res.get("areas") or []) if res.get("valid") else []
-    blocked = [b for b in GESPERRT_OHNE_LIZENZ if b not in covered]
+    blocked = [b for b in gesperrt_bereiche() if b not in covered]
     warn = bool(res.get("valid") and res["days_left"] <= WARN_DAYS)
     return dict(res, has_key=bool(key), blocked=blocked, blocked_text=[BEREICHE.get(b, b) for b in blocked], warn_expiry=warn,
-                public_key_set=bool(PUBLIC_KEYS), bereiche=BEREICHE, gesperrt_ohne_lizenz=list(GESPERRT_OHNE_LIZENZ))
+                public_key_set=bool(PUBLIC_KEYS), bereiche=BEREICHE, gesperrt_ohne_lizenz=list(gesperrt_bereiche()))
 
 
 def frei(base: str, area: str, action_id: str = "") -> bool:
@@ -165,6 +173,6 @@ def frei(base: str, area: str, action_id: str = "") -> bool:
         return True
     if area == "aktionen" and action_id in AKTIONEN_IMMER_FREI:
         return True
-    if area not in GESPERRT_OHNE_LIZENZ:
+    if area not in gesperrt_bereiche():
         return True
     return area not in state(base)["blocked"]

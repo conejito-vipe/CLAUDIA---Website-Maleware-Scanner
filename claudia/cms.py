@@ -123,7 +123,7 @@ DRUPAL: Dict[str, Any] = {
     # Von den gemeinsamen Prüfungen laufen bei Drupal nur die, die nichts Joomla- oder WordPress-Spezifisches lesen (Ordner, Server, Web, Datenbank allgemein).
     "common_checks": {"root_files", "perms", "node_modules", "js_scan", "php_in_uploads", "webshells", "suspicious_names", "recent_changes", "backups_in_webroot", "php_ini", "web_source",
                       "web_headers", "web_csp", "access_logs", "local_logs", "php_settings", "safe_browsing", "malware_patterns", "hidden_structure", "crontab", "authorized_keys",
-                      "processes", "shell_startup", "skimmer_scan", "seo_spam_files", "locked_files", "mail_dns", "dns_changes", "plaintext_creds", "backup_age", "tls_protocols", "cookie_flags", "js_libs", "db_access", "auto_updates"},
+                      "processes", "shell_startup", "skimmer_scan", "seo_spam_files", "locked_files", "mail_dns", "dns_changes", "plaintext_creds", "backup_age", "tls_protocols", "cookie_flags", "js_libs", "db_access", "auto_updates", "ext_fingerprint", "ext_components", "ext_files"},
 }
 
 # ---- TYPO3 (seit 2.10.0): klassische Installation (typo3, typo3conf) und Composer-Installation (config, vendor, public). Maßgeblich ist TYPO3 11 und neuer.

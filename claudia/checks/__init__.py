@@ -36,6 +36,7 @@ _MODULES = [
     "shopware_checks",
     "umgebung_pruefungen",
     "zusatz",
+    "extern",
 ]
 
 for _m in _MODULES:

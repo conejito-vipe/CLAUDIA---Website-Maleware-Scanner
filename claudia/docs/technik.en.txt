@@ -53,6 +53,12 @@ Program updates and new knowledge data can be checked with an Ed25519 signature.
 During an action every command runs through the wrapper Traced. It reports command and answer to the status window so you can see live what happens on the server.
 - mask replaces passwords, download keys and tokens with *** (known secrets and patterns like key=..., token=...) before anything is shown or saved in the report.
 - The output is shortened to the last 2,500 characters; a time limit is reported as an error.
+## g:extern | How the external mode works
+In external mode there is no runner (no SSH). App._connect_external sets conn to {mode: none, external: true, url, host} and calls extern.detect_site; Settings.extern makes Engine.run skip all checks that have neither extern=True nor needs=local.
+- Detection: extern.detect() sums weighted signs (generator, folders, headers, cookies, standard addresses). A system counts as detected only with weight 3 or more and a lead of at least 2, otherwise it stays empty.
+- Soft 404: gather() requests a random address; if it returns status 200, standard addresses with the same page are discarded, and ext_files counts hits only if the page differs. In addition each file needs a signature in its content.
+- Versions: parse_version() reads public sources only; judge_version() uses the existing judges per system and falls back to "info" when the online source is missing (CLAUDIA_OFFLINE: no requests).
+- Limits: at most 25 extra requests for extensions, responses are capped at 40 to 60 KB, https only (except local addresses), contents of files found never appear in the result.
 ## a:backup_now | Full backup
 Only the backup step runs (see Basics: Backup). Then the folder name is reported. Nothing on the server is changed except the new backup folder.
 ## a:fix_permissions | Remove write permission for everyone

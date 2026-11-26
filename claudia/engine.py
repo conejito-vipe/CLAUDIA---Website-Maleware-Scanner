@@ -31,6 +31,7 @@ class Settings:
     php_cands: List[Dict[str, Any]] = field(default_factory=list)    # gefundene PHP-Programme (aus dem Verbindungstest)
     baseline_dir: str = ""                                           # Ordner für Vergleichsbasen (B9); leer = Vergleich nicht verfügbar
     baseline_key: str = ""                                           # Kennung der Verbindung (Server, Benutzer, Seitenordner)
+    extern: bool = False                                             # externer Modus: ohne Serverzugang, es laufen nur Prüfungen mit Abrufen von außen
     baseline_label: str = ""                                         # Beschriftung (Server und Seitenordner, ohne Zugangsdaten)
 
 
@@ -258,6 +259,8 @@ class Engine:
                 break
             cdef = REGISTRY.get(cid)
             if cdef is None or cdef.cms not in (ctx.cms, "both"):
+                continue
+            if self.settings.extern and not (cdef.extern or cdef.needs == "local"):
                 continue
             res = CheckResult(id=cdef.id, title=cdef.view(ctx.cms)["title"], group=cdef.group)
             ctx.current, ctx.current_id = res, cid

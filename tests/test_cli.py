@@ -26,7 +26,7 @@ class Cli(unittest.TestCase):
     def test_selftest(self):
         p = subprocess.run([sys.executable, "-m", "claudia", "--selftest"], cwd=ROOT, env=self.env(),
                            capture_output=True, text=True, timeout=60)
-        self.assertIn("74 geladen", p.stdout)
+        self.assertIn("77 geladen", p.stdout)
         self.assertIn("beschreibbar", p.stdout)
 
     def test_starts_without_key_leak(self):

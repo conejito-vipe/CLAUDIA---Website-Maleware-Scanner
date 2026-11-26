@@ -342,7 +342,7 @@ const checkById = id => S.init.checks.find(c => c.id === id);
 /* Verbindungsanzeige: erst der Profilname, dann die Serveradresse; ohne Profilname nur die Serveradresse */
 function connLabel() {
   const c = S.conn;
-  if (!c || c.mode === "none") return tr("Ohne Serverzugang");
+  if (!c || c.mode === "none") return c && c.host ? tr("Externer Modus") + " · " + c.host : tr("Ohne Serverzugang");
   const profs = S.init.profiles || {};
   let name = S.form.profile && profs[S.form.profile] && profs[S.form.profile].host === c.host ? S.form.profile : "";
   if (!name) name = Object.keys(profs).find(n => profs[n].host === c.host && (profs[n].user || "") === (c.user || "")) || "";
@@ -463,7 +463,7 @@ function viewConnect() {
   if (S.busy) card.append(connectProgress());
   card.append(h("div", { class: "actions" },
     h("button", { class: "btn primary", type: "button", disabled: S.busy, onclick: () => testConnection() }, S.busy ? "Verbindungstest läuft ..." : "Verbindung testen"),
-    h("button", { class: "link", type: "button", disabled: S.busy, onclick: () => noServer() }, "Ohne Serverzugang nur die Webseite prüfen")));
+    h("button", { class: "link", type: "button", disabled: S.busy, onclick: () => noServer() }, "Externer Modus (ohne Serverzugang)")));
 
   const side = h("div", { class: "side" });
   side.append(h("div", { class: "card" }, h("h2", { text: "So geht das Programm mit deinen Daten um" }),
@@ -634,10 +634,18 @@ function askTrust(hostId, fp) {
 }
 
 async function noServer() {
+  const url = (S.form.url || "").trim();
+  if (!url) { S.connError = { error: "Für den externen Modus bitte die Adresse der Webseite eintragen (Feld „Adresse der Webseite“)." }; render(); return; }
   try {
-    await api("/api/connect", { mode: "none" });
-    S.conn = { mode: "none" }; S.connError = null; goTests();
-  } catch (e) { S.connError = e; render(); }
+    S.busy = true; S.connError = null; render();
+    const r = await api("/api/connect", { mode: "none", url });
+    S.busy = false;
+    S.conn = r.info || { mode: "none" };
+    await reloadInit();
+    const d = S.conn.detected || {};
+    toast(d.cms ? tr("Erkannt:") + " " + d.name + (d.version ? " " + d.version : "") : tr("Das System wurde nicht erkannt; bitte unter „Prüfungen“ prüfen."));
+    goTests();
+  } catch (e) { S.busy = false; S.connError = e; render(); }
 }
 
 function loadProfile(name) {
@@ -683,7 +691,7 @@ function applyPreset(id) {
   S.preset = id;
   S.sel = new Set(S.init.checks.filter(c => c.presets.includes(id) && usable(c)).map(c => c.id));
 }
-function usable(c) { return !(S.conn && S.conn.mode === "none" && (c.needs === "ssh" || c.needs === "db")); }
+function usable(c) { return !(S.conn && S.conn.mode === "none" && !(c.extern || c.needs === "local")); }
 function goTests() { if (!S.sel.size) applyPreset(S.conn && S.conn.mode === "none" ? "schnell" : "hack"); go("tests"); }
 
 function viewTests() {
@@ -2110,7 +2118,7 @@ function renderLicense(st, note) {
   }
   kids.push(h("p", { class: "small", text: "Die Prüfung (Suche nach Schadcode und Schwachstellen), die Verbindung, die Hilfe, Updates und der Rückweg (Sicherung anlegen, Dateien aus der Quarantäne zurückholen) sind immer frei." }),
     h("p", { class: "small", text: "Der Schlüssel wird nur auf diesem Computer geprüft. Es wird nichts ins Internet gesendet." }));
-  const ta = h("textarea", { class: "lic-key", id: "lickey", placeholder: "Lizenzschlüssel hier einfügen (beginnt mit CL1.)", spellcheck: "false" });
+  const ta = h("textarea", { class: "lic-key", id: "lickey", placeholder: "Lizenzschlüssel (CL1.) oder Schaltdatei (SW1.) hier einfügen", spellcheck: "false" });
   kids.push(h("label", { for: "lickey", class: "small", text: "Lizenzschlüssel eintragen" }), ta);
   const set = h("button", { class: "btn primary", type: "button", onclick: async () => {
     try {

@@ -162,3 +162,10 @@ The "Dashboard" button at the top shows what CLAUDIA knows about your sites. Eve
 - Delete the history of a site: first "Delete history of this site", then "Really delete?". This affects only the notes in CLAUDIA, not the site itself.
 - Stock on the server (after connecting): backups and quarantine folders with size and age. Creating a backup, deleting old backups and restoring or deleting quarantine work like "Fixes at the push of a button": first look at the commands, then confirm, then run.
 - A full backup is deliberately not restored automatically: that overwrites the current state of the site and cannot be undone. Ask your host or a specialist for that.
+## extern | 14. External mode (since 2.20.0)
+Without SSH access you can still check a website from the outside. Choose "External mode: check from outside only" on the start page; only the address of the website is needed.
+- CLAUDIA detects the system itself (Joomla, WordPress, Drupal, TYPO3, Contao, PrestaShop, Shopware). If the detection is wrong or impossible, choose the system by hand.
+- Only checks that work without server access appear (10 to 11 per system): page source, security headers, CSP, cookies, TLS, blocklist, threat situation, open interfaces and files of the system, plus the checks "system and version from outside", "visible extensions" and "forgotten and sensitive files".
+- Not possible without server access: searching files for malicious code, database, permissions, access logs, accounts, actions. For these you need the normal mode with SSH.
+- For Contao and PrestaShop the version cannot be read from outside; the result says so. For Drupal only the major version is visible without the file CHANGELOG.txt.
+- Only ordinary page requests are sent, like a visitor makes them. Contents of files found are not stored, only the path is reported. Check only sites you own or have a mandate for.

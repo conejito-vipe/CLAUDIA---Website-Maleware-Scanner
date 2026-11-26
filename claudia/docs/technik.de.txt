@@ -53,6 +53,12 @@ Programm-Updates und neue Wissensdaten können mit einer Ed25519-Unterschrift ge
 Während einer Aktion läuft jeder Befehl durch die Hülle Traced. Sie meldet Befehl und Antwort an das Statusfenster, damit du live siehst, was auf dem Server passiert.
 - mask ersetzt Passwörter, Download-Schlüssel und Tokens durch *** (bekannte Geheimnisse und Muster wie key=..., token=...), bevor etwas angezeigt oder im Bericht gespeichert wird.
 - Die Ausgabe wird auf die letzten 2.500 Zeichen gekürzt, ein Zeitlimit wird als Fehler gemeldet.
+## g:extern | Wie der externe Modus arbeitet
+Im externen Modus gibt es keinen Runner (kein SSH). App._connect_external setzt conn auf {mode: none, external: true, url, host} und ruft extern.detect_site; Settings.extern lässt Engine.run alle Prüfungen auslassen, die weder extern=True noch needs=local haben.
+- Erkennung: extern.detect() zählt gewichtete Merkmale (Generator, Ordner, Kopfzeilen, Cookies, Standardadressen). Ein System gilt nur bei Gewicht ab 3 und mindestens 2 Vorsprung als erkannt, sonst bleibt es leer.
+- Weiche 404: gather() ruft eine zufällige Adresse ab; liefert sie Status 200, werden Standardadressen mit gleicher Seite verworfen, und ext_files zählt Treffer nur, wenn die Seite abweicht. Zusätzlich braucht jede Datei eine Signatur im Inhalt.
+- Versionen: parse_version() liest nur öffentliche Quellen; judge_version() nutzt die vorhandenen Bewerter je System und fällt bei fehlender Online-Quelle auf "info" zurück (CLAUDIA_OFFLINE: keine Abrufe).
+- Grenzen: höchstens 25 Zusatzabrufe für Erweiterungen, Antworten werden auf 40 bis 60 KB begrenzt, nur https (Ausnahme lokale Adressen), Inhalte gefundener Dateien erscheinen nie im Ergebnis.
 ## a:backup_now | Vollständige Sicherung
 Es läuft nur der Sicherungsschritt (siehe Grundlagen: Sicherung). Danach wird der Ordnername gemeldet. Auf dem Server wird nichts verändert außer dem neuen Sicherungsordner.
 ## a:fix_permissions | Schreibrecht für alle entfernen

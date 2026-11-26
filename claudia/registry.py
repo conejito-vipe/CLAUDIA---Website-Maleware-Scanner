@@ -81,7 +81,7 @@ CLUSTER_MEMBERS = {
     "db_content": "joomla_code", "db_redirects": "joomla_code", "db_extensions": "joomla_code",
     "crontab": "konto", "authorized_keys": "konto", "processes": "konto", "shell_startup": "konto", "sessions": "konto", "joomla_api": "konto", "joomla_api_exposure": "besucher",
     "access_logs": "logs_spuren", "local_logs": "logs_spuren", "joomla_logs": "logs_spuren",
-    "web_source": "besucher", "web_headers": "besucher", "web_csp": "besucher", "safe_browsing": "besucher",
+    "web_source": "besucher", "web_headers": "besucher", "web_csp": "besucher", "safe_browsing": "besucher", "ext_fingerprint": "umfeld", "ext_components": "umfeld", "ext_files": "besucher",
     "dbx_server": "dbx_aufbau", "dbx_codescan": "dbx_inject", "dbx_anomalies": "dbx_auffaellig", "dbx_incidents": "dbx_lage",
 }
 
@@ -213,10 +213,15 @@ PRESETS = [
 ]
 
 
+# Prüfungen, die ohne Serverzugang laufen (nur öffentliche Abrufe von diesem PC aus): Grundlage des externen Modus
+EXTERN_IDS = {"web_source", "web_headers", "web_csp", "wp_exposure", "safe_browsing", "cookie_flags", "tls_protocols", "threat_intel", "joomla_api_exposure",
+              "drupal_exposed", "typo3_exposed", "contao_exposed", "prestashop_exposed", "shopware_exposed"}
+
+
 def check(id: str, group: str, title: str, summary: str, what: str, why: str, reads: str,
           load: str = "leicht", needs: str = "ssh", presets: Optional[List[str]] = None,
           options: Optional[List[Option]] = None, cms: str = "joomla", wp: Optional[Dict[str, str]] = None,
-          texts: Optional[Dict[str, Dict[str, str]]] = None) -> Callable:
+          texts: Optional[Dict[str, Dict[str, str]]] = None, extern: bool = False) -> Callable:
     def deco(fn: Callable) -> Callable:
         if id in REGISTRY:
             raise ValueError("Doppelte Test-ID: " + id)
@@ -227,7 +232,7 @@ def check(id: str, group: str, title: str, summary: str, what: str, why: str, re
         REGISTRY[id] = CheckDef(id=id, group=group, title=title, summary=summary, what=what, why=why,
                                 reads=reads, load=load, needs=needs, fn=fn, presets=pr,
                                 options=list(options or []), cluster=CLUSTER_MEMBERS.get(id, ""),
-                                cms=kind, cluster_wp=CLUSTER_MEMBERS_WP.get(id, ""), wp={**WP_TEXTS.get(id, {}), **dict(wp or {})}, texts=dict(texts or {}))
+                                cms=kind, extern=bool(extern or id in EXTERN_IDS), cluster_wp=CLUSTER_MEMBERS_WP.get(id, ""), wp={**WP_TEXTS.get(id, {}), **dict(wp or {})}, texts=dict(texts or {}))
         ORDER.append(id)
         return fn
     return deco

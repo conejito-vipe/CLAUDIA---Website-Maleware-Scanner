@@ -107,6 +107,7 @@ class CheckDef:
     cms: str = "joomla"           # joomla | wordpress | both
     cluster_wp: str = ""          # Cluster im WordPress-Bereich (leer = wie bei Joomla)
     wp: Dict[str, str] = field(default_factory=dict)   # Texte für den WordPress-Bereich (title, summary, what, why, reads)
+    extern: bool = False          # läuft ohne Serverzugang (nur Abrufe von außen); Grundlage des externen Modus
     texts: Dict[str, Dict[str, str]] = field(default_factory=dict)   # Texte je weiterem System (drupal, typo3, contao, prestashop, shopware): ersetzen die automatisch umgeschriebenen Joomla-Texte
 
     def cluster_for(self, cms: str = "joomla") -> str:
@@ -130,7 +131,7 @@ class CheckDef:
         return {
             "id": self.id, "group": self.group, "title": t["title"], "summary": t["summary"],
             "what": t["what"], "why": t["why"], "reads": t["reads"], "load": self.load,
-            "needs": self.needs, "presets": self.presets, "cluster": cluster, "cms": self.cms,
+            "needs": self.needs, "extern": self.extern, "presets": self.presets, "cluster": cluster, "cms": self.cms,
             "options": [dataclasses.asdict(o) for o in self.options],
         }
 

@@ -164,3 +164,10 @@ Der Knopf "Dashboard" oben zeigt, was CLAUDIA über deine Seiten weiß. Alles st
 - Verlauf einer Seite löschen: erst "Verlauf dieser Seite löschen", dann "Wirklich löschen?". Das betrifft nur die Notizen in CLAUDIA, nicht die Seite selbst.
 - Bestand auf dem Server (nach der Verbindung): Sicherungen und Quarantäne-Ordner mit Größe und Alter. Sicherung anlegen, alte Sicherungen löschen sowie Quarantäne zurückholen oder löschen laufen wie die "Lösungen auf Knopfdruck": erst die Befehle ansehen, dann bestätigen, dann ausführen.
 - Eine Vollsicherung wird bewusst nicht automatisch zurückgespielt: Das überschreibt den aktuellen Stand der Seite und lässt sich nicht rückgängig machen. Wende dich dafür an deinen Hoster oder an eine Fachperson.
+## extern | 14. Externer Modus (seit 2.20.0)
+Ohne SSH-Zugang kannst du eine Webseite trotzdem von außen prüfen. Auf der Startseite "Externer Modus: nur von außen prüfen" wählen; nötig ist nur die Adresse der Webseite.
+- CLAUDIA erkennt das System selbst (Joomla, WordPress, Drupal, TYPO3, Contao, PrestaShop, Shopware). Ist die Erkennung falsch oder nicht möglich, wählst du das System von Hand.
+- Es erscheinen nur Prüfungen, die ohne Serverzugang möglich sind (10 bis 11 je System): Quelltext, Sicherheits-Header, CSP, Cookies, TLS, Sperrliste, Bedrohungslage, offene Schnittstellen und Dateien des Systems sowie die Prüfungen "System und Version von außen", "sichtbare Erweiterungen" und "vergessene und sensible Dateien".
+- Nicht möglich ohne Serverzugang: Dateien auf Schadcode durchsuchen, Datenbank, Rechte, Zugriffsprotokolle, Konten, Aktionen. Für diese Prüfungen brauchst du den normalen Modus mit SSH.
+- Die Version ist bei Contao und PrestaShop von außen nicht lesbar; das steht dann im Ergebnis. Bei Drupal ist ohne die Datei CHANGELOG.txt nur die Hauptversion sichtbar.
+- Es werden nur normale Seitenaufrufe gesendet, wie ein Besucher sie macht. Inhalte gefundener Dateien werden nicht gespeichert, nur der Pfad wird gemeldet. Prüfe nur Seiten, die dir gehören oder für die du den Auftrag hast.
