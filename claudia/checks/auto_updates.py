@@ -158,11 +158,36 @@ def fw_log_hits(ctx, db, patterns: List[str]) -> List[str]:
           "(Statuscode, Art der Antwort, Server-Kennung). Nichts wird verändert. Nicht prüfbar von hier: ob joomla.org die Seite erreicht und ob die Anmeldung beim Update-Dienst gültig ist.",
     load="leicht", presets=["schnell", "hack"],
     wp={"title": "Laufen die automatischen Updates wirklich? (WordPress-Cron)",
-        "summary": "Läuft der WP-Cron, der die Hintergrund-Updates auslöst, und ist wp-cron.php erreichbar?"},
+        "summary": "Läuft der WP-Cron, der die Hintergrund-Updates auslöst, und ist wp-cron.php erreichbar? Bei WooCommerce: stehen geplante Aufgaben still?"},
+    texts={
+        "drupal": {"summary": "Läuft der Drupal-Cron, ist die Update-Suche aktiv, und ist das Modul 'Automatic Updates' eingeschaltet?",
+                   "what": "Liest aus der Datenbank, ob das Modul 'Update Manager' und 'Automatic Updates' eingeschaltet sind, wann der Cron zuletzt lief und wann Drupal zuletzt nach Updates gesucht hat, und ob die Seite mit Composer verwaltet wird (composer.lock). Zeigt die Cronjobs im Konto.",
+                   "why": "Drupal spielt Updates nicht von selbst ein (nur mit dem Modul 'Automatic Updates'). Steht der Cron, melden sich Sicherheitsupdates nicht mehr, und die Seite bleibt unbemerkt auf einem verwundbaren Stand.",
+                   "reads": "Nur Einstellungen und Zeitwerte aus der Datenbank (Tabellen config und key_value) und die Cronjobs des Kontos. Nichts wird verändert. Nicht prüfbar von hier: ob ein Update gelingen würde."},
+        "typo3": {"summary": "Läuft der TYPO3-Scheduler, und wird die Seite mit Composer verwaltet?",
+                  "what": "Liest aus der Datenbank, wie viele Scheduler-Aufgaben aktiv und überfällig sind und wann der Scheduler zuletzt lief, und ob die Seite mit Composer verwaltet wird (composer.lock). Zeigt die Cronjobs im Konto.",
+                  "why": "TYPO3 aktualisiert weder Kern noch Erweiterungen selbst. Läuft der Scheduler nicht, bleiben auch regelmäßige Aufgaben wie Aufräumen liegen. Die Prüfung sagt ehrlich, dass Updates Handarbeit sind.",
+                  "reads": "Nur Zähler und Zeitwerte aus den Tabellen tx_scheduler_task und sys_registry und die Cronjobs des Kontos. Nichts wird verändert."},
+        "contao": {"summary": "Läuft der Contao-Cron, und wird die Seite mit Composer oder dem Contao Manager verwaltet?",
+                   "what": "Liest aus der Tabelle tl_cron_job, wann Contao-Cronjobs zuletzt liefen, prüft composer.lock und ob der Contao Manager im Webordner liegt, und zeigt die Cronjobs im Konto.",
+                   "why": "Contao aktualisiert sich nie selbst. Steht der Cron, bleiben Aufgaben wie Suchindex und Aufräumen liegen. Ein Contao Manager im Webordner ist ein zusätzliches Ziel für Angreifer.",
+                   "reads": "Nur Zähler und Zeitwerte aus der Tabelle tl_cron_job, die Dateien composer.lock und contao-manager.phar.php (nur ob sie vorhanden sind) und die Cronjobs des Kontos. Nichts wird verändert."},
+        "prestashop": {"summary": "Ist das Modul '1-Click-Upgrade' bereit, und laufen die Cronjobs?",
+                       "what": "Liest aus der Tabelle module, ob 'autoupgrade' und 'cronjobs' installiert und aktiv sind (mit Version) und wann die Cronjobs zuletzt liefen.",
+                       "why": "PrestaShop aktualisiert sich nie selbst; das Modul 'autoupgrade' führt ein Update nur auf Anstoß aus. Ohne es bleibt das Einspielen von Hand, und stehende Cronjobs lassen geplante Aufgaben liegen.",
+                       "reads": "Nur Einträge der Tabelle module und, falls vorhanden, der Tabelle cronjobs (Zähler und Zeitwerte). Nichts wird verändert."},
+        "shopware": {"summary": "Laufen die geplanten Aufgaben von Shopware, und wird die Seite mit Composer verwaltet?",
+                     "what": "Liest aus der Tabelle scheduled_task, wie viele Aufgaben überfällig oder fehlgeschlagen sind und wann zuletzt eine lief, prüft composer.lock und zeigt Einstellungen zu 'auto_update' aus config/packages und .env.",
+                     "why": "Shopware aktualisiert sich nie ganz ohne Anstoß. Steht der Zeitplan (kein Cron, kein Worker), bleiben Suchindex, Aufräumen und Prüfungen auf neue Versionen liegen.",
+                     "reads": "Nur Zähler und Zeitwerte aus der Tabelle scheduled_task, die Datei composer.lock (nur ob sie vorhanden ist) und Zeilen mit 'auto_update' aus den Einstellungsdateien. Nichts wird verändert."},
+    },
 )
 def auto_updates(ctx, res):
     if ctx.cms == "wordpress":
         return _wordpress(ctx, res)
+    if ctx.cms in ("drupal", "typo3", "contao", "prestashop", "shopware"):
+        from . import auto_updates_cms
+        return auto_updates_cms.run(ctx, res)
     return _joomla(ctx, res)
 
 
@@ -475,6 +500,9 @@ def _wordpress(ctx, res):
             notes.append("Zeitplan aus der Datenbank (%s)" % type(e).__name__)
     else:
         notes.append("Zeitplan aus der Datenbank (kein Datenbankzugriff vom Server aus)")
+    from . import auto_updates_cms
+    if auto_updates_cms.woocommerce(ctx, res):
+        problems.append("woo")
     ctx.shared["auto_updates_problems"] = problems
     if problems:
         return

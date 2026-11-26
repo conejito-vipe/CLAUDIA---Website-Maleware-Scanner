@@ -215,7 +215,8 @@ PRESETS = [
 
 def check(id: str, group: str, title: str, summary: str, what: str, why: str, reads: str,
           load: str = "leicht", needs: str = "ssh", presets: Optional[List[str]] = None,
-          options: Optional[List[Option]] = None, cms: str = "joomla", wp: Optional[Dict[str, str]] = None) -> Callable:
+          options: Optional[List[Option]] = None, cms: str = "joomla", wp: Optional[Dict[str, str]] = None,
+          texts: Optional[Dict[str, Dict[str, str]]] = None) -> Callable:
     def deco(fn: Callable) -> Callable:
         if id in REGISTRY:
             raise ValueError("Doppelte Test-ID: " + id)
@@ -226,7 +227,7 @@ def check(id: str, group: str, title: str, summary: str, what: str, why: str, re
         REGISTRY[id] = CheckDef(id=id, group=group, title=title, summary=summary, what=what, why=why,
                                 reads=reads, load=load, needs=needs, fn=fn, presets=pr,
                                 options=list(options or []), cluster=CLUSTER_MEMBERS.get(id, ""),
-                                cms=kind, cluster_wp=CLUSTER_MEMBERS_WP.get(id, ""), wp={**WP_TEXTS.get(id, {}), **dict(wp or {})})
+                                cms=kind, cluster_wp=CLUSTER_MEMBERS_WP.get(id, ""), wp={**WP_TEXTS.get(id, {}), **dict(wp or {})}, texts=dict(texts or {}))
         ORDER.append(id)
         return fn
     return deco

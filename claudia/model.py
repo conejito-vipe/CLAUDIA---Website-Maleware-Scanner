@@ -107,6 +107,7 @@ class CheckDef:
     cms: str = "joomla"           # joomla | wordpress | both
     cluster_wp: str = ""          # Cluster im WordPress-Bereich (leer = wie bei Joomla)
     wp: Dict[str, str] = field(default_factory=dict)   # Texte für den WordPress-Bereich (title, summary, what, why, reads)
+    texts: Dict[str, Dict[str, str]] = field(default_factory=dict)   # Texte je weiterem System (drupal, typo3, contao, prestashop, shopware): ersetzen die automatisch umgeschriebenen Joomla-Texte
 
     def cluster_for(self, cms: str = "joomla") -> str:
         """Cluster dieses Tests im Bereich des Systems (WordPress kann abweichen; leer = wie Joomla)."""
@@ -120,6 +121,7 @@ class CheckDef:
                 t = {k: _wp_words(v, cms) for k, v in t.items()}
             if cms == "wordpress":
                 t.update({k: v for k, v in self.wp.items() if k in t})
+            t.update({k: v for k, v in self.texts.get(cms, {}).items() if k in t})
         return t
 
     def public(self, cms: str = "joomla") -> Dict[str, Any]:

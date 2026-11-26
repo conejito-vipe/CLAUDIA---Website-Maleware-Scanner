@@ -2,6 +2,18 @@
 
 Generated from `claudia/docs/aenderungen.en.txt` (do not edit by hand).
 
+## 2.19.0 (2026-11-26) - Automatic updates: now also for Drupal, TYPO3, Contao, PrestaShop, Shopware and WooCommerce
+
+### Check: Do automatic updates really run? (all systems)
+- **What:** The check now exists for all seven systems. Drupal: whether 'Update Manager' and 'Automatic Updates' are enabled, when cron last ran and when updates were last looked for, whether the site is managed with Composer. TYPO3: scheduler tasks, overdue tasks, last run. Contao: cron schedule (tl_cron_job), Contao Manager in the web folder. PrestaShop: the modules '1-Click Upgrade' (autoupgrade) and 'Cronjobs', their version and last run. Shopware: scheduled tasks (overdue, failed), auto_update settings, Composer. WooCommerce (on WordPress): Action Scheduler, i.e. overdue and failed tasks. Each system shows its own texts; it is stated explicitly when a system does not install core updates by itself (except Drupal with the 'Automatic Updates' module).
+- **Why:** A stalled schedule is the most common reason update notices, cleanup and background tasks stop without anyone noticing. Whether a system updates itself is not the rule for these systems; the check says so openly instead of suggesting a safety that is not there.
+- **How:** Read-only queries (SELECT on config, key_value, tx_scheduler_task, sys_registry, tl_cron_job, module, cronjobs, scheduled_task, actionscheduler_actions) and a few read-only shell calls (composer.lock, contao-manager, crontab, search for auto_update in configuration files). Missing tables count as "not present", missing database access as "not checkable". The evaluation is in pure functions (claudia/checks/auto_updates_cms.py) that are tested with sample data. Not yet tested against real servers: table and field names and the format of the time values; if they differ, the line appears as "not checkable", not as an error.
+
+### Internal
+- **What:** New file claudia/checks/auto_updates_cms.py and tests/test_auto_updates_cms.py; CheckDef knows "texts" (own texts per system).
+- **Why:** One check with the same ID can show suitable descriptions per system without four copies.
+- **How:** view() applies the texts of the respective system after text substitution; the allow-list common_checks of Drupal (shared by TYPO3, Contao, PrestaShop, Shopware) contains "auto_updates".
+
 ## 2.18.0 (2026-11-24) - Single program file and release workflow
 
 ### Single program file without Python setup (Windows, Mac)
