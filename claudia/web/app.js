@@ -226,9 +226,9 @@ function integrityBanner() {
   if (!g.liste_da) return h("div", { class: "integ" }, h("h3", { text: "Installation nicht prüfbar" }),
     h("p", { class: "small", text: "Die Prüfsummenliste PRUEFSUMMEN.txt fehlt im Programmordner. Ohne sie lässt sich nicht feststellen, ob Dateien fehlen. Installiere CLAUDIA neu." }));
   const alle = [...g.fehlend.map(x => ["fehlt: ", x]), ...g.geaendert.map(x => ["verändert: ", x])];
-  return h("div", { class: "integ" }, h("h3", { text: "Installation unvollständig oder verändert: " + g.fehlend_anzahl + " Datei(en) fehlen, " + g.geaendert_anzahl + " weichen ab" }),
+  return h("div", { class: "integ" }, h("h3", { text: tr("Installation unvollständig oder verändert (%s Dateien fehlen, %s weichen ab)").replace("%s", g.fehlend_anzahl).replace("%s", g.geaendert_anzahl) }),
     h("p", { class: "small", text: "Das kann passieren, wenn ein Virenscanner Dateien entfernt hat oder ein Update abgebrochen ist. Installiere CLAUDIA über das Setup neu. Deine Verbindungen, Einstellungen und Berichte bleiben erhalten." }),
-    h("details", {}, h("summary", { text: "Betroffene Dateien anzeigen (" + alle.length + ")" }),
+    h("details", {}, h("summary", { text: tr("Betroffene Dateien anzeigen (%s)").replace("%s", alle.length) }),
       h("ul", {}, alle.slice(0, 200).map(([a, b]) => h("li", {}, a, h("code", { text: b }))))));
 }
 /* Hilfefenster per Kopfzeile verschieben (bleibt im sichtbaren Bereich) */
@@ -374,7 +374,7 @@ function viewTitle() {
   if (S.step === "dash") return "Dashboard";
   if (S.step === "help") return "Hilfe und Handbuch";
   const i = STEPS.findIndex(s => s[0] === S.step);
-  return i >= 0 ? "Schritt " + (i + 1) + " von " + STEPS.length + ": " + STEPS[i][1] : "CLAUDIA";
+  return i >= 0 ? tr("Schritt %s von %s (%s)").replace("%s", i + 1).replace("%s", STEPS.length).replace("%s", tr(STEPS[i][1])) : "CLAUDIA";
 }
 const STEP_ICON = { connect: "⇄", tests: "☑", run: "▶", result: "⚑" };
 function renderFrame() {
@@ -1575,8 +1575,8 @@ function securityOffer(a, st) {
   const kind = a.id === "install_backup" ? "backup" : "security", pre = kind === "backup" ? "b:" : "";
   const info = (S.storeInfo = S.storeInfo || {});
   const wrap = h("div", { class: "secoffer" });
-  wrap.append(h("p", { class: "small" }, h("strong", { text: "Bei der gewünschten Erweiterung auf „Installieren“ klicken. " }),
-    "Bild, Beschreibung und Link stammen von der Store-Seite " + (isWP() ? "(wordpress.org)" : "(Joomla Extensions Directory)") + ". Ohne Internetverbindung siehst du statt dessen die Kurzbeschreibung des Programms."));
+  wrap.append(h("p", { class: "small" }, h("strong", { text: tr("Wähle eine Erweiterung.") + " " }),
+    (isWP() ? tr("Bild, Beschreibung und Link stammen von der Store-Seite (wordpress.org). Ohne Internetverbindung siehst du statt dessen die Kurzbeschreibung des Programms.") : tr("Bild, Beschreibung und Link stammen von der Store-Seite (Joomla Extensions Directory). Ohne Internetverbindung siehst du statt dessen die Kurzbeschreibung des Programms."))));
   /* erst die kostenlosen, dann unter eigener Überschrift die kostenpflichtigen (Preis unklar zuletzt) */
   const pg = t => { const x = String(t.price || "").toLowerCase(); return x.startsWith("kostenlos") ? 0 : (x.includes("kostenpflichtig") || /[€$]/.test(x)) ? 2 : (t.price === undefined || t.price === null || isWP()) ? 0 : (t.price === "" ? 1 : 0); };
   const sorted = tools.map((t, n) => [pg(t), n, t]).sort((p, q) => p[0] - q[0] || p[1] - q[1]);

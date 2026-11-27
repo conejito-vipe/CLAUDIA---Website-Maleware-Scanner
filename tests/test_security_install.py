@@ -148,7 +148,7 @@ class Manifest(unittest.TestCase):
 </updates>"""
 
     def test_newest_with_https(self):
-        self.assertEqual(actions.newest_download(self.XML), {"version": "1.10.1", "url": "https://example.org/x-1.10.1.zip"})
+        self.assertEqual(actions.newest_download(self.XML), {"version": "1.10.1", "url": "https://example.org/x-1.10.1.zip", "sha256": "", "sha512": ""})
 
     def test_refuses_doctype_and_garbage(self):
         self.assertEqual(actions.newest_download('<!DOCTYPE x [<!ENTITY a "b">]><updates/>'), {})
