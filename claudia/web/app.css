@@ -626,8 +626,9 @@ main > * { max-width: 1180px; margin-left: auto; margin-right: auto; }
 .sbar .sbar-note { color: var(--side-muted); }
 html.has-titlebar #titlebar { position: fixed; top: 0; left: 0; right: 0; }
 html.has-titlebar .rail { top: 40px; }
-html.has-titlebar .stage { padding-top: 40px; }
-html.has-titlebar .topbar { top: 40px; }
+/* Der Seitenbereich (body) beginnt im Programmfenster schon unter der Titelleiste: kein zweiter Abstand */
+html.has-titlebar .stage { padding-top: 0; }
+html.has-titlebar .topbar { top: 0; }
 html.has-titlebar .sbar { left: 0; right: 0; bottom: 0; }
 html.has-titlebar .bar { bottom: var(--foot-h); }
 

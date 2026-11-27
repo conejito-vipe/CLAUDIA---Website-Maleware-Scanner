@@ -121,6 +121,9 @@ class WindowApi:
         if w is not None:
             w.minimize()
 
+    def is_maximized(self) -> bool:
+        return bool(self._owner._maximized)
+
     def toggle_maximize(self) -> None:
         w = self._owner._win
         if w is None:
@@ -274,6 +277,12 @@ class Window:
                 win.events.closing += self._on_closing
             except Exception:
                 pass
+            for ereignis, wert in (("maximized", True), ("restored", False)):        # Zustand auch dann richtig, wenn per Tastatur oder Systemmenü maximiert wird
+                try:
+                    ev = getattr(win.events, ereignis)
+                    ev += (lambda w=wert: setattr(self, "_maximized", w))
+                except Exception:
+                    pass
             self._watch_loaded()
             started = time.monotonic()
             wv.start(debug=False)

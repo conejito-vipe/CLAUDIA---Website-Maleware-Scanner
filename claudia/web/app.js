@@ -2369,6 +2369,14 @@ setInterval(() => { fetch("/api/ping", { headers: { "X-Claudia": "1" } }).catch(
     document.getElementById("tb-min").addEventListener("click", () => window.pywebview.api.minimize());
     document.getElementById("tb-max").addEventListener("click", () => { document.documentElement.classList.toggle("maxed"); window.pywebview.api.toggle_maximize(); });
     document.getElementById("tb-close").addEventListener("click", () => window.pywebview.api.close());
+    /* Zustand "maximiert" vom Fenster übernehmen (auch bei Win+Pfeil oben oder Systemmenü) */
+    let syncT = 0;
+    window.addEventListener("resize", () => {
+      clearTimeout(syncT);
+      syncT = setTimeout(async () => {
+        try { document.documentElement.classList.toggle("maxed", !!(await window.pywebview.api.is_maximized())); } catch (e) { /* Fenster zu */ }
+      }, 150);
+    });
     /* Größe ändern: rahmenlose Fenster haben keinen eigenen Rand zum Ziehen, deshalb Griffe links, rechts, unten und in den unteren Ecken */
     for (const g of document.querySelectorAll(".rz")) {
       g.hidden = false;

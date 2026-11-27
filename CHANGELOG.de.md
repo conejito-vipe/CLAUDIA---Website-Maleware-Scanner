@@ -19,6 +19,11 @@ Erzeugt aus `claudia/docs/aenderungen.de.txt` (nicht von Hand ändern).
 - **Warum:** Das Layout sollte dem festgelegten Entwurf "Leitstand Blau" entsprechen.
 - **Wie:** index.html und app.css (Design 3.1).
 
+### Fenster maximieren
+- **Was:** Das Programmfenster lässt sich mit der Schaltfläche in der Titelleiste, per Doppelklick auf die Leiste oder mit Win+Pfeil nach oben maximieren und wieder verkleinern. Auch das Setup-Fenster hat jetzt eine Maximieren-Schaltfläche und lässt sich vergrößern.
+- **Warum:** Auf großen Bildschirmen blieb das Fenster klein, und ein Maximieren per Tastatur wurde von der Oberfläche nicht erkannt.
+- **Wie:** window.py meldet den echten Fensterzustand an die Seite (is_maximized, Ereignisse maximized und restored), app.js übernimmt ihn. Im Programmfenster war zudem der Abstand unter der Titelleiste doppelt (app.css). Im Setup ist WizardResizable aktiv (claudia.iss).
+
 ### Updates: Ladeanzeige
 - **Was:** Während die Updatesuche läuft, erscheint eine Ladeanzeige. Der Text "null" bei der Anzeige der installierten Version ist weg.
 - **Warum:** Ein Fehler bei der Anzeige der installierten Version.

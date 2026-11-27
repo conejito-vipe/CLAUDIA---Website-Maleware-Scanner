@@ -11,6 +11,10 @@ How: Help is a view like Connection and Result; the Help button is at the top ri
 Was: The sidebar has icons with text underneath and adapts to the screen height without its own scroll bar. Language, help and connection are at the top. The status bar shows only the status. The inner area is dark, the blue comes from the logo. The version now appears only in the title bar.
 Why: The layout should match the agreed design "Leitstand Blau".
 How: index.html and app.css (design 3.1).
+### Maximize the window
+What: The program window can be maximized and restored with the button in the title bar, by double-clicking the bar, or with Win+Up arrow. The setup window now also has a maximize button and can be enlarged.
+Why: On large screens the window stayed small, and maximizing with the keyboard was not noticed by the interface.
+How: window.py reports the real window state to the page (is_maximized, events maximized and restored) and app.js takes it over. The program window also had a doubled gap below the title bar (app.css). The setup uses WizardResizable (claudia.iss).
 ### Updates: loading indicator
 Was: While the update search runs, a loading indicator appears. The text "null" in the installed version display is gone.
 Why: A bug in the display of the installed version.

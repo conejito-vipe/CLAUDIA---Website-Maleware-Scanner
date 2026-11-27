@@ -19,6 +19,11 @@ Generated from `claudia/docs/aenderungen.en.txt` (do not edit by hand).
 - **Why:** The layout should match the agreed design "Leitstand Blau".
 - **How:** index.html and app.css (design 3.1).
 
+### Maximize the window
+- **What:** The program window can be maximized and restored with the button in the title bar, by double-clicking the bar, or with Win+Up arrow. The setup window now also has a maximize button and can be enlarged.
+- **Why:** On large screens the window stayed small, and maximizing with the keyboard was not noticed by the interface.
+- **How:** window.py reports the real window state to the page (is_maximized, events maximized and restored) and app.js takes it over. The program window also had a doubled gap below the title bar (app.css). The setup uses WizardResizable (claudia.iss).
+
 ### Updates: loading indicator
 - **What:** While the update search runs, a loading indicator appears. The text "null" in the installed version display is gone.
 - **Why:** A bug in the display of the installed version.

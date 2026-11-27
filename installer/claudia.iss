@@ -32,6 +32,7 @@ PrivilegesRequired=lowest
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+WizardResizable=yes
 OutputDir=Output
 OutputBaseFilename=CLAUDIA-Setup-{#AppVersion}
 LicenseFile=..\LICENSE

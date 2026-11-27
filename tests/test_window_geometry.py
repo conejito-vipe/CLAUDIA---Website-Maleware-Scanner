@@ -81,6 +81,15 @@ class Api(Base):
         api.toggle_maximize()
         self.assertTrue(api.set_size(1400, 900))
 
+    def test_maximized_state_follows_window(self):
+        wv, w, sizes = self.make()
+        api = wv.kw["js_api"]
+        self.assertFalse(api.is_maximized())
+        api.toggle_maximize()
+        self.assertTrue(api.is_maximized())
+        api.toggle_maximize()
+        self.assertFalse(api.is_maximized())
+
 
 class Page(unittest.TestCase):
     def test_handles_and_ui_wiring(self):
@@ -89,6 +98,8 @@ class Page(unittest.TestCase):
         for rid in ("rz-l", "rz-bl", "rz-r", "rz-b", "rz-br"):
             self.assertIn('id="%s"' % rid, html)
         self.assertIn("api.resize_by(", js)
+        self.assertIn("api.is_maximized()", js)                          # Zustand "maximiert" kommt vom Fenster
+        self.assertIn('id="tb-max"', html)
         self.assertNotIn('id="quit"', html)                              # "Programm beenden" entfällt, das X der Titelleiste übernimmt
         self.assertNotIn('$("#quit")', js)
         self.assertIn('id="tb-ver"', html)                               # Versionsnummer neben dem festen CLAUDIA oben
