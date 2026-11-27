@@ -7,6 +7,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -44,6 +45,13 @@ class UiFlow(unittest.TestCase):
         os.environ["CLAUDIA_REPORTS"] = cls.reports
         cls.logs = os.path.join(cls.base, "protokolle")
         os.environ["CLAUDIA_LOGS"] = cls.logs
+        # Im Entwicklungsbaum passt PRUEFSUMMEN.txt nicht zu den Dateien; der Hinweis würde die Seite
+        # mitten im Test neu zeichnen. Die Prüfung selbst testet test_integritaet_dashboard.
+        from claudia import integritaet
+        cls.integ_patch = mock.patch.object(integritaet, "pruefen", return_value={
+            "ok": True, "liste_da": True, "gesamt": 0, "fehlend": [], "fehlend_anzahl": 0,
+            "geaendert": [], "geaendert_anzahl": 0, "ordner": ""})
+        cls.integ_patch.start()
         cls.srv = make_server(directory=os.path.join(cls.base, "data"))
         threading.Thread(target=cls.srv.serve_forever, daemon=True).start()
         cls.pw = sync_playwright().start()
@@ -55,6 +63,7 @@ class UiFlow(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.integ_patch.stop()
         cls.browser.close()
         cls.pw.stop()
         cls.srv.shutdown()
@@ -285,6 +294,10 @@ class UiFlow(unittest.TestCase):
         pg.check("text=Diese Einstellungen als Profil speichern")
         pg.fill("#f-pn", "Testseite")
         pg.click("text=Verbindung testen")
+        # eigenständig: kennt der Server noch niemand (Test allein gestartet), erst vertrauen
+        pg.wait_for_function("() => document.querySelector('#trust[open]') || document.body.innerText.includes('Verbindung steht')", timeout=30000)
+        if pg.locator("#trust[open]").count():
+            pg.click("#trust-yes")
         pg.wait_for_selector("text=Verbindung steht")
         pg.wait_for_selector("text=Profil gespeichert")
         txt = open(path, encoding="utf-8").read()
