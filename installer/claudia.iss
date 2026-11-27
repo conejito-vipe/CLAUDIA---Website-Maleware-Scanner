@@ -135,32 +135,37 @@ begin
 end;
 
 function ReadInstalledVersion(var Old: String): Boolean;
-var Text, Rest: AnsiString; P, Q: Integer; Old2: String;
+var Raw: AnsiString; Text: String; P, Q: Integer;
 begin
   Result := RegQueryStringValue(HKCU, UninstKey, 'DisplayVersion', Old) or
             RegQueryStringValue(HKLM, UninstKey, 'DisplayVersion', Old);
   if Result then Exit;
   { Ohne Registry-Eintrag (z. B. Python-Fassung oder Kopie im Programmordner): Version aus claudia\__init__.py lesen }
   Result := False;
-  if LoadStringFromFile(ExpandConstant('{localappdata}\Programs\CLAUDIA\claudia\__init__.py'), Text) then
+  if LoadStringFromFile(ExpandConstant('{localappdata}\Programs\CLAUDIA\claudia\__init__.py'), Raw) then
   begin
+    Text := String(Raw);
     P := Pos('__version__', Text);
     if P > 0 then
     begin
-      Rest := Copy(Text, P, 200);
-      P := Pos('"', Rest);
+      Text := Copy(Text, P, 200);
+      P := Pos('"', Text);
       if P > 0 then
       begin
-        Delete(Rest, 1, P);
-        Q := Pos('"', Rest);
-        if Q > 0 then begin Old2 := Copy(Rest, 1, Q - 1); Old := Old2; Result := Old <> ''; end;
+        Delete(Text, 1, P);
+        Q := Pos('"', Text);
+        if Q > 0 then
+        begin
+          Old := Copy(Text, 1, Q - 1);
+          Result := Old <> '';
+        end;
       end;
     end;
   end;
 end;
 
 procedure InitializeWizard;
-var Pg: TWizardPage; Txt: TNewStaticText; Pic: TBitmapImage;
+var Pg: TWizardPage; Txt: TNewStaticText; Pic: TBitmapImage; Hint: String;
 begin
   { Hinweis zur Windows-Meldung: nach der Installation, vor der letzten Seite }
   Pg := CreateCustomPage(wpInstalling, CustomMessage('SmartTitle'), CustomMessage('SmartSub'));
@@ -176,7 +181,9 @@ begin
   Txt.Left := 0; Txt.Top := 0;
   Txt.Width := ScaleX(285); Txt.AutoSize := False; Txt.WordWrap := True;
   Txt.Height := ScaleY(260);
-  Txt.Caption := StringChange(CustomMessage('SmartText'), '%n', #13#10);
+  Hint := CustomMessage('SmartText');
+  StringChange(Hint, '%n', #13#10);       { StringChange verändert die Variable selbst }
+  Txt.Caption := Hint;
 end;
 
 function InitializeSetup(): Boolean;

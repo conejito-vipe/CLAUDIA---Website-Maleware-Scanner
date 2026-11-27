@@ -17,6 +17,22 @@ class InstallerTests(unittest.TestCase):
         self.assertIn("AppVersion \"%s\"" % __version__, s)
         self.assertIn("conejito-vipe", s)
 
+    def test_iss_code_compiles_in_principle(self):
+        """Der Inno-Compiler läuft nur im Windows-Build; typische Fehler hier schon abfangen."""
+        s = rd("installer", "claudia.iss")
+        code = s.split("[Code]")[1]
+        # StringChange und Delete verändern ihr erstes Argument: es muss eine Variable sein, kein Aufruf
+        for fn in ("StringChange", "Delete"):
+            for m in re.finditer(fn + r"\(\s*([^,]+),", code):
+                self.assertRegex(m.group(1).strip(), r"^[A-Za-z_]\w*$", "%s braucht eine Variable: %s" % (fn, m.group(0)))
+        # LoadStringFromFile liefert AnsiString; vor der Weiterverarbeitung in String wandeln
+        self.assertIn("String(Raw)", code)
+        # Die Seite mit Logo und SmartScreen-Hinweis muss erhalten bleiben
+        self.assertIn("procedure InitializeWizard;", code)
+        self.assertIn("hinweis_smartscreen.bmp", code)
+        self.assertIn("function ReadInstalledVersion", code)
+        self.assertIn("WizardResizable=yes", s)
+
     def test_iss_keeps_user_data(self):
         s = rd("installer", "claudia.iss")
         inst = s.split("[InstallDelete]")[1].split("[Files]")[0]
