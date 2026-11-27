@@ -51,7 +51,7 @@ class Frameless(Base):
 
     def test_api_exposes_only_the_title_bar_functions(self):
         public = sorted(n for n in dir(window.WindowApi) if not n.startswith("_"))
-        self.assertEqual(public, ["close", "get_rect", "get_size", "is_custom_frame", "minimize", "resize_by", "set_size", "toggle_maximize"])
+        self.assertEqual(public, ["close", "get_rect", "get_size", "is_custom_frame", "is_maximized", "minimize", "resize_by", "set_size", "toggle_maximize"])
 
     def test_old_pywebview_falls_back_to_normal_frame(self):
         wv = Old(self)
