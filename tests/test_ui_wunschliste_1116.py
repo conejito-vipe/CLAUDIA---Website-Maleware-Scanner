@@ -68,11 +68,13 @@ class Ui(unittest.TestCase):
         self.assertAlmostEqual(u["b"], c["b"], delta=6)                  # gleiche Höhe (Unterkante)
         pg.close()
 
-    def test_help_window_is_not_modal(self):
+    def test_help_in_main_window_keeps_sidebar(self):
+        """Seit 3.1.0: Hilfe öffnet sich im Hauptfenster, die Seitenleiste bleibt sichtbar."""
         pg = self.page()
         pg.click("#help")
-        pg.wait_for_selector("#helpdlg[open]")
-        self.assertFalse(pg.evaluate("document.querySelector('#helpdlg').matches(':modal')"))
+        pg.wait_for_selector("#view .help-view .docs-head")
+        self.assertTrue(pg.evaluate("!!document.querySelector('.rail')&&document.querySelector('.rail').getBoundingClientRect().width>100"))
+        self.assertFalse(pg.evaluate("!!document.querySelector('dialog[open]')"))
         pg.close()
 
     def test_safe_browsing_key_link_on_start(self):
@@ -82,9 +84,9 @@ class Ui(unittest.TestCase):
         pg.close()
 
     def test_logo_in_sidebar_has_margin_to_edges(self):
-        """Seit 3.0.0: Das Logo steht in der Seitenleiste mit Abstand zu allen Rändern; Seitenleiste mindestens 140 px breit."""
+        """Seit 3.0.0: Das Logo steht in der Seitenleiste mit Abstand zu allen Rändern; Seitenleiste mindestens 140 px breit (3.1.0: Abstand auch beim Ein- und Ausblenden)."""
         pg = self.page()
-        logo, top = self.box(pg, ".brand-mark"), self.box(pg, ".top")
+        logo, top = self.box(pg, ".rail-logo"), self.box(pg, ".rail")
         self.assertGreaterEqual(top["r"] - top["l"], 140)
         self.assertGreaterEqual(logo["t"] - top["t"], 20)
         self.assertGreaterEqual(logo["l"] - top["l"], 14)

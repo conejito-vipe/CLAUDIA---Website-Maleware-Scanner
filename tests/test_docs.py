@@ -97,26 +97,26 @@ class Viewer(unittest.TestCase):
         self.assertEqual(errs, [])
         pg.close()
 
-    def test_help_dialog_in_program(self):
+    def test_help_in_main_window_in_program(self):
         pg = self.browser.new_page(viewport={"width": 1280, "height": 900})
         errs = []
         pg.on("pageerror", lambda e: errs.append(str(e)))
         pg.goto(self.srv.entry_url())
         pg.wait_for_selector("#help")
         pg.click("#help")
-        pg.wait_for_selector("#helpdlg .docs-tab")
-        self.assertIn("Schnellstart", pg.inner_text("#helpdlg"))
-        pg.fill("#helpdlg .docs-q", "Prüfsummen")
-        pg.wait_for_selector("#helpdlg .docs-hit")
-        pg.click("#helpdlg .docs-x")
-        self.assertFalse(pg.evaluate("document.getElementById('helpdlg').open"))
+        pg.wait_for_selector("#view .help-view .docs-tab")
+        self.assertIn("Schnellstart", pg.inner_text("#view .help-view"))
+        pg.fill("#view .help-view .docs-q", "Prüfsummen")
+        pg.wait_for_selector("#view .help-view .docs-hit")
+        pg.click("#view .help-view .docs-x")
+        self.assertFalse(pg.evaluate("!!document.querySelector('#view .help-view')"))      # Schließen führt zurück, die Hilfe bleibt nicht offen
         pg.click("#langs button >> nth=1")
         pg.wait_for_selector("text=Connect to the server")
         self.assertEqual(pg.inner_text("#help").strip(), "Help")
         pg.click("#help")
-        pg.wait_for_selector("#helpdlg >> text=Quick start")
-        pg.click("#helpdlg .docs-tab >> nth=2")
-        self.assertIn("Checks that run", pg.inner_text("#helpdlg") + "Checks that run") 
+        pg.wait_for_selector("#view .help-view >> text=Quick start")
+        pg.click("#view .help-view .docs-tab >> nth=2")
+        self.assertIn("Checks that run", pg.inner_text("#view .help-view") + "Checks that run") 
         self.assertEqual(errs, [])
         pg.close()
 

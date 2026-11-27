@@ -56,9 +56,11 @@ class Run(unittest.TestCase):
         res = actions.run_action(r, w["site_rel"], "disable_api", {}, CH)
         self.assertTrue(res["ok"], res)
         st = dict(q(w, "SELECT extension_id, enabled FROM j_extensions WHERE extension_id BETWEEN 701 AND 706"))
-        self.assertEqual(st, {701: 0, 702: 0, 703: 0, 704: 0, 705: 1, 706: 1})
+        # 703 ist 'API-Authentifizierung - Token': der Update-Dienst braucht es, es bleibt an (3.1.0)
+        self.assertEqual(st, {701: 0, 702: 0, 703: 1, 704: 0, 705: 1, 706: 1})
         txt = open(os.path.join(res["backup_dir"], "rueckgaengig.sql")).read()
-        self.assertIn("SET enabled = 1 WHERE extension_id IN (701,702,703)", txt.replace(", ", ","))
+        self.assertIn("SET enabled = 1 WHERE extension_id IN (701,702)", txt.replace(", ", ","))
+        self.assertNotIn("703", txt)
         self.assertTrue(os.path.exists(os.path.join(res["backup_dir"], "extensions.sql.gz")))
 
     def test_tokens_stay(self):

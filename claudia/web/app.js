@@ -308,6 +308,7 @@ async function switchLang(code) {
     if (S.conn && init.connected) S.conn = init.info;
     if (S.results.length) { const st = await api("/api/state?since=0"); S.results = st.results; S.next = st.next; S.summary = st.summary; S.plan = st.plan; S.hoster = st.hoster || null; }
     S.actions = null;
+    S.docs = null;                                  // Dokumentation neu laden, sonst bleibt der alte Sprachstand
     applyLang(cat);
     render();
   } catch (e) { toast(e.error || "Die Sprache konnte nicht gewechselt werden."); }
@@ -2117,7 +2118,7 @@ function viewDashboard() {
   wrap.append(h("div", { class: "pagehead" },
     h("div", { style: "flex:1;min-width:200px" }, h("h1", { text: "Dashboard" }),
       h("p", { class: "small", text: "Alles stammt aus dem, was CLAUDIA auf diesem Computer notiert hat (Datei verlauf.json im Datenordner). Keine Passwörter, keine Dateiinhalte." })),
-    d.sites.length ? h("button", { class: "btn ghost mini", type: "button", onclick: () => dashExport("csv", "") }, "Gesamten Verlauf als CSV") : null,
+    d.sites.length ? h("button", { class: "btn ghost mini", type: "button", onclick: () => dashExport("csv", "") }, "Gesamten Verlauf als CSV speichern") : null,
     h("button", { class: "btn ghost mini", type: "button", onclick: () => openDashboard() }, "Aktualisieren")));
   if (!d.sites.length) {
     wrap.append(h("div", { class: "dcard" }, h("div", { class: "dbody" }, h("p", { text: "Noch kein Verlauf. Nach der ersten vollständigen Prüfung erscheinen hier Diagramme, Auswertung und die Befunde." }))));

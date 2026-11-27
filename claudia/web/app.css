@@ -576,7 +576,7 @@ body { background: var(--bg); color: var(--ink); }
 
 /* Seitenleiste: fest, passt sich der Bildschirmhöhe an, hat keinen eigenen Scrollbalken */
 .rail { position: fixed; left: 0; top: 0; bottom: var(--foot-h); width: var(--side-w); box-sizing: border-box; z-index: 20;
-  display: flex; flex-direction: column; align-items: stretch; padding: clamp(10px, 3vh, 26px) 12px clamp(8px, 2vh, 14px);
+  display: flex; flex-direction: column; align-items: stretch; padding: clamp(10px, 3vh, 26px) 14px clamp(8px, 2vh, 14px);
   background: var(--side); border-right: 1px solid var(--side-line); overflow: hidden; }
 .rail-logo { width: clamp(64px, 12.5vh, 104px); height: auto; align-self: center; margin: 0 0 clamp(8px, 2.6vh, 22px); }
 .steps { display: flex; flex-direction: column; gap: clamp(4px, 0.9vh, 8px); margin: 0; padding: 0; overflow: visible; }

@@ -57,20 +57,20 @@ class Ui(unittest.TestCase):
     def test_uebersicht(self):
         pg = self.page()
         pg.click("#dashbtn")
-        pg.wait_for_selector("#dashdlg[open] .dash-site")
-        text = pg.inner_text("#dashdlg")
+        pg.wait_for_selector("#view .dash-view .sitecard")
+        text = pg.inner_text("#view")
         for t in ("shop.example : html", "blog.example : html", "WordPress 6.8.2", "Joomla 6.2.0", "Keine Auffälligkeiten", "Hinweise", "1 Fund behoben", "1 Aktion ausgeführt",
                   "Konten sperren", "Die letzte Prüfung ist 60 Tage her", "noch keine Sicherung", "Funde behoben"):
             self.assertIn(t, text)
-        self.assertEqual(pg.locator("#dashdlg .dash-site").count(), 2)
-        self.assertEqual(pg.locator("#dashdlg .dash-site svg polyline").count(), 4)          # je Seite zwei Linien
+        self.assertEqual(pg.locator("#view .sitecard").count(), 2)
+        self.assertEqual(pg.locator("#view .dash-view .dcard svg polyline").count(), 2)          # gewählte Seite: kritisch und Hinweise
 
     def test_vergleich_aufklappen(self):
         pg = self.page()
         pg.click("#dashbtn")
-        pg.wait_for_selector("#dashdlg[open] details")
-        pg.click("#dashdlg details summary")
-        text = pg.inner_text("#dashdlg details")
+        pg.wait_for_selector("#view .dash-view details")
+        pg.click("#view .dash-view details summary")
+        text = pg.inner_text("#view .dash-view details")
         self.assertIn("Hintertür gefunden", text)                   # behoben
         self.assertIn("Neu", text)
         self.assertIn("unverändert", text)
@@ -78,18 +78,18 @@ class Ui(unittest.TestCase):
     def test_loeschen_in_zwei_schritten(self):
         pg = self.page()
         pg.click("#dashbtn")
-        pg.wait_for_selector("#dashdlg[open] .dash-site")
-        pg.locator("#dashdlg .dash-site").first.locator("text=Verlauf dieser Seite löschen").click()
-        self.assertEqual(pg.locator("#dashdlg .dash-site").count(), 2)           # erster Klick löscht noch nichts
+        pg.wait_for_selector("#view .dash-view .sitecard")
+        pg.locator("#view .sitecard").first.locator("text=Verlauf dieser Seite löschen").click()
+        self.assertEqual(pg.locator("#view .sitecard").count(), 2)           # erster Klick löscht noch nichts
         pg.locator("text=Wirklich löschen?").first.click()
-        pg.wait_for_function("()=>document.querySelectorAll('#dashdlg .dash-site').length===1")
+        pg.wait_for_function("()=>document.querySelectorAll('#view .sitecard').length===1")
         from claudia import verlauf
         self.assertEqual(len({r["site"] for r in verlauf.load(self.app.dir)["runs"]}), 1)
 
     def test_ohne_verbindung_hinweis(self):
         pg = self.page()
         pg.click("#dashbtn")
-        pg.wait_for_selector("#dashdlg[open] #dash-srv")
+        pg.wait_for_selector("#view #dash-srv")
         self.assertIn("Verbinde dich zuerst", pg.inner_text("#dash-srv"))
 
     def test_server_bestand_und_aktionen(self):
@@ -106,7 +106,7 @@ class Ui(unittest.TestCase):
                 mock.patch.object(type(self.app), "ensure_connected", lambda self: None):
             pg = self.page()
             pg.click("#dashbtn")
-            pg.wait_for_selector("#dashdlg[open]")
+            pg.wait_for_selector("#view .dash-view")
             pg.wait_for_selector("text=Bestand auf dem Server ansehen")
             pg.click("text=Bestand auf dem Server ansehen")
             pg.wait_for_selector("#dash-srv table")
@@ -126,13 +126,13 @@ class Ui(unittest.TestCase):
         import glob
         pg = self.page()
         pg.click("#dashbtn")
-        pg.wait_for_selector("#dashdlg[open] .dash-site")
+        pg.wait_for_selector("#view .dash-view .sitecard")
         pg.click("text=Gesamten Verlauf als CSV speichern")
         pg.wait_for_selector("#dash-msg >> text=Gespeichert:")
         csv = glob.glob(os.path.join(self.base, "b", "verlauf_*", "verlauf.csv"))
         self.assertEqual(len(csv), 1)
         self.assertIn("shop.example : html", open(csv[0], encoding="utf-8").read())
-        pg.locator("#dashdlg .dash-site").first.locator("text=Bericht für diese Seite").click()
+        pg.locator("#view .sitecard").first.locator("text=Bericht für diese Seite").click()
         pg.wait_for_function("()=>document.querySelectorAll('#dash-msg .notice.ok').length===1 && document.querySelector('#dash-msg').innerText.includes('bericht.html')")
         self.assertEqual(len(glob.glob(os.path.join(self.base, "b", "verlauf_*", "bericht.html"))), 1)
         pg.click("text=Support-Paket erstellen")
@@ -145,8 +145,8 @@ class Ui(unittest.TestCase):
         verlauf.record_action(self.app.dir, "s2", "blog.example : html", "remove_shells", "Schadcode entfernen", True, int(time.time()) - 5 * DAY)
         pg = self.page()
         pg.click("#dashbtn")
-        pg.wait_for_selector("#dashdlg[open] .dash-site")
-        self.assertIn("Nachkontrolle fällig", pg.inner_text("#dashdlg"))
+        pg.wait_for_selector("#view .dash-view .sitecard")
+        self.assertIn("Nachkontrolle fällig", pg.inner_text("#view"))
 
     def test_sicherung_pruefen_knopf(self):
         from claudia import actions
@@ -202,9 +202,9 @@ class Ui(unittest.TestCase):
         with mock.patch.object(lizenz, "GESPERRT_OHNE_LIZENZ", ("dashboard",)):
             pg = self.page()
             pg.click("#dashbtn")
-            pg.wait_for_selector("#dashdlg[open]")
-            self.assertIn("Lizenzschlüssel", pg.inner_text("#dashdlg"))
-            self.assertIn("Die Prüfung bleibt immer frei", pg.inner_text("#dashdlg"))
+            pg.wait_for_selector("#view .dash-view")
+            self.assertIn("Lizenzschlüssel", pg.inner_text("#view"))
+            self.assertIn("Die Prüfung bleibt immer frei", pg.inner_text("#view"))
 
 
 if __name__ == "__main__":
