@@ -10,7 +10,7 @@
 
 #define AppShortName "CLAUDIA"
 #ifndef AppVersion
-  #define AppVersion "3.0.0"
+  #define AppVersion "3.1.0"
 #endif
 #define AuthorName "conejito-vipe"
 
@@ -36,6 +36,8 @@ OutputDir=Output
 OutputBaseFilename=CLAUDIA-Setup-{#AppVersion}
 LicenseFile=..\LICENSE
 SetupIconFile=..\claudia\assets\claudia.ico
+WizardImageFile=wizard.bmp
+WizardSmallImageFile=wizard_small.bmp
 UninstallDisplayName={#AppShortName}
 #ifdef FrozenApp
 UninstallDisplayIcon={app}\CLAUDIA.exe
@@ -66,6 +68,7 @@ Type: files; Name: "{app}\pruefen.bat"
 #endif
 
 [Files]
+Source: "hinweis_smartscreen.bmp"; DestDir: "{tmp}"; Flags: dontcopy
 #ifdef FrozenApp
 Source: "..\dist-exe\_work\dist\CLAUDIA\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 #else
@@ -93,6 +96,12 @@ Type: filesandordirs; Name: "{app}\.venv"
 Type: files; Name: "{app}\CLAUDIA.lnk"
 
 [CustomMessages]
+german.SmartTitle=Windows-Meldung beim Start
+german.SmartSub=Warum Windows warnt und was du tun kannst
+german.SmartText=CLAUDIA ist ein kostenloses Programm ohne Herstellerzertifikat. Deshalb kann Windows (Microsoft Defender SmartScreen) beim ersten Start die Meldung „Der Computer wurde durch Windows geschützt“ anzeigen. Das liegt am fehlenden Zertifikat, nicht an einem Fund.%n%nSo geht es weiter: Klicke auf „Weitere Informationen“ (falls sichtbar) und dann auf „Trotzdem ausführen“. Der Quelltext ist offen einsehbar: github.com/conejito-vipe.
+english.SmartTitle=Windows message at start
+english.SmartSub=Why Windows warns and what you can do
+english.SmartText=CLAUDIA is a free program without a publisher certificate. Therefore Windows (Microsoft Defender SmartScreen) may show the message "Windows protected your PC" when it starts for the first time. This is due to the missing certificate, not to a finding.%n%nTo continue: click "More info" (if shown) and then "Run anyway". The source code is open: github.com/conejito-vipe.
 german.UpdateAsk=CLAUDIA %1 ist bereits installiert. Die neue Version ist %2.%nSoll auf %2 aktualisiert werden? Deine Verbindungen, Einstellungen und Berichte bleiben erhalten.
 english.UpdateAsk=CLAUDIA %1 is already installed. The new version is %2.%nUpdate to %2? Your connections, settings and reports are kept.
 german.SameAsk=CLAUDIA %1 ist bereits installiert.%nSoll sie neu installiert (repariert) werden? Deine Daten bleiben erhalten.
@@ -124,12 +133,56 @@ begin
   end;
 end;
 
+function ReadInstalledVersion(var Old: String): Boolean;
+var Text, Rest: AnsiString; P, Q: Integer; Old2: String;
+begin
+  Result := RegQueryStringValue(HKCU, UninstKey, 'DisplayVersion', Old) or
+            RegQueryStringValue(HKLM, UninstKey, 'DisplayVersion', Old);
+  if Result then Exit;
+  { Ohne Registry-Eintrag (z. B. Python-Fassung oder Kopie im Programmordner): Version aus claudia\__init__.py lesen }
+  Result := False;
+  if LoadStringFromFile(ExpandConstant('{localappdata}\Programs\CLAUDIA\claudia\__init__.py'), Text) then
+  begin
+    P := Pos('__version__', Text);
+    if P > 0 then
+    begin
+      Rest := Copy(Text, P, 200);
+      P := Pos('"', Rest);
+      if P > 0 then
+      begin
+        Delete(Rest, 1, P);
+        Q := Pos('"', Rest);
+        if Q > 0 then begin Old2 := Copy(Rest, 1, Q - 1); Old := Old2; Result := Old <> ''; end;
+      end;
+    end;
+  end;
+end;
+
+procedure InitializeWizard;
+var Pg: TWizardPage; Txt: TNewStaticText; Pic: TBitmapImage;
+begin
+  { Hinweis zur Windows-Meldung: nach der Installation, vor der letzten Seite }
+  Pg := CreateCustomPage(wpInstalling, CustomMessage('SmartTitle'), CustomMessage('SmartSub'));
+  Pic := TBitmapImage.Create(Pg);
+  Pic.Parent := Pg.Surface;
+  Pic.Stretch := True;
+  Pic.Left := ScaleX(300); Pic.Top := ScaleY(0);
+  Pic.Width := ScaleX(250); Pic.Height := ScaleY(234);
+  ExtractTemporaryFile('hinweis_smartscreen.bmp');
+  Pic.Bitmap.LoadFromFile(ExpandConstant('{tmp}\hinweis_smartscreen.bmp'));
+  Txt := TNewStaticText.Create(Pg);
+  Txt.Parent := Pg.Surface;
+  Txt.Left := 0; Txt.Top := 0;
+  Txt.Width := ScaleX(285); Txt.AutoSize := False; Txt.WordWrap := True;
+  Txt.Height := ScaleY(260);
+  Txt.Caption := StringChange(CustomMessage('SmartText'), '%n', #13#10);
+end;
+
 function InitializeSetup(): Boolean;
 var Old, Msg: String; C: Integer;
 begin
   Result := True;
-  if not (RegQueryStringValue(HKCU, UninstKey, 'DisplayVersion', Old) or
-          RegQueryStringValue(HKLM, UninstKey, 'DisplayVersion', Old)) then Exit;
+  if not ReadInstalledVersion(Old) then Exit;
   if WizardSilent then Exit;
   C := CompareVer(Old, '{#AppVersion}');
   if C < 0 then Msg := FmtMessage(CustomMessage('UpdateAsk'), [Old, '{#AppVersion}'])

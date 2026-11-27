@@ -168,6 +168,14 @@ def _day(ts: float) -> str:
     return time.strftime("%d.%m.%Y", time.localtime(ts))
 
 
+def _befunde_sortiert(run: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Befunde der letzten Prüfung für das Dashboard: kritisch zuerst. Jeder Eintrag: Prüf-ID, Schwere, Titel."""
+    rang = {"crit": 0, "warn": 1, "info": 2}
+    out = [{"id": str(f[0]), "sev": str(f[1]), "title": str(f[2])} for f in run.get("findings") or [] if isinstance(f, list) and len(f) == 3]
+    out.sort(key=lambda x: rang.get(x["sev"], 9))
+    return out[:200]
+
+
 def dashboard(base: str, now: Optional[float] = None) -> Dict[str, Any]:
     """Alles, was das Dashboard anzeigt (nur lesend)."""
     now = float(now if now is not None else time.time())
@@ -195,7 +203,9 @@ def dashboard(base: str, now: Optional[float] = None) -> Dict[str, Any]:
                       "trend": [{"ts": r["ts"], "crit": r["counts"].get("crit", 0), "warn": r["counts"].get("warn", 0)} for r in runs[-20:]],
                       "fixed": fixed_total(runs), "compare": cmp_last,
                       "actions_ok": len([a for a in acts if a["ok"]]), "actions_failed": len([a for a in acts if not a["ok"]]),
-                      "last_backup": backups[-1]["ts"] if backups else 0, "hints": hints, "nachkontrolle": nk})
+                      "last_backup": backups[-1]["ts"] if backups else 0, "hints": hints, "nachkontrolle": nk,
+                      "findings": _befunde_sortiert(last), "history": [{"ts": r["ts"], "crit": r["counts"].get("crit", 0), "warn": r["counts"].get("warn", 0),
+                                                                    "info": r["counts"].get("info", 0), "ok": r["counts"].get("ok", 0)} for r in runs[-30:]]})
     sites.sort(key=lambda s: ({"crit": 0, "warn": 1, "ok": 2}.get(s["level"], 3), -s["last_ts"]))
     recent = sorted(data["actions"], key=lambda a: a["ts"], reverse=True)[:40]
     return {"sites": sites, "recent_actions": recent,

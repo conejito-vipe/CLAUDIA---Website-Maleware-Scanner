@@ -14,7 +14,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from . import db as dbmod, joomla, wordpress
 from . import updcheck
-from .runner import Runner, RunnerError
+from .runner import Runner, RunnerError, ShResult
 from .util import digits, lines_of, parse_xml, sq
 
 CHMOD_MAX = 200
@@ -270,7 +270,7 @@ ACTIONS: Dict[str, Dict[str, Any]] = {
         "summary": "Schaltet in der Datenbank die Plugins der Joomla-Programmierschnittstelle aus: alle Web-Services-Plugins, 'Benutzer - Joomla API-Token' und die API-Authentifizierung. "
                    "Danach nimmt die Seite keine Anfragen an /api mehr an. Tokens und Dateien bleiben unverändert.",
         "warning": "Wenn du die API nutzt (Apps, Anbindungen an andere Systeme, Headless-Betrieb), funktionieren diese danach nicht mehr. Normale Seiten und das Backend sind nicht betroffen. "
-                   "Ab Joomla 5.4 laufen danach auch die automatischen Core-Updates nicht mehr: Der Update-Dienst von joomla.org arbeitet über diese Schnittstelle. "
+                   "Die zwei Plugins, die der Update-Dienst für die automatischen Core-Updates braucht ('Web Services - Joomla-Update' und 'API-Authentifizierung - Token'), bleiben an, damit die Automatik weiter läuft. "
                    "Vorher wird die Tabelle extensions gesichert und geprüft, die genauen Rückgängig-Befehle werden als Datei gespeichert. Gelöscht wird nichts.",
         "risk": "mittel", "backup": False, "needs_php": False,
         "undo": "Datei rueckgaengig.sql im Sicherungsordner enthält die genauen Befehle (UPDATE ... SET enabled = 1), oder im Backend unter System -> Verwalten -> Plugins die Plugins wieder einschalten.",
@@ -1167,8 +1167,35 @@ def newest_download(xml_text: str) -> Dict[str, str]:
             continue
         url = pick_download(ET.tostring(up, encoding="unicode").join(["<updates>", "</updates>"]), v)
         if url and (not best or joomla_vcmp(v, best["version"]) > 0):
-            best = {"version": v, "url": url}
+            sha256 = (up.findtext("sha256") or "").strip().lower()
+            sha512 = (up.findtext("sha512") or "").strip().lower()
+            best = {"version": v, "url": url, "sha256": sha256 if re.match(r"^[0-9a-f]{64}\Z", sha256) else "",
+                    "sha512": sha512 if re.match(r"^[0-9a-f]{128}\Z", sha512) else ""}
     return best
+
+
+def _joomla_install_checked(runner, site_dir: str, php: str, best: Dict[str, str], log) -> Any:
+    """Erweiterung installieren: Paket auf dem Server in tmp/ laden, Prüfsumme aus dem Herstellermanifest vergleichen,
+    dann mit Joomlas eigenem Befehl aus der lokalen Datei installieren (nicht direkt aus dem Link, das schlägt bei Downloads mit Anmeldung oder Umleitung fehl)."""
+    cli = "timeout -k 5 600 %s cli/joomla.php " % sq(php)
+    if best.get("sha256"):
+        algo, want, tool = "sha256", best["sha256"], "sha256sum"
+    elif best.get("sha512"):
+        algo, want, tool = "sha512", best["sha512"], "sha512sum"
+    else:
+        log("Prüfsumme im Herstellermanifest", False, "Keine SHA-256- oder SHA-512-Prüfsumme gefunden. Die Installation wird nicht gestartet.")
+        return ShResult("", "", 1, False)
+    script = (
+        "mkdir -p tmp && f=$(mktemp tmp/claudia-ext-XXXXXX.zip) || exit 41\n"
+        "curl -fsSL --max-time 300 --proto '=https' -o \"$f\" -- %(url)s || { echo 'Download fehlgeschlagen'; rm -f \"$f\"; exit 42; }\n"
+        "[ \"$(head -c 2 \"$f\")\" = PK ] || { echo 'Die Adresse liefert keine ZIP-Datei (vermutlich Anmeldung oder Umleitung)'; rm -f \"$f\"; exit 43; }\n"
+        "got=$(%(tool)s \"$f\" | cut -d' ' -f1); [ \"$got\" = %(want)s ] || { echo \"Prüfsumme stimmt nicht (%(algo)s)\"; rm -f \"$f\"; exit 44; }\n"
+        "echo 'Prüfsumme (%(algo)s) stimmt'\n"
+        "%(cli)sextension:install --path=\"$f\" </dev/null 2>&1; rc=$?; rm -f \"$f\"; exit $rc\n"
+    ) % {"url": sq(best["url"]), "tool": tool, "want": sq(want), "algo": algo, "cli": cli}
+    r = runner.sh(site_dir, script, 720)
+    log("Paket laden und Prüfsumme (%s) vergleichen" % algo, r.rc not in (41, 42, 43, 44), r.out.strip()[-400:])
+    return r
 
 
 _DOC_PARAMS = {"selected_pick": ["u:42", "e:component/-/com_beispiel", "p:beispiel-plugin"], "php": "php", "wpcli": "wp", "files": [], "ids": [0], "dirs": ["tmp"], "selected": [], "updates": [], "backups": [{"name": "claudia-sicherung-20250101-000000"}], "selected_backups": ["claudia-sicherung-20250101-000000"], "logs": [], "tool": "wordfence",
@@ -2148,7 +2175,7 @@ def _run_install_security(runner, site_dir: str, php: str, tgt: Dict[str, Any], 
     log("Download-Adresse aus dem Update-Manifest", bool(best), (("Version %s: %s" % (best["version"], best["url"])) if best else "Im Manifest wurde keine https-Adresse gefunden."))
     if not best:
         raise ActionError("Die Download-Adresse konnte nicht ermittelt werden. Es wurde nichts verändert. Installiere die Erweiterung über die Store-Seite.")
-    r = runner.sh(site_dir, cli + "extension:install --url=%s </dev/null 2>&1" % sq(best["url"]), 660)
+    r = _joomla_install_checked(runner, site_dir, php, best, log)
     good = r.rc == 0 and not r.timed_out
     log("Installieren: %s" % name, good, r.out.strip()[-800:])
     if not good:
@@ -3796,13 +3823,13 @@ def _run_enable_autoupdate_api(runner, site_dir: str, log, result: Dict[str, Any
 
 
 def _run_disable_api(runner, site_dir: str, log, result: Dict[str, Any]) -> None:
-    """Joomla-API abschalten: Web-Services-, API-Token- und API-Authentifizierungs-Plugins auf enabled = 0. Mit Sicherung und rueckgaengig.sql."""
+    """Joomla-API abschalten: Web-Services-, API-Token- und API-Authentifizierungs-Plugins auf enabled = 0. Die zwei Plugins des Update-Dienstes (AUTOUPDATE_PLUGIN_SQL) bleiben an, damit die automatischen Core-Updates weiter laufen. Mit Sicherung und rueckgaengig.sql."""
     cfg, cms = _read_cfg_site(runner, site_dir)
     if cms == "wordpress":
         raise ActionError("Diese Aktion gibt es nur für Joomla.")
     pw = str(cfg.get("password", "")) + "\n"
     prefix = str(cfg.get("dbprefix", "jos_"))
-    rows = _sql_rows(runner, site_dir, cfg, pw, "SELECT extension_id, IFNULL(folder, ''), element FROM #__extensions WHERE type = 'plugin' AND enabled = 1 AND protected = 0 AND (%s)" % API_PLUGIN_SQL)
+    rows = _sql_rows(runner, site_dir, cfg, pw, "SELECT extension_id, IFNULL(folder, ''), element FROM #__extensions WHERE type = 'plugin' AND enabled = 1 AND protected = 0 AND (%s) AND NOT (%s)" % (API_PLUGIN_SQL, AUTOUPDATE_PLUGIN_SQL))
     todo = [(int(x[0]), "%s/%s" % (x[1], x[2])) for x in rows if len(x) >= 3 and digits(x[0])]
     log("Eingeschaltete API-Plugins suchen", True, ", ".join("%s (#%d)" % (n, i) for i, n in todo) or "keine")
     if not todo:

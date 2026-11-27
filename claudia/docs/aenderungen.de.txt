@@ -1,3 +1,40 @@
+## 3.1.0 | 2026-11-27 | Dashboard mit Diagrammen, Hilfe im Hauptfenster, Prüfung der Installation und Fehlerbehebungen
+### Dashboard mit Diagrammen
+Was: Das Dashboard öffnet sich jetzt im Hauptfenster wie die Prüfung. Oben stehen Kennzahlen, darunter Balken je Seite, eine Auswertung in Sätzen, ein Verlaufsdiagramm mit kritischen Funden und Hinweisen und die Seiten im Detail. Die Befunde sind anklickbar und zeigen, was geprüft wird und warum es wichtig ist.
+Warum: Die Übersicht war nur Text und hatte keine Aussage auf einen Blick.
+Wie: Die Verlaufsdaten enthalten jetzt die Befunde der letzten Prüfung und den Verlauf je Seite (verlauf.py). Die Ansicht steht in app.js und app.css.
+### Hilfe im selben Fenster
+Was: Handbuch, Prüfkatalog und Änderungsverlauf öffnen sich im Hauptfenster mit derselben Seitenleiste, nicht mehr in einem eigenen Fenster.
+Warum: Ein zweites Fenster passte nicht zur übrigen Oberfläche.
+Wie: Die Hilfe ist eine Ansicht wie Verbindung und Ergebnis, der Knopf Hilfe steht oben rechts.
+### Oberfläche
+Was: Die Seitenleiste hat Symbole mit Text darunter und passt sich der Bildschirmhöhe an, ohne eigenen Scrollbalken. Sprache, Hilfe und Verbindung stehen oben. Die Fußleiste zeigt nur den Status. Der Innenbereich ist dunkel, das Blau kommt aus dem Logo. Die Version steht nur noch in der Titelleiste.
+Warum: Das Layout sollte dem festgelegten Entwurf "Leitstand Blau" entsprechen.
+Wie: index.html und app.css (Design 3.1).
+### Updates: Ladeanzeige
+Was: Während die Updatesuche läuft, erscheint eine Ladeanzeige. Der Text "null" bei der Anzeige der installierten Version ist weg.
+Warum: Ein Fehler bei der Anzeige der installierten Version.
+Wie: Die Ladeanzeige ersetzt den Text, und die Version fällt auf die Versionsangabe des Programms zurück.
+### Sicherheits-Erweiterung installieren
+Was: Der Knopf "Installieren" steht jetzt direkt bei der Erweiterung, nicht unter der Liste. Die Bestätigung erscheint wie bisher unten.
+Warum: Man sollte beim gewünschten Werkzeug installieren können.
+Wie: securityOffer() in app.js.
+### Joomla: Automatische Updates bleiben beim Abschalten der API an
+Was: Die Aktion "Joomla-API abschalten" schaltet die zwei Plugins des Update-Dienstes nicht mehr aus. Die automatischen Core-Updates laufen damit weiter.
+Warum: Die API-Plugins und die Plugins des Update-Dienstes überschnitten sich. Dadurch ging mit der API auch die Automatik aus.
+Wie: _run_disable_api schließt AUTOUPDATE_PLUGIN_SQL aus. Die Warnung im Katalog nennt die beiden Plugins.
+### Joomla: Erweiterungen installieren (z. B. JCE)
+Was: Das Paket wird zuerst auf dem Server geladen, die Prüfsumme aus dem Herstellermanifest wird verglichen und erst dann installiert. Fehlt die Prüfsumme oder ist sie falsch, passiert nichts.
+Warum: Die Installation direkt aus dem Link schlug bei JCE 3.0.6 fehl.
+Wie: _joomla_install_checked in actions.py. Der Befehl extension:install --path installiert die lokal geladene Datei.
+### Installation prüfen
+Was: CLAUDIA vergleicht die Dateien des Programms mit PRUEFSUMMEN.txt. Fehlt eine Datei oder ist sie verändert, erscheint oben eine Meldung mit der Liste. Fehlt die Liste selbst, wird das gesagt.
+Warum: Fehlende Dateien blieben bisher unbemerkt.
+Wie: claudia/integritaet.py, Endpunkt /api/integritaet.
+### Setup
+Was: Auf der Abschlussseite steht das CLAUDIA-Logo. Vor dem Abschluss erklärt eine Seite die Windows-Meldung "Der Computer wurde durch Windows geschützt" mit dem Bild dazu. Das Setup erkennt eine ältere Version auch dann, wenn sie keinen Registry-Eintrag hat (z. B. die Python-Fassung).
+Warum: Die Meldung verunsichert Nutzer, und eine ältere Version wurde nicht erkannt.
+Wie: installer/claudia.iss, Bilder wizard.bmp, wizard_small.bmp und hinweis_smartscreen.bmp.
 ## 3.0.0 | 2026-11-26 | Neue Oberfläche: Seitenleiste mit Logo, Fußleiste und das Blau des Logos
 ### Neue Oberfläche
 Was: Die Oberfläche wirkt jetzt wie ein Programm statt wie eine Webseite. Links steht eine Seitenleiste mit dem Logo, den vier Schritten (Verbindung, Tests auswählen, Prüfung, Ergebnis) und unten Updates, Dashboard und Hilfe. Unten steht eine feste Fußleiste mit dem Verbindungsstatus, der Sprachwahl und der Version; der bisherige Hinweistext steht unter dem Inhalt. Die Farben stammen aus dem Logo (Blau der Lupe als Akzent, dunkles Marineblau im dunklen Modus, helles Blau im hellen Modus). Ändert sich nichts an Funktionen, Prüfungen und Berichten.

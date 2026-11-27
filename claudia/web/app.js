@@ -198,18 +198,38 @@ function applyLang(payload) {
   lStart();
   lWalk(document.body);
 }
-/* Dokumentation (Handbuch, Änderungen, Prüfkatalog mit Suche) im Fenster */
+/* Dokumentation (Handbuch, Änderungen, Prüfkatalog mit Suche) im Hauptfenster, mit derselben Seitenleiste */
 async function openHelp() {
-  const dlg = $("#helpdlg"), box = $("#help-body");
-  box.replaceChildren(h("p", { text: "…", "data-nt": "1" }));
-  if (!dlg.open) dlg.show();                     // nicht modal: das Fenster lässt sich verschieben, die Prüfung läuft daneben weiter und bleibt bedienbar
-  try {
-    const data = await api("/api/docs");
-    window.ClaudiaDocs.mount(box, data, { onclose: () => dlg.close(), loadTech: () => api("/api/techdoc") });
-    helpDrag(dlg, box);
-  } catch (e) {
-    box.replaceChildren(h("p", { text: String(e.message || e) }), h("button", { class: "btn", type: "button", onclick: () => dlg.close() }, "Schließen"));
-  }
+  if (S.step !== "help") { S.helpBack = S.step; S.step = "help"; }
+  render();
+}
+function viewHelp() {
+  const box = h("div", { class: "help-view" }, loadingBox("Lade die Dokumentation …"));
+  const back = () => { S.step = S.helpBack && S.helpBack !== "help" ? S.helpBack : "connect"; render(); };
+  (async () => {
+    try {
+      if (!S.docs) S.docs = await api("/api/docs");
+      box.replaceChildren();
+      window.ClaudiaDocs.mount(box, S.docs, { onclose: back, loadTech: () => api("/api/techdoc") });
+    } catch (e) { box.replaceChildren(h("p", { text: String(e.message || e.error || e) }), h("button", { class: "btn", type: "button", onclick: back }, "Zurück")); }
+  })();
+  return box;
+}
+function loadingBox(text) { return h("div", { class: "loader" }, h("i", { class: "spin", "aria-hidden": "true" }), h("span", { text })); }
+/* Installation prüfen: fehlende oder veränderte Dateien des Originalpakets */
+async function loadIntegrity() {
+  try { S.integ = await api("/api/integritaet"); } catch (e) { S.integ = null; }
+  if (S.integ && !S.integ.ok) render();
+}
+function integrityBanner() {
+  const g = S.integ;
+  if (!g.liste_da) return h("div", { class: "integ" }, h("h3", { text: "Installation nicht prüfbar" }),
+    h("p", { class: "small", text: "Die Prüfsummenliste PRUEFSUMMEN.txt fehlt im Programmordner. Ohne sie lässt sich nicht feststellen, ob Dateien fehlen. Installiere CLAUDIA neu." }));
+  const alle = [...g.fehlend.map(x => ["fehlt: ", x]), ...g.geaendert.map(x => ["verändert: ", x])];
+  return h("div", { class: "integ" }, h("h3", { text: "Installation unvollständig oder verändert: " + g.fehlend_anzahl + " Datei(en) fehlen, " + g.geaendert_anzahl + " weichen ab" }),
+    h("p", { class: "small", text: "Das kann passieren, wenn ein Virenscanner Dateien entfernt hat oder ein Update abgebrochen ist. Installiere CLAUDIA über das Setup neu. Deine Verbindungen, Einstellungen und Berichte bleiben erhalten." }),
+    h("details", {}, h("summary", { text: "Betroffene Dateien anzeigen (" + alle.length + ")" }),
+      h("ul", {}, alle.slice(0, 200).map(([a, b]) => h("li", {}, a, h("code", { text: b }))))));
 }
 /* Hilfefenster per Kopfzeile verschieben (bleibt im sichtbaren Bereich) */
 function helpDrag(dlg, box) {
@@ -348,20 +368,27 @@ function connLabel() {
   if (!name) name = Object.keys(profs).find(n => profs[n].host === c.host && (profs[n].user || "") === (c.user || "")) || "";
   return name ? name + " · " + c.host : c.host;
 }
+/* Kopfzeile, Seitenleiste und Fußleiste: Titel, Verbindung, Sprache, Hilfe */
+function viewTitle() {
+  if (S.step === "dash") return "Dashboard";
+  if (S.step === "help") return "Hilfe und Handbuch";
+  const i = STEPS.findIndex(s => s[0] === S.step);
+  return i >= 0 ? "Schritt " + (i + 1) + " von " + STEPS.length + ": " + STEPS[i][1] : "CLAUDIA";
+}
+const STEP_ICON = { connect: "⇄", tests: "☑", run: "▶", result: "⚑" };
 function renderFrame() {
   renderLangs();
-  $("#ver").textContent = tr("Version") + " " + S.init.version;
   $("#tb-ver").textContent = S.init.version;
-  $("#foot-ver").textContent = S.init.version;
   const ub = $("#uninstall"), bar = $("#uni-bar");
   if (ub.parentElement !== bar) bar.append(ub);                     // aus der Verbindungsansicht zurückholen, bevor diese abgebaut wird
   bar.hidden = S.step !== "result";
   const c = $("#conn");
-  if (S.conn) {
-    c.hidden = false;
-    $("#conn-text").textContent = connLabel();
-  } else c.hidden = true;
-  $("#foot-off").hidden = !c.hidden;
+  if (S.conn) { c.hidden = false; $("#conn-text").textContent = connLabel(); } else c.hidden = true;
+  $("#foot-off").textContent = S.conn ? connLabel() + " · " + tr("nur lesend") : tr("Nicht verbunden");
+  document.querySelector("#sbar .sdot").classList.toggle("on", !!S.conn);
+  $("#tb-title").textContent = viewTitle();
+  $("#dashbtn").classList.toggle("on", S.step === "dash");
+  $("#help").classList.toggle("on", S.step === "help");
   const order = STEPS.map(s => s[0]);
   const cur = order.indexOf(S.step);
   const reach = { connect: true, tests: !!S.conn, run: S.running || S.results.length > 0, result: !S.running && S.results.length > 0 };
@@ -372,7 +399,7 @@ function renderFrame() {
       class: "step" + (i === cur ? " on" : "") + (done ? " done" : ""), type: "button",
       "aria-current": i === cur ? "step" : false, disabled: !(done || i === cur),
       onclick: () => { if (done) go(id); },
-    }, h("span", { class: "n", text: done ? "✓" : String(i + 1) }), label);
+    }, h("span", { class: "n", "aria-hidden": "true", text: done ? "✓" : STEP_ICON[id] }), label);
     nav.append(b);
   });
 }
@@ -388,13 +415,15 @@ function render() {
   const keepY = scroller().scrollTop;
   renderFrame();
   const v = $("#view"); v.replaceChildren();
+  if (S.integ && !S.integ.ok && S.step !== "help") v.append(integrityBanner());
   if (S.step === "connect") v.append(viewConnect());
   else if (S.step === "tests") v.append(viewTests());
   else if (S.step === "run") v.append(viewRun());
+  else if (S.step === "dash") v.append(viewDashboard());
+  else if (S.step === "help") v.append(viewHelp());
   else v.append(viewResult());
   radarSync();
   scroller().scrollTo(0, keepY);
-  if (document.getElementById("dashdlg") && $("#dashdlg").open) dashActionsRender();
 }
 
 /* ------------------------------------------------------------------ 1. Verbindung */
@@ -1545,7 +1574,7 @@ function securityOffer(a, st) {
   const kind = a.id === "install_backup" ? "backup" : "security", pre = kind === "backup" ? "b:" : "";
   const info = (S.storeInfo = S.storeInfo || {});
   const wrap = h("div", { class: "secoffer" });
-  wrap.append(h("p", { class: "small" }, h("strong", { text: "Wähle eine Erweiterung. " }),
+  wrap.append(h("p", { class: "small" }, h("strong", { text: "Bei der gewünschten Erweiterung auf „Installieren“ klicken. " }),
     "Bild, Beschreibung und Link stammen von der Store-Seite " + (isWP() ? "(wordpress.org)" : "(Joomla Extensions Directory)") + ". Ohne Internetverbindung siehst du statt dessen die Kurzbeschreibung des Programms."));
   /* erst die kostenlosen, dann unter eigener Überschrift die kostenpflichtigen (Preis unklar zuletzt) */
   const pg = t => { const x = String(t.price || "").toLowerCase(); return x.startsWith("kostenlos") ? 0 : (x.includes("kostenpflichtig") || /[€$]/.test(x)) ? 2 : (t.price === undefined || t.price === null || isWP()) ? 0 : (t.price === "" ? 1 : 0); };
@@ -1575,6 +1604,7 @@ function securityOffer(a, st) {
         h("div", { class: "small", text: i.short || t.text }),
         t.howto ? h("div", { class: "small muted", text: t.howto }) : null,
         t.stand ? h("div", { class: "small muted", text: "Download-Adresse des Herstellers geprüft, Stand der Liste: " + t.stand }) : null,
+        t.installable && !st.running ? h("div", { class: "secact" }, h("button", { class: "btn primary mini", type: "button", onclick: () => { st.tool = t.id; st.preview = null; st.ok = false; previewAction(a); } }, "Installieren …"), h("span", { class: "small muted", text: "  Zeigt die Befehle und die Bestätigung unten." })) : null,
         h("div", { class: "small" }, (grp === 2 || !t.installable) ? h("a", { href: t.store_url, target: "_blank", rel: "noopener noreferrer", text: "Store-Seite öffnen" }) : null,
           i.live === false && !i.loading ? h("span", { class: "muted", text: "   (Store nicht erreichbar: eigener Text)" }) : null))));
   }
@@ -1700,7 +1730,6 @@ function statusBody() {
   return wrap;
 }
 function showStatus() {
-  if ($("#dashdlg").open) { S.dashReopen = true; $("#dashdlg").close(); }        // das Statusfenster liegt sonst unter dem Dashboard
   let back = document.getElementById("status-modal");
   if (!back) {
     back = h("div", { class: "modal-back", id: "status-modal" });
@@ -1875,18 +1904,18 @@ function updFrame(title, scroll, foot) {
 }
 async function openUpdate(manual) {
   const dlg = $("#upddlg");
-  updFrame("Programm-Update", h("p", { text: "Suche nach einer neuen Version …" }));
+  updFrame("Programm-Update", loadingBox("Suche nach einer neuen Version …"));
   let st;
   try { st = manual ? await api("/api/app-update-check", {}) : await api("/api/app-update"); } catch (e) { updFrame("Programm-Update", h("p", { text: e.error || "Nicht möglich." })); return; }
   renderUpdate(st);
 }
 function renderUpdate(st) {
   const dlg = $("#upddlg"), close = h("button", { class: "btn ghost", type: "button", onclick: () => dlg.close() }, "Abbrechen");
-  if (st.checking) { updFrame("Programm-Update", h("p", { text: "Suche nach einer neuen Version …" })); setTimeout(async () => { try { renderUpdate(await api("/api/app-update")); } catch (e) { /* bleibt */ } }, 1200); return; }
+  if (st.checking) { updFrame("Programm-Update", loadingBox("Suche nach einer neuen Version …")); setTimeout(async () => { try { renderUpdate(await api("/api/app-update")); } catch (e) { /* bleibt */ } }, 1200); return; }
   if (!st.newer) {
     const bad = st.checked && st.ok === false;
     updFrame("Programm-Update", [h("p", { text: bad ? "Die Suche war nicht möglich (keine Internetverbindung oder GitHub nicht erreichbar)." : "Du verwendest die aktuelle Version." }),
-      h("p", { class: "hint", text: "Installierte Version: " + st.current })],
+      h("p", { class: "hint", text: "Installierte Version: " + (st.current || (S.init && S.init.version) || "?") })],
       h("div", { class: "dlg-actions" }, h("button", { class: "btn", type: "button", onclick: () => dlg.close() }, "Schließen")));
     return;
   }
@@ -1930,7 +1959,7 @@ async function autoUpdateCheck() {
     if (st.checked && !st.checking) {
       if (st.newer) {
         $("#updbtn").classList.add("has-upd");
-        $("#updbtn").textContent = tr("Update verfügbar");
+        $("#updbtn .rl").textContent = tr("Update verfügbar");
         if (!st.skipped && !updShown && !S.running && !$("#upddlg").open) { updShown = true; renderUpdate(st); }
       }
       return;
@@ -1940,61 +1969,128 @@ async function autoUpdateCheck() {
 }
 
 /* ------------------------------------------------------------------ Dashboard (Verlauf, Vergleich, Verwaltung) */
-function dashFrame(title, scroll) {
-  const dlg = $("#dashdlg"), box = $("#dash-body");
-  box.replaceChildren(
-    h("div", { class: "uni-head" }, h("h2", { text: title }), h("button", { class: "dlg-x", type: "button", title: "Schließen", "aria-label": "Schließen", onclick: () => dlg.close(), text: "✕" })),
-    h("div", { class: "uni-scroll" }, scroll));
-  if (!dlg.open) dlg.showModal();
-}
+/* ------------------------------------------------------------------ Dashboard (Verlauf, Diagramme, Befunde) */
+const LVL = { crit: "var(--crit)", warn: "var(--warn)", info: "var(--info)", ok: "var(--ok)" };
+const LVL_NAME = { crit: "Kritisch", warn: "Prüfen", info: "Hinweis", ok: "In Ordnung" };
 async function openDashboard() {
-  let d;
-  try { d = await api("/api/dashboard"); } catch (e) { dashFrame("Dashboard", h("p", { text: e.error || "Nicht möglich." })); return; }
-  S.dash = d;
-  renderDashboard();
+  S.step = "dash"; S.dashErr = ""; render();
+  try {
+    S.dash = await api("/api/dashboard");
+    if (S.dashPick && !S.dash.sites.some(s => s.site === S.dashPick)) S.dashPick = "";
+  } catch (e) { S.dash = null; S.dashErr = e.error || "Nicht möglich."; }
+  render();
 }
 function svgEl(tag, attrs) { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
-function trendSvg(trend) {
-  const W = 180, H = 40, n = trend.length, max = Math.max(1, ...trend.map(t => Math.max(t.crit, t.warn)));
-  const x = i => n === 1 ? W / 2 : 6 + i * (W - 12) / (n - 1), y = v => H - 5 - (v / max) * (H - 10);
-  const svg = svgEl("svg", { width: W, height: H, viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Verlauf der kritischen Funde und Warnungen" });
-  for (const [key, cls] of [["warn", "tr-warn"], ["crit", "tr-crit"]]) {
-    svg.append(svgEl("polyline", { class: cls, points: trend.map((t, i) => x(i) + "," + y(t[key])).join(" ") }));
-    if (n === 1) svg.append(svgEl("circle", { cx: x(0), cy: y(trend[0][key]), r: 3, class: cls }));
+function ageText(days) { return days <= 0 ? "heute" : days === 1 ? "gestern" : "vor " + days + " Tagen"; }
+/* Liniendiagramm: kritische Funde (durchgezogen) und Hinweise (gestrichelt) je Prüfung */
+function dashLineChart(history) {
+  const W = 620, H = 230, pl = 40, pr = 14, pt = 14, pb = 26, n = history.length;
+  const max = Math.max(1, ...history.map(p => Math.max(p.crit, p.warn)));
+  const x = i => n === 1 ? pl + (W - pl - pr) / 2 : pl + i * (W - pl - pr) / (n - 1);
+  const y = v => pt + (H - pt - pb) * (1 - v / max);
+  const svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Verlauf der kritischen Funde und Hinweise" });
+  for (const v of [0, max / 2, max]) {
+    svg.append(svgEl("line", { x1: pl, x2: W - pr, y1: y(v), y2: y(v), class: "dash-grid" }));
+    const t = svgEl("text", { x: pl - 8, y: y(v) + 4, "text-anchor": "end", class: "dash-axis" }); t.textContent = String(Math.round(v)); svg.append(t);
+  }
+  for (const [key, col, dash] of [["warn", "var(--warn)", "6 5"], ["crit", "var(--crit)", null]]) {
+    const line = svgEl("polyline", { points: history.map((p, i) => x(i) + "," + y(p[key])).join(" "), fill: "none", "stroke-width": 2.5, "stroke-linejoin": "round" });
+    line.style.stroke = col; if (dash) line.setAttribute("stroke-dasharray", dash);
+    svg.append(line);
+    history.forEach((p, i) => {
+      const c = svgEl("circle", { cx: x(i), cy: y(p[key]), r: 3.5 }); c.style.fill = col;
+      const tt = svgEl("title", {}); tt.textContent = fmtDate(p.ts) + ": " + p[key] + (key === "crit" ? " kritisch" : " Hinweise"); c.append(tt); svg.append(c);
+    });
+  }
+  if (n) {
+    const a = svgEl("text", { x: pl, y: H - 6, class: "dash-axis" }); a.textContent = fmtDate(history[0].ts); svg.append(a);
+    const b = svgEl("text", { x: W - pr, y: H - 6, "text-anchor": "end", class: "dash-axis" }); b.textContent = fmtDate(history[n - 1].ts); svg.append(b);
   }
   return svg;
 }
-function ageText(days) { return days <= 0 ? "heute" : days === 1 ? "gestern" : "vor " + days + " Tagen"; }
-function dashSite(s) {
+function dashStackBar(counts) {
+  const total = (counts.crit || 0) + (counts.warn || 0) + (counts.info || 0) + (counts.ok || 0) || 1;
+  const seg = k => { const i = h("i", {}); i.style.width = ((counts[k] || 0) / total * 100) + "%"; i.style.background = LVL[k]; i.title = LVL_NAME[k] + ": " + (counts[k] || 0); return i; };
+  return h("div", { class: "hstack" }, seg("crit"), seg("warn"), seg("info"), seg("ok"));
+}
+function topFindingTitle(s) { const f = (s.findings || []).find(x => x.sev === "crit") || (s.findings || [])[0]; return f ? f.title : ""; }
+/* Auswertung in Sätzen, aus den Zahlen des Verlaufs; wer einen Punkt anklickt, springt zur Seite */
+function dashAnalysis(d) {
+  const out = [];
+  for (const s of d.sites) {
+    if (s.counts.crit) out.push({ lvl: "crit", site: s.site, text: s.label + ": " + plural(s.counts.crit, "kritischer Fund", "kritische Funde") + "." + (topFindingTitle(s) ? " Zuerst prüfen: " + topFindingTitle(s) + "." : "") });
+    if (s.history.length >= 2) {
+      const a = s.history[0], b = s.history[s.history.length - 1];
+      if (b.crit < a.crit) out.push({ lvl: "ok", site: s.site, text: s.label + ": kritische Funde von " + a.crit + " auf " + b.crit + " gesunken." });
+      else if (b.crit > a.crit) out.push({ lvl: "crit", site: s.site, text: s.label + ": kritische Funde von " + a.crit + " auf " + b.crit + " gestiegen." });
+      else if (b.warn < a.warn) out.push({ lvl: "ok", site: s.site, text: s.label + ": Hinweise von " + a.warn + " auf " + b.warn + " gesunken." });
+    }
+    if (s.compare && (s.compare.new || []).length) out.push({ lvl: "warn", site: s.site, text: s.label + ": " + plural(s.compare.new.length, "neuer Fund", "neue Funde") + " seit der Prüfung davor." });
+    for (const t of s.hints) out.push({ lvl: "warn", site: s.site, text: s.label + ": " + t });
+  }
+  if (d.totals.fixed) out.push({ lvl: "ok", text: plural(d.totals.fixed, "Fund wurde", "Funde wurden") + " behoben: in einer späteren Prüfung nicht mehr gemeldet." });
+  if (!out.length) out.push({ lvl: "ok", text: "Keine auffälligen Punkte in den bisherigen Prüfungen." });
+  return out;
+}
+function findingDetail(s, f) {
+  const c = (S.init.checks || []).find(x => x.id === f.id);
+  const box = h("div", { class: "fdetail" }, h("h4", {}, badge(f.sev === "crit" ? "crit" : f.sev === "warn" ? "warn" : "info", SEV_LABEL[f.sev] || f.sev, "margin-right:8px"), f.title));
+  box.append(h("div", { class: "small muted", text: "Seite: " + s.label + "  ·  Prüfung vom " + fmtDate(s.last_ts) + "  ·  Prüf-ID: " + f.id }));
+  if (c) {
+    box.append(h("p", {}, h("strong", { text: "Prüfung: " }), c.title));
+    if (c.what) box.append(h("p", {}, h("strong", { text: "Was geprüft wird: " }), c.what));
+    if (c.why) box.append(h("p", {}, h("strong", { text: "Warum das wichtig ist: " }), c.why));
+  } else {
+    box.append(h("p", { class: "small", text: "Zu dieser Prüfung gibt es in der aktuellen Sprache oder bei diesem System keine Beschreibung. Die Erklärung steht im Handbuch unter Prüfkatalog." }));
+  }
+  box.append(h("div", { class: "actions", style: "margin:8px 0 0" },
+    h("button", { class: "btn mini", type: "button", onclick: () => openHelp() }, "Im Handbuch nachlesen"),
+    h("button", { class: "btn mini ghost", type: "button", onclick: () => { S.dashFind = null; render(); } }, "Schließen")));
+  return box;
+}
+function dashSiteCard(s) {
   const lvl = { crit: ["crit", "Kritische Funde"], warn: ["warn", "Hinweise"], ok: ["ok", "Keine Auffälligkeiten"] }[s.level] || ["info", ""];
-  const c = s.compare, first = s.trend[0], last = s.trend[s.trend.length - 1];
-  const box = h("div", { class: "dash-site" });
-  box.append(h("h3", {}, badge(lvl[0], lvl[1], "margin-right:8px"), s.label),
+  const card = h("div", { class: "sitecard", id: "site-" + String(s.site).replace(/[^a-zA-Z0-9_-]/g, "_") });
+  card.style.setProperty("--sc", LVL[s.level] || "var(--line)");
+  const c = s.compare;
+  card.append(h("h3", {}, badge(lvl[0], lvl[1], "margin-right:4px"), s.label),
     h("div", { class: "meta" }, h("span", { text: (cmsNames()[s.cms] || s.cms || "?") + (s.version ? " " + s.version : "") }),
       h("span", { text: "Letzte Prüfung: " + fmtDate(s.last_ts) + " (" + ageText(s.age_days) + ")" }),
-      h("span", { text: s.counts.crit + " kritisch, " + s.counts.warn + " Warnungen" }), h("span", { text: s.runs + " Prüfung" + (s.runs === 1 ? "" : "en") })));
-  box.append(h("div", { class: "dash-trend" }, trendSvg(s.trend), h("div", { class: "small" },
-    h("div", { text: "kritisch: " + first.crit + " → " + last.crit + " (durchgezogen)" }), h("div", { text: "Warnungen: " + first.warn + " → " + last.warn + " (gestrichelt)" }))));
-  box.append(h("div", { class: "small" }, h("strong", { text: "Erledigt: " }),
-    s.fixed + " Fund" + (s.fixed === 1 ? "" : "e") + " behoben (in einer späteren Prüfung nicht mehr gemeldet), " + s.actions_ok + " Aktion" + (s.actions_ok === 1 ? "" : "en") + " ausgeführt" +
+      h("span", { text: s.counts.crit + " kritisch, " + s.counts.warn + " Hinweise" }), h("span", { text: s.runs + " Prüfung" + (s.runs === 1 ? "" : "en") }),
+      h("span", { text: s.fixed + " behoben" })));
+  if ((s.findings || []).length) {
+    card.append(h("div", { class: "small", style: "margin:4px 0 6px", text: "Befunde der letzten Prüfung (anklicken für die Erklärung):" }));
+    const grid = h("div", { class: "fgrid" });
+    s.findings.slice(0, 60).forEach((f, k) => {
+      const on = S.dashFind && S.dashFind.site === s.site && S.dashFind.k === k;
+      const dot = h("i", { class: "fd" }); dot.style.background = LVL[f.sev] || "var(--line)";
+      grid.append(h("button", { class: "fbtn" + (on ? " on" : ""), type: "button", title: f.title, onclick: () => { S.dashFind = on ? null : { site: s.site, k }; render(); } }, dot, h("span", { class: "ft", text: f.title })));
+    });
+    card.append(grid);
+    if (S.dashFind && S.dashFind.site === s.site && s.findings[S.dashFind.k]) card.append(findingDetail(s, s.findings[S.dashFind.k]));
+    if (s.findings.length > 60) card.append(h("p", { class: "small muted", text: "… und " + (s.findings.length - 60) + " weitere" }));
+  }
+  if (s.hints.length) card.append(h("ul", { class: "analysis", style: "margin-top:8px" }, s.hints.map(t => h("li", { text: t }))));
+  if (s.nachkontrolle && s.nachkontrolle.state !== "faellig") card.append(h("div", { class: "small", text: s.nachkontrolle.text }));
+  card.append(h("div", { class: "small", style: "margin-top:8px" }, h("strong", { text: "Erledigt: " }),
+    s.fixed + " Fund" + (s.fixed === 1 ? "" : "e") + " behoben, " + s.actions_ok + " Aktion" + (s.actions_ok === 1 ? "" : "en") + " ausgeführt" +
     (s.actions_failed ? ", " + s.actions_failed + " nicht erfolgreich" : "") + (s.last_backup ? ". Letzte Sicherung mit CLAUDIA: " + fmtDate(s.last_backup) : "")));
-  if (s.hints.length) box.append(h("ul", {}, s.hints.map(t => h("li", { text: t }))));
-  if (s.nachkontrolle && s.nachkontrolle.state !== "faellig") box.append(h("div", { class: "small", text: s.nachkontrolle.text }));
   if (c) {
     const list = (title, items) => items.length ? h("div", {}, h("strong", { text: title + " (" + items.length + ")" }), h("ul", {}, items.slice(0, 30).map(x => h("li", { text: x[2] })))) : null;
-    box.append(h("details", {}, h("summary", { text: "Vergleich mit der Prüfung davor (" + fmtDate(c.prev_ts) + " → " + fmtDate(c.cur_ts) + ")" }),
+    card.append(h("details", { style: "margin-top:8px" }, h("summary", { text: "Vergleich mit der Prüfung davor (" + fmtDate(c.prev_ts) + " → " + fmtDate(c.cur_ts) + ")" }),
       list("Neu", c.new), list("Behoben", c.fixed), list("Nicht geprüft (nicht als behoben gezählt)", c.not_checked),
       h("div", { class: "small", text: c.same + " Befund" + (c.same === 1 ? "" : "e") + " unverändert." })));
   }
   const st = (S.dashDel = S.dashDel || {});
-  box.append(h("div", { class: "actions", style: "margin:8px 0 0" },
+  card.append(h("div", { class: "actions", style: "margin:10px 0 0" },
     h("button", { class: "btn mini ghost", type: "button", onclick: () => dashExport("csv", s.site) }, "Verlauf als CSV"),
-    h("button", { class: "btn mini ghost", type: "button", onclick: () => dashExport("html", s.site) }, "Bericht für diese Seite"), h("button", { class: "btn mini " + (st[s.site] ? "danger" : "ghost"), type: "button", onclick: async () => {
-    if (!st[s.site]) { st[s.site] = true; renderDashboard(); return; }
-    try { await api("/api/dashboard-delete", { site: s.site }); } catch (e) { /* egal */ }
-    delete st[s.site]; openDashboard();
-  } }, st[s.site] ? "Wirklich löschen? (nur der Verlauf in CLAUDIA, nicht die Seite)" : "Verlauf dieser Seite löschen")));
-  return box;
+    h("button", { class: "btn mini ghost", type: "button", onclick: () => dashExport("html", s.site) }, "Bericht für diese Seite"),
+    h("button", { class: "btn mini " + (st[s.site] ? "danger" : "ghost"), type: "button", onclick: async () => {
+      if (!st[s.site]) { st[s.site] = true; render(); return; }
+      try { await api("/api/dashboard-delete", { site: s.site }); } catch (e) { /* egal */ }
+      delete st[s.site]; openDashboard();
+    } }, st[s.site] ? "Wirklich löschen? (nur der Verlauf in CLAUDIA, nicht die Seite)" : "Verlauf dieser Seite löschen")));
+  return card;
 }
 async function dashExport(fmt, site) {
   const box = document.getElementById("dash-msg"); if (!box) return;
@@ -2010,24 +2106,69 @@ async function dashSupport() {
   } catch (e) { box.replaceChildren(h("div", { class: "notice err" }, h("div", {}, e.error || "Nicht möglich."))); }
 }
 function cmsNames() { return { joomla: "Joomla", wordpress: "WordPress", drupal: "Drupal", typo3: "TYPO3", contao: "Contao", prestashop: "PrestaShop", shopware: "Shopware" }; }
-function renderDashboard() {
-  const d = S.dash, t = d.totals, kids = [];
-  kids.push(h("p", { class: "small", text: "Alles hier stammt aus dem, was CLAUDIA auf diesem Computer notiert hat (Datei verlauf.json im Programmordner der Daten). Es gibt keine Passwörter und keine Dateiinhalte, und nichts wird übertragen." }));
-  kids.push(h("div", { class: "dash-tot" }, [[t.sites, "Seiten"], [t.runs, "Prüfungen"], [t.fixed, "Funde behoben"], [t.actions_ok, "Aktionen ausgeführt"]].map(x => h("div", {}, h("b", { text: String(x[0]) }), x[1]))));
-  if (!d.sites.length) kids.push(h("p", { text: "Noch kein Verlauf. Nach der ersten vollständigen Prüfung erscheint die Seite hier." }));
-  else kids.push(h("div", { class: "actions", style: "margin:0 0 8px" }, h("button", { class: "btn mini ghost", type: "button", onclick: () => dashExport("csv", "") }, "Gesamten Verlauf als CSV speichern")));
-  kids.push(h("div", { id: "dash-msg" }));
-  for (const s of d.sites) kids.push(dashSite(s));
-  if (d.recent_actions.length) {
-    kids.push(h("h3", { text: "Zuletzt ausgeführte Aktionen" }),
-      h("table", { class: "dash-tab" }, h("tr", {}, ["Datum", "Aktion", "Seite", "Ergebnis"].map(x => h("th", { text: x }))),
-        d.recent_actions.slice(0, 15).map(a => h("tr", {}, h("td", { text: fmtDate(a.ts) }), h("td", { text: a.title }), h("td", { text: a.label }), h("td", { text: a.ok ? "erfolgreich" : "nicht erfolgreich" })))));
+function viewDashboard() {
+  const wrap = h("div", { class: "dash-view" });
+  if (!S.dash) {
+    wrap.append(h("div", { class: "loader" }, h("i", { class: "spin", "aria-hidden": "true" }), h("span", { text: S.dashErr || "Lade den Verlauf …" })));
+    return wrap;
   }
-  kids.push(h("h3", { text: "Sicherungen und Quarantäne auf dem Server" }), h("div", { id: "dash-srv" }));
-  kids.push(h("h3", { text: "Hilfe bei Fehlern" }), h("p", { class: "small", text: "Das Support-Paket ist eine kurze Textdatei mit Versionen, dem Ergebnis jeder Prüfung und dem Update-Protokoll, ohne Passwörter, Serveradresse und Dateiinhalte. Sie hilft, einen Fehler zu finden, wenn du sie an ein GitHub-Issue hängst." }),
-    h("button", { class: "btn mini ghost", type: "button", onclick: dashSupport }, "Support-Paket erstellen"));
-  dashFrame("Dashboard", h("div", {}, ...kids));
-  renderDashServer();
+  const d = S.dash, t = d.totals;
+  const sumC = k => d.sites.reduce((a, s) => a + (s.counts[k] || 0), 0);
+  wrap.append(h("div", { class: "pagehead" },
+    h("div", { style: "flex:1;min-width:200px" }, h("h1", { text: "Dashboard" }),
+      h("p", { class: "small", text: "Alles stammt aus dem, was CLAUDIA auf diesem Computer notiert hat (Datei verlauf.json im Datenordner). Keine Passwörter, keine Dateiinhalte." })),
+    d.sites.length ? h("button", { class: "btn ghost mini", type: "button", onclick: () => dashExport("csv", "") }, "Gesamten Verlauf als CSV") : null,
+    h("button", { class: "btn ghost mini", type: "button", onclick: () => openDashboard() }, "Aktualisieren")));
+  if (!d.sites.length) {
+    wrap.append(h("div", { class: "dcard" }, h("div", { class: "dbody" }, h("p", { text: "Noch kein Verlauf. Nach der ersten vollständigen Prüfung erscheinen hier Diagramme, Auswertung und die Befunde." }))));
+  } else {
+    const kpi = (v, label, col) => h("div", { class: "kpi", style: "--kc:" + col }, h("b", { text: String(v) }), h("span", { text: label }));
+    wrap.append(h("div", { class: "kpis" },
+      kpi(t.sites, "Geprüfte Seiten", "var(--accent)"),
+      kpi(sumC("crit"), "Kritische Funde (aktuell)", "var(--crit)"),
+      kpi(sumC("warn"), "Hinweise (aktuell)", "var(--warn)"),
+      kpi(t.fixed, "Funde behoben", "var(--ok)"),
+      kpi(t.actions_ok, "Aktionen erfolgreich", "var(--info)")));
+    /* Befunde je Seite (Balken, anklickbar) und Auswertung */
+    const pick = d.sites.find(s => s.site === S.dashPick) ? S.dashPick : d.sites[0].site;
+    S.dashPick = pick;
+    const bars = d.sites.map(s => h("button", { class: "hbar" + (s.site === pick ? " on" : ""), type: "button", title: "Verlauf dieser Seite anzeigen",
+      onclick: () => { S.dashPick = s.site; S.dashFind = null; render(); } },
+      h("span", { class: "hname", text: s.label }), dashStackBar(s.counts), h("span", { class: "hnum", text: s.counts.crit + " / " + s.counts.warn }))); 
+    const legend = h("div", { class: "legend" }, ["crit", "warn", "info", "ok"].map(k => h("span", {}, h("i", { style: "background:" + LVL[k] }), LVL_NAME[k])));
+    const items = dashAnalysis(d);
+    const ana = h("ul", { class: "analysis" }, items.slice(0, 14).map(it => h("li", {}, badge(it.lvl, it.lvl === "crit" ? "Kritisch" : it.lvl === "warn" ? "Prüfen" : "Gut", "margin-right:8px"),
+      it.site ? h("button", { type: "button", onclick: () => { S.dashPick = it.site; S.dashFind = null; render(); document.getElementById("site-" + String(it.site).replace(/[^a-zA-Z0-9_-]/g, "_"))?.scrollIntoView({ block: "start" }); } }, it.text) : h("span", { text: it.text }))));
+    if (items.length > 14) ana.append(h("li", { class: "small muted", text: "… und " + (items.length - 14) + " weitere Punkte" }));
+    wrap.append(h("div", { class: "dgrid" },
+      h("div", { class: "dcard" }, h("h3", {}, h("span", { text: "Befunde je Seite" }), h("span", { class: "small muted", text: "kritisch / Hinweise" })),
+        h("div", { class: "dbody" }, bars, legend)),
+      h("div", { class: "dcard" }, h("h3", {}, h("span", { text: "Auswertung" })), h("div", { class: "dbody" }, ana))));
+    /* Verlauf der gewählten Seite */
+    const cur = d.sites.find(s => s.site === pick);
+    const sel = h("select", { class: "dash-sel", onchange: e => { S.dashPick = e.target.value; S.dashFind = null; render(); } },
+      d.sites.map(s => h("option", { value: s.site, selected: s.site === pick, text: s.label })));
+    wrap.append(h("div", { class: "dcard", style: "margin-bottom:14px" },
+      h("h3", {}, h("span", { text: "Verlauf" }), sel),
+      h("div", { class: "dbody" },
+        cur.history.length >= 2 ? dashLineChart(cur.history) : h("p", { class: "small", text: "Für den Verlauf braucht es mindestens zwei Prüfungen dieser Seite." }),
+        h("div", { class: "legend" }, h("span", {}, h("i", { style: "background:var(--crit)" }), "kritisch (durchgezogen)"), h("span", {}, h("i", { style: "background:var(--warn)" }), "Hinweise (gestrichelt)")))));
+    wrap.append(h("h2", { style: "margin:18px 0 8px;font-size:17px", text: "Seiten im Detail" }));
+    for (const s of d.sites) wrap.append(dashSiteCard(s));
+  }
+  if (d.recent_actions && d.recent_actions.length) {
+    wrap.append(h("div", { class: "dcard", style: "margin-top:14px" }, h("h3", {}, h("span", { text: "Zuletzt ausgeführte Aktionen" })),
+      h("div", { class: "dbody" }, h("table", { class: "dtable" }, h("tr", {}, ["Datum", "Aktion", "Seite", "Ergebnis"].map(x => h("th", { text: x }))),
+        d.recent_actions.slice(0, 15).map(a => h("tr", {}, h("td", { text: fmtDate(a.ts) }), h("td", { text: a.title }), h("td", { text: a.label }), h("td", { text: a.ok ? "erfolgreich" : "nicht erfolgreich" })))))));
+  }
+  wrap.append(h("div", { id: "dash-msg" }));
+  wrap.append(h("div", { class: "dcard", style: "margin-top:14px" }, h("h3", {}, h("span", { text: "Sicherungen und Quarantäne auf dem Server" })), h("div", { class: "dbody", id: "dash-srv" })));
+  wrap.append(h("div", { class: "dcard", style: "margin-top:14px" }, h("h3", {}, h("span", { text: "Aktionen verwalten" })), h("div", { class: "dbody", id: "dash-acts" })));
+  wrap.append(h("div", { class: "dcard", style: "margin-top:14px" }, h("h3", {}, h("span", { text: "Hilfe bei Fehlern" })), h("div", { class: "dbody" },
+    h("p", { class: "small", text: "Das Support-Paket ist eine kurze Textdatei mit Versionen, dem Ergebnis jeder Prüfung und dem Update-Protokoll, ohne Passwörter, Server- oder Zugangsdaten." }),
+    h("button", { class: "btn mini ghost", type: "button", onclick: dashSupport }, "Support-Paket erstellen"))));
+  setTimeout(() => { renderDashServer(); dashActionsRender(); }, 0);
+  return wrap;
 }
 async function loadDashServer() {
   S.dashServer = { loading: true }; renderDashServer();
@@ -2179,6 +2320,7 @@ async function openOffer(code, note) {
   { const lic = S.init.license || {}; $("#licbtn").hidden = !(S.init.offer || lic.public_key_set || lic.has_key || (lic.gesperrt_ohne_lizenz || []).length); }   // unsichtbar, solange es keinen öffentlichen Schlüssel und keine Sperre gibt
   $("#dashbtn").addEventListener("click", () => openDashboard());
   autoUpdateCheck();
+  loadIntegrity();
   $("#uninstall").addEventListener("click", openUninstall);
   if (S.init.loc > 0) { $("#locn").textContent = Number(S.init.loc).toLocaleString(); $("#loc").hidden = false; }
   if (location.hash === "#uninstall") setTimeout(openUninstall, 300);

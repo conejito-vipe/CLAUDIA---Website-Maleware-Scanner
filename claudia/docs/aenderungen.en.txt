@@ -1,3 +1,40 @@
+## 3.1.0 | 2026-11-27 | Dashboard with charts, help in the main window, installation check and fixes
+### Dashboard with charts
+Was: The dashboard now opens in the main window, like the check. At the top are key figures, below them bars per site, an analysis in sentences, a history chart of critical findings and notices, and the sites in detail. The findings are clickable and show what is checked and why it matters.
+Why: The overview was only text and did not show its meaning at a glance.
+How: The history data now includes the findings of the last check and the history per site (verlauf.py). The view is in app.js and app.css.
+### Help in the same window
+Was: Handbook, check catalogue and change log open in the main window with the same sidebar, no longer in a separate window.
+Why: A second window did not fit the rest of the interface.
+How: Help is a view like Connection and Result; the Help button is at the top right.
+### Interface
+Was: The sidebar has icons with text underneath and adapts to the screen height without its own scroll bar. Language, help and connection are at the top. The status bar shows only the status. The inner area is dark, the blue comes from the logo. The version now appears only in the title bar.
+Why: The layout should match the agreed design "Leitstand Blau".
+How: index.html and app.css (design 3.1).
+### Updates: loading indicator
+Was: While the update search runs, a loading indicator appears. The text "null" in the installed version display is gone.
+Why: A bug in the display of the installed version.
+How: The loading indicator replaces the text, and the version falls back to the program's version.
+### Install security extension
+Was: The "Install" button is now directly next to the extension, not below the list. The confirmation appears at the bottom as before.
+Why: You should be able to install the tool you chose.
+How: securityOffer() in app.js.
+### Joomla: automatic updates stay on when the API is switched off
+Was: The action "Switch off Joomla API" no longer switches off the two plugins of the update service. Automatic core updates keep running.
+Why: The API plugins and the update service plugins overlapped, so switching off the API also switched off automatic updates.
+How: _run_disable_api excludes AUTOUPDATE_PLUGIN_SQL. The catalogue warning names the two plugins.
+### Joomla: installing extensions (e.g. JCE)
+Was: The package is first downloaded to the server, the checksum from the publisher's manifest is compared, and only then installed. If the checksum is missing or wrong, nothing happens.
+Why: Installing directly from the link failed for JCE 3.0.6.
+How: _joomla_install_checked in actions.py. The command extension:install --path installs the locally downloaded file.
+### Check the installation
+Was: CLAUDIA compares the program's files with PRUEFSUMMEN.txt. If a file is missing or changed, a notice with the list appears at the top. If the list itself is missing, this is stated.
+Why: Missing files went unnoticed before.
+How: claudia/integritaet.py, endpoint /api/integritaet.
+### Setup
+Was: The finish page shows the CLAUDIA logo. Before the end, a page explains the Windows message "Windows protected your PC" with the picture. Setup also recognises an older version when it has no registry entry (e.g. the Python edition).
+Why: The message unsettles users, and an older version was not recognised.
+How: installer/claudia.iss, images wizard.bmp, wizard_small.bmp and hinweis_smartscreen.bmp.
 ## 3.0.0 | 2026-11-26 | New interface: sidebar with logo, footer bar and the blue of the logo
 ### New interface
 Was: The interface now looks like a program instead of a website. On the left is a sidebar with the logo, the four steps (connection, select checks, check, result) and, at the bottom, Updates, Dashboard and Help. A fixed footer bar at the bottom shows the connection status, the language choice and the version; the previous notice text sits below the content. The colors come from the logo (the blue of the magnifier as accent, dark navy in dark mode, light blue in light mode). Nothing changes in functions, checks or reports.

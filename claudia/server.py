@@ -1716,6 +1716,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(app.dashboard())
             if method == "POST" and path == "/api/dashboard-delete":
                 return self._json(app.dashboard_delete(body))
+            if method == "GET" and path == "/api/integritaet":
+                from . import integritaet
+                return self._json(integritaet.pruefen())
             if method == "GET" and path == "/api/dashboard-server":
                 return self._json(app.dashboard_server())
             if method == "POST" and path == "/api/dashboard-export":

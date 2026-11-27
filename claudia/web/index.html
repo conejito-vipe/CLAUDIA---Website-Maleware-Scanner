@@ -20,46 +20,37 @@
   <button type="button" class="tb-btn tb-close" id="tb-close" aria-label="Schließen">&#10005;</button>
 </div>
 <div class="rz rz-l" id="rz-l" data-dir="l" hidden></div><div class="rz rz-bl" id="rz-bl" data-dir="lb" hidden></div><div class="rz rz-r" id="rz-r" data-dir="r" hidden></div><div class="rz rz-b" id="rz-b" data-dir="b" hidden></div><div class="rz rz-br" id="rz-br" data-dir="rb" hidden></div>
-<header class="top">
-  <div class="top-in">
-    <div class="brand">
-      <img class="brand-mark" src="/logo.png" alt="" width="82" height="76">
-      <span class="brand-txt"><span class="brand-name"><span class="brand-chip">CLAUDIA</span></span></span>
-      <span class="brand-ver" id="ver"></span>
-    </div>
-    <div class="top-r">
-      <div class="top-tools">
-        <button class="link" id="updbtn" type="button" title="Nach einer neuen Programmversion suchen">Updates</button>
-        <button class="link" id="dashbtn" type="button" title="Verlauf, Vergleich und Verwaltung der Sicherungen">Dashboard</button>
-        <button class="link" id="licbtn" type="button" hidden title="Lizenzschlüssel eintragen und ansehen">Lizenz</button>
-        <button class="link" id="help" type="button" title="Dokumentation und Änderungsverlauf">Hilfe</button>
-      </div>
-    </div>
-  </div>
+<aside class="rail" id="rail" aria-label="Navigation">
+  <img class="rail-logo" src="/logo.png" alt="CLAUDIA" width="104" height="104">
   <nav class="steps" id="steps" aria-label="Ablauf"></nav>
-</header>
-
-<main id="view" tabindex="-1"></main>
-
-<div class="sbar" id="sbar">
-  <div class="conn" id="conn" hidden>
-    <span class="conn-dot" aria-hidden="true"></span>
-    <span id="conn-text"></span>
-    <button class="link" id="conn-off" type="button">Trennen</button>
+  <div class="rail-tools">
+    <button class="rail-btn" id="dashbtn" type="button" title="Verlauf, Diagramme und Befunde aller geprüften Seiten"><span class="ri" aria-hidden="true">&#9638;</span><span class="rl">Dashboard</span></button>
+    <button class="rail-btn" id="updbtn" type="button" title="Nach einer neuen Programmversion suchen"><span class="ri" aria-hidden="true">&#8635;</span><span class="rl">Updates</span></button>
+    <button class="rail-btn" id="licbtn" type="button" hidden title="Lizenzschlüssel eintragen und ansehen"><span class="ri" aria-hidden="true">&#9671;</span><span class="rl">Lizenz</span></button>
   </div>
-  <span class="foot-off" id="foot-off">Nicht verbunden</span>
-  <span class="foot-space"></span>
-  <div class="langs" id="langs" role="group" aria-label="Sprache / Language" hidden></div>
-  <span class="foot-ver">CLAUDIA <span id="foot-ver"></span></span>
+</aside>
+<div class="stage">
+  <header class="topbar" id="topbar">
+    <div class="tb-title" id="tb-title"></div>
+    <span class="tb-space"></span>
+    <div class="conn" id="conn" hidden>
+      <span class="conn-dot" aria-hidden="true"></span>
+      <span id="conn-text"></span>
+      <button class="link" id="conn-off" type="button">Trennen</button>
+    </div>
+    <div class="langs" id="langs" role="group" aria-label="Sprache / Language" hidden></div>
+    <button class="btn ghost tb-help" id="help" type="button" title="Handbuch, Prüfkatalog und Änderungsverlauf">Hilfe</button>
+  </header>
+  <main id="view" tabindex="-1"></main>
+  <footer class="foot">Freeware, kostenlos und ohne jegliche Gewährleistung oder Erfolgsgarantie. Quelltext offen lesbar. Prüfungen sind nur lesend. Änderungen am Server auf eigene Gefahr und nur über die selbst zu aktivierenden Buttons. <span class="vibe">vibecoded with Claude (Anthropic) by <a href="https://github.com/conejito-vipe" target="_blank" rel="noopener noreferrer">conejito-vipe</a> with love ❤️.<span id="loc" hidden> &middot; <b id="locn"></b> Zeilen reiner Python-Code</span></span></footer>
 </div>
 
-
-<dialog id="helpdlg" data-nt="1"><div id="help-body"></div></dialog>
-
-<dialog id="upddlg" data-nt="1"><div id="upd-body" class="dlg"></div></dialog>
-<dialog id="licdlg" data-nt="1"><div id="lic-body" class="dlg"></div></dialog>
-<dialog id="dashdlg" data-nt="1"><div id="dash-body" class="dlg"></div></dialog>
-<dialog id="unidlg" data-nt="1"><div id="uni-body" class="dlg"></div></dialog>
+<div class="sbar" id="sbar">
+  <span class="sdot" aria-hidden="true"></span>
+  <span id="foot-off">Nicht verbunden</span>
+  <span class="foot-space"></span>
+  <span class="sbar-note">Nur lesend</span>
+</div>
 
 <dialog id="weakdlg">
   <form method="dialog" class="dlg">
@@ -88,8 +79,6 @@
 </dialog>
 
 <div class="uni-row-bar" id="uni-bar"><button class="btn danger-fill" id="uninstall" type="button" title="Entfernt, was das Programm auf diesem PC angelegt hat">Deinstallieren</button></div>
-<footer class="foot">Freeware, kostenlos und ohne jegliche Gewährleistung oder Erfolgsgarantie. Quelltext offen lesbar. Prüfungen sind nur lesend. Änderungen am Server auf eigene Gefahr und nur über die selbst zu aktivierenden Buttons. <span class="vibe">vibecoded with Claude (Anthropic) by <a href="https://github.com/conejito-vipe" target="_blank" rel="noopener noreferrer">conejito-vipe</a> with love ❤️.<span id="loc" hidden> &middot; <b id="locn"></b> Zeilen reiner Python-Code</span></span>
-</footer>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <script src="/docs.js"></script>
 <script src="/radar.js"></script>
