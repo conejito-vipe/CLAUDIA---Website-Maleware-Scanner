@@ -198,11 +198,17 @@ class Ui(unittest.TestCase):
         self.assertEqual(lizenz.load(self.app.dir), "")                      # nichts gespeichert
 
     def test_gesperrter_bereich_zeigt_meldung(self):
-        from claudia import lizenz
-        with mock.patch.object(lizenz, "GESPERRT_OHNE_LIZENZ", ("dashboard",)):
+        from claudia import lizenz, integritaet
+        ok = {"ok": True, "liste_da": True, "gesamt": 0, "fehlend": [], "fehlend_anzahl": 0,
+              "geaendert": [], "geaendert_anzahl": 0, "ordner": ""}
+        with mock.patch.object(lizenz, "GESPERRT_OHNE_LIZENZ", ("dashboard",)), \
+                mock.patch.object(integritaet, "pruefen", return_value=ok):
             pg = self.page()
             pg.click("#dashbtn")
             pg.wait_for_selector("#view .dash-view")
+            pg.wait_for_function(
+                "() => (document.querySelector('#view') || {innerText: ''}).innerText.includes('Lizenzschlüssel')",
+                timeout=15000)
             self.assertIn("Lizenzschlüssel", pg.inner_text("#view"))
             self.assertIn("Die Prüfung bleibt immer frei", pg.inner_text("#view"))
 
