@@ -36,7 +36,7 @@ jobs:
       - run: python -m pip install --upgrade pip pillow "cryptography>=41" hypothesis
       - name: Tests (Linux, alle)
         working-directory: tests
-        env: { PYTHONPATH: "fake_paramiko:.." }
+        env: { PYTHONPATH: "fake_paramiko:..", CLAUDIA_SITE_PAUSE: "0" }
         run: python -W ignore -m unittest discover -s . -p "test_*.py"
 
   package:

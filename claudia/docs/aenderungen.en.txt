@@ -11,6 +11,10 @@ How: server.py (cancel_run; a replaced run no longer writes results).
 What: If the homepage cannot be reached from this PC, the external tests are skipped immediately with a reason. Otherwise the progress shows each address, the time limits are shorter, and after three failed attempts or 45 seconds the rest is left out. Slowly trickling answers also end at the deadline.
 Why: "From outside: detect system and version" stood still for more than three minutes (twelve addresses one after another up to the time limit) and hardly reacted to cancel.
 How: checks/extern.py, checks/web.py.
+### External requests without blocking your own address
+What: The external tests request the website with a 1.5 second pause. If the site throttles (answer 429) or does not answer three times in a row, CLAUDIA stops all further external requests and says so in the result instead of reporting "all fine". Before the start, a notice explains how to allow your own internet address in the firewall extension or at the host.
+Why: After requests for typical locations (.env, backup files) the site was no longer reachable from the PC, but it was via mobile data: your own address had been blocked.
+How: checks/extern.py (site_fetch, pause via CLAUDIA_SITE_PAUSE), app.js (notice in the test selection).
 ### Small things
 What: Version lines (e.g. "Joomla 6.2.1") count as explanation, not as a notice. Between the presets and "Save logs to your PC" there is the same gap as between the other tiles. In the setup, subtitle and content start aligned with the heading on every page.
 Why: Feedback after testing 3.1.1.

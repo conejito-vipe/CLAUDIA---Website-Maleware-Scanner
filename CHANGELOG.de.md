@@ -19,6 +19,11 @@ Erzeugt aus `claudia/docs/aenderungen.de.txt` (nicht von Hand ändern).
 - **Warum:** "Von außen: System und Version erkennen" stand über drei Minuten still (zwölf Adressen nacheinander bis zur Zeitgrenze) und reagierte kaum auf Abbrechen.
 - **Wie:** checks/extern.py, checks/web.py.
 
+### Abrufe von außen ohne Sperre der eigenen Adresse
+- **Was:** Die Tests von außen rufen die Webseite mit 1,5 Sekunden Pause ab. Bremst die Seite (Antwort 429) oder antwortet sie dreimal nacheinander nicht, hört CLAUDIA mit allen weiteren Abrufen von außen auf und sagt das im Ergebnis, statt "alles in Ordnung" zu melden. Vor dem Start erklärt ein Hinweis, die eigene Internet-Adresse in der Firewall-Erweiterung bzw. beim Hoster freizuschalten.
+- **Warum:** Nach den Abrufen typischer Fundorte (.env, Sicherungsdateien) war die Seite vom PC aus nicht mehr erreichbar, über Mobilfunk aber schon: Die eigene Adresse war gesperrt.
+- **Wie:** checks/extern.py (site_fetch, Pause über CLAUDIA_SITE_PAUSE), app.js (Hinweis in der Testauswahl).
+
 ### Kleinigkeiten
 - **Was:** Versionsangaben (z. B. "Joomla 6.2.1") gelten als Erläuterung, nicht als Hinweis. Zwischen den Voreinstellungen und "Protokolle auf deinen PC sichern" steht derselbe Abstand wie zwischen den anderen Kacheln. Im Setup beginnen Unterzeile und Inhalt auf jeder Seite bündig mit der Überschrift.
 - **Warum:** Rückmeldungen nach dem Test von 3.1.1.

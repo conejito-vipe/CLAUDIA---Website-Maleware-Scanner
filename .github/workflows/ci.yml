@@ -34,7 +34,7 @@ jobs:
         continue-on-error: true
       - name: Tests (Linux, alle)
         working-directory: tests
-        env: { PYTHONPATH: "fake_paramiko:.." }
+        env: { PYTHONPATH: "fake_paramiko:..", CLAUDIA_SITE_PAUSE: "0" }
         run: python -W ignore -m unittest discover -s . -p "test_*.py"
   # Windows: nur die Tests, die Windows-Seite und plattformunabhängige Teile prüfen
   # (Start, Fenster, Deinstallation, Icons, Berichte, Doku). Liste: tests/windows_tests.txt
@@ -54,7 +54,7 @@ jobs:
       - name: Tests (Windows, Auswahl)
         shell: bash
         working-directory: tests
-        env: { PYTHONPATH: "fake_paramiko;.." }
+        env: { PYTHONPATH: "fake_paramiko;..", CLAUDIA_SITE_PAUSE: "0" }
         run: python -W ignore -m unittest $(tr -d '\r' < windows_tests.txt)
   # macOS: nur die Tests, die Mac-Seite und plattformunabhängige Teile prüfen (Startdatei unter bash 3.2, Speicherorte, Fenster, Paket).
   # Liste: tests/mac_tests.txt. Nur diese Auswahl, weil die übrigen Tests einen Linux-Server nachbauen.
@@ -69,7 +69,7 @@ jobs:
         run: python -m pip install --upgrade pip pillow "cryptography>=41" hypothesis
       - name: Tests (Mac, Auswahl)
         working-directory: tests
-        env: { PYTHONPATH: "fake_paramiko:.." }
+        env: { PYTHONPATH: "fake_paramiko:..", CLAUDIA_SITE_PAUSE: "0" }
         run: python -W ignore -m unittest $(tr -d '\r' < mac_tests.txt)
   translations:
     runs-on: ubuntu-latest

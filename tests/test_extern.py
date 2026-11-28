@@ -4,6 +4,7 @@ import os
 import sys
 import threading
 import unittest
+os.environ.setdefault("CLAUDIA_SITE_PAUSE", "0")      # keine Höflichkeitspause in Tests
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))

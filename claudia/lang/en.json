@@ -7948,6 +7948,16 @@
 "Seite auch nach dem Neuladen nicht geladen (WebView2 hängt).": "Page still not loaded after reloading (WebView2 hangs).",
 "Seite nach %d s nicht geladen, lade neu": "Page not loaded after %d s, reloading",
 "Standardadresse %d von %d:": "Standard address %d of %d:",
-"Öffne die Oberfläche im Standardbrowser.": "Opening the interface in the default browser."
+"Öffne die Oberfläche im Standardbrowser.": "Opening the interface in the default browser.",
+"Abrufe vorzeitig beendet (%d von %d Fundorten nicht geprüft)": "Requests stopped early (%d of %d locations not checked)",
+"Antwortet die Seite nicht mehr, hört CLAUDIA mit diesen Abrufen von selbst auf.": "If the site stops answering, CLAUDIA stops these requests by itself.",
+"Die Webseite bremst die Abrufe oder antwortet nicht mehr.": "The website is throttling the requests or no longer answers.",
+"Die eigene Internet-Adresse in der Firewall-Erweiterung bzw. beim Hoster auf die Ausnahmeliste setzen und den Test wiederholen.": "Put your own internet address on the allowlist of the firewall extension or the host and repeat the test.",
+"Firewall-Erweiterungen (z. B. HTProtect, Admin Tools, RSFirewall) oder der Hoster können eine Adresse trotzdem sperren, weil auch nach typischen Fundorten wie .env oder Sicherungsdateien gefragt wird.": "Firewall extensions (e.g. HTProtect, Admin Tools, RSFirewall) or the host can still block an address because typical locations such as .env or backup files are requested too.",
+"Geht die Seite über ein anderes Netz (z. B. Mobilfunk), ist deine Adresse gesperrt: im Sperrprotokoll der Firewall-Erweiterung bzw. beim Hoster entsperren und auf die Ausnahmeliste setzen.": "If the site works over another network (e.g. mobile data), your address is blocked: unblock it in the block log of the firewall extension or at the host and put it on the allowlist.",
+"Tipp vor dem Start: eigene Internet-Adresse freischalten": "Tip before starting: allow your own internet address",
+"Trage deine Internet-Adresse dort vorher auf die Ausnahmeliste ein.": "Add your internet address to the allowlist there beforehand.",
+"Weitere Abrufe von außen wurden ausgelassen, damit eine Firewall (z. B. HTProtect, Admin Tools, RSFirewall oder die des Hosters) deine Internet-Adresse nicht sperrt.": "Further external requests were skipped so that a firewall (e.g. HTProtect, Admin Tools, RSFirewall or the host's) does not block your internet address.",
+"Einige der gewählten Tests rufen deine Webseite von diesem PC aus ab, wie ein Besucher, mit kurzen Pausen dazwischen.": "Some of the selected tests request your website from this PC like a visitor, with short pauses in between."
 }
 }

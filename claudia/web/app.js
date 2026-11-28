@@ -739,6 +739,17 @@ function applyPreset(id) {
 function usable(c) { return !(S.conn && S.conn.mode === "none" && !(c.extern || c.needs === "local")); }
 function goTests() { if (!S.sel.size) applyPreset(S.conn && S.conn.mode === "none" ? "schnell" : "hack"); go("tests"); }
 
+/* Hinweis vor dem Scan: Tests, die die Webseite von diesem PC aus abrufen, können eine Firewall auslösen */
+function webHint() {
+  const web = S.init.checks.filter(c => S.sel.has(c.id) && c.needs === "web" && usable(c)).length;
+  if (!web) return h("div", { hidden: true });
+  return h("div", { class: "notice info", id: "web-hint" }, h("div", {},
+    h("strong", { text: "Tipp vor dem Start: eigene Internet-Adresse freischalten" }),
+    h("div", { class: "small", text: "Einige der gewählten Tests rufen deine Webseite von diesem PC aus ab, wie ein Besucher, mit kurzen Pausen dazwischen. "
+      + "Firewall-Erweiterungen (z. B. HTProtect, Admin Tools, RSFirewall) oder der Hoster können eine Adresse trotzdem sperren, weil auch nach typischen Fundorten wie .env oder Sicherungsdateien gefragt wird. "
+      + "Trage deine Internet-Adresse dort vorher auf die Ausnahmeliste ein. Antwortet die Seite nicht mehr, hört CLAUDIA mit diesen Abrufen von selbst auf." })));
+}
+
 function viewTests() {
   const root = h("div", {});
   root.append(h("h1", { text: "Welche Prüfungen sollen laufen?" }),
@@ -751,6 +762,7 @@ function viewTests() {
       h("b", { text: p.title + " (" + n + ")" }), h("span", { text: p.text }));
   })));
 
+  root.append(webHint());
   root.append(logSaveCard());
   root.append(settingsBox());
 

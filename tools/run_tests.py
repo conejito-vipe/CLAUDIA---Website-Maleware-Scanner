@@ -19,7 +19,7 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TESTS = os.path.join(ROOT, "tests")
 KNOWN_FLAKY = {"test_ui.UiFlow.test_2_texts_are_never_html": "Browser-Test der Oberfläche, scheitert im Volllauf gelegentlich durch Zeitverhalten; besteht einzeln"}
-ENV = dict(os.environ, PYTHONPATH=os.pathsep.join([os.path.join(TESTS, "fake_paramiko"), ROOT]))
+ENV = dict(os.environ, PYTHONPATH=os.pathsep.join([os.path.join(TESTS, "fake_paramiko"), ROOT]), CLAUDIA_SITE_PAUSE="0")   # keine Höflichkeitspause in Tests
 
 
 def run(args, timeout=1800):

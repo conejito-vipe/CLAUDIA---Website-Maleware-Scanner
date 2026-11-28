@@ -6,6 +6,7 @@ import tempfile
 import threading
 import time
 import unittest
+os.environ.setdefault("CLAUDIA_SITE_PAUSE", "0")      # keine Höflichkeitspause in Tests
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -131,3 +132,80 @@ class FensterOhneThreadZugriff(unittest.TestCase):
         self.assertNotIn("win.native.Icon", src)
         self.assertIn("icon=window_icon()", src)
         self.assertIn("dump_traceback_later", src)               # hängt der Start, landet die Stelle im Protokoll
+
+
+class HoeflicherAbruf(unittest.TestCase):
+    """3.1.2: Abrufe von außen mit Pause; hört auf, sobald die Seite bremst oder nicht mehr antwortet (Sperre der eigenen IP vermeiden)."""
+
+    def ctx(self):
+        from unittest import mock
+        c = mock.MagicMock()
+        c.shared = {}
+        return c
+
+    def test_pause_between_requests(self):
+        from unittest import mock
+        from claudia.checks import extern, web
+        times = []
+
+        def fetch(url, *a, **k):
+            times.append(time.monotonic())
+            f = web.Fetched()
+            f.status = 404
+            return f
+        c = self.ctx()
+        with mock.patch.dict(os.environ, {"CLAUDIA_SITE_PAUSE": "0.2"}), mock.patch.object(web, "fetch", side_effect=fetch):
+            for _ in range(3):
+                extern.site_fetch(c, "https://x.example/a")
+        self.assertGreaterEqual(times[1] - times[0], 0.18)
+        self.assertGreaterEqual(times[2] - times[1], 0.18)
+        self.assertEqual(extern.site_pause(), 0.0)                   # in Testläufen ohne Pause (CLAUDIA_SITE_PAUSE=0)
+
+    def test_stops_after_429_or_three_failures(self):
+        from unittest import mock
+        from claudia.checks import extern, web
+        calls = []
+
+        def fetch(url, *a, **k):
+            calls.append(url)
+            f = web.Fetched()
+            f.status = 429
+            return f
+        c = self.ctx()
+        with mock.patch.object(web, "fetch", side_effect=fetch):
+            extern.site_fetch(c, "https://x.example/1")
+            f = extern.site_fetch(c, "https://x.example/2")
+        self.assertEqual(len(calls), 1)                              # nach "zu viele Anfragen" kein weiterer Abruf
+        self.assertIn("Internet-Adresse", f.error)
+
+        calls.clear()
+
+        def dead(url, *a, **k):
+            calls.append(url)
+            f = web.Fetched()
+            f.error = "timed out"
+            return f
+        c = self.ctx()
+        with mock.patch.object(web, "fetch", side_effect=dead):
+            for i in range(6):
+                extern.site_fetch(c, "https://x.example/%d" % i)
+        self.assertEqual(len(calls), 3)
+
+    def test_ext_files_reports_early_stop(self):
+        from unittest import mock
+        from claudia.checks import extern, web
+        from claudia.model import CheckResult
+        c = self.ctx()
+        c.cms = "joomla"
+        c.shared["extern"] = {"detect": {"cms": "joomla"}, "base": "https://x.example", "soft": None}
+
+        def dead(url, *a, **k):
+            f = web.Fetched()
+            f.error = "timed out"
+            return f
+        res = CheckResult("ext_files", "t", "g")
+        with mock.patch.object(web, "fetch", side_effect=dead):
+            extern.ext_files.__wrapped__(c, res) if hasattr(extern.ext_files, "__wrapped__") else extern.ext_files(c, res)
+        titles = [f.title for f in res.findings]
+        self.assertTrue(any("vorzeitig beendet" in t for t in titles), titles)
+        self.assertFalse(any("Keine vergessenen" in t for t in titles))   # kein falsches "alles in Ordnung"
