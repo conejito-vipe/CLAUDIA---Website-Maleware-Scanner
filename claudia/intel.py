@@ -204,6 +204,24 @@ def extension_hits(intel: Dict[str, Any], names: List[str], version: str) -> Dic
             if prods:
                 if any(version_affected(version, cp) for cp in prods):
                     out.setdefault(n, []).append({**c, "match": "confirmed"})
-            elif len(k) >= 6 and re.search(r"(?<![a-z0-9])%s(?![a-z0-9])" % re.escape(n.lower()), low):
+            elif len(k) >= 6 and re.search(r"(?<![a-z0-9])%s(?![a-z0-9])" % re.escape(n.lower()), low) and not fixed_by_text(low, version):
                 out.setdefault(n, []).append({**c, "match": "name"})
     return out
+
+
+def fixed_by_text(text: str, version: str) -> bool:
+    """Nennt der Meldungstext die betroffenen Versionen ('before 9.1.2', 'prior to 3.0', 'through 8.4.1', 'up to and including 2.1') und ist die installierte
+    Version schon außerhalb davon, betrifft die Meldung diese Seite nicht. Ohne solche Angabe: False (Hinweis bleibt)."""
+    if not version or not re.match(r"^\d", version):
+        return False
+    low = text.lower()
+    found = False
+    for m in re.finditer(r"(?:before|prior to|below|< ?)\s*(?:version\s*)?v?(\d+(?:\.\d+){1,3})", low):
+        found = True
+        if vcmp(version, m.group(1)) < 0:
+            return False
+    for m in re.finditer(r"(?:through|up to(?: and including)?|<= ?|and earlier than or equal to)\s*(?:version\s*)?v?(\d+(?:\.\d+){1,3})", low):
+        found = True
+        if vcmp(version, m.group(1)) <= 0:
+            return False
+    return found

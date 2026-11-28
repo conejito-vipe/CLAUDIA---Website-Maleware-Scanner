@@ -33,14 +33,16 @@ def theme_url(slug: str, version: str) -> str:
     return "https://downloads.wordpress.org/theme/%s.%s.zip" % (quote(slug, safe=""), quote(version, safe=""))
 
 
-def read_zip(data: bytes) -> Tuple[Dict[str, str], str]:
-    """-> ({Pfad im ZIP: sha256}, Text des Manifests im Hauptordner des ZIP oder ""). Wirft ZipProblem bei defektem oder zu großem Paket."""
+def read_zip_full(data: bytes, strip_top: bool = False) -> Tuple[Dict[str, str], str, Dict[str, bytes]]:
+    """-> ({Pfad: sha256}, Manifest-Text, {Pfad: Inhalt eingebetteter ZIPs}). strip_top: liegt alles in EINEM Oberordner
+    (z. B. paket-1.2/...), wird er entfernt. Wirft ZipProblem bei defektem oder zu großem Paket."""
     try:
         zf = zipfile.ZipFile(io.BytesIO(data))
     except zipfile.BadZipFile:
         raise ZipProblem("Das Paket ist kein gültiges ZIP.")
     files: Dict[str, str] = {}
-    manifest = ""
+    xmls: Dict[str, bytes] = {}
+    nested: Dict[str, bytes] = {}
     total = 0
     with zf:
         infos = zf.infolist()
@@ -48,18 +50,92 @@ def read_zip(data: bytes) -> Tuple[Dict[str, str], str]:
             raise ZipProblem("Das Paket enthält zu viele Dateien.")
         for i in infos:
             n = i.filename.replace("\\", "/")
-            if n.endswith("/") or n.startswith("/") or ".." in n.split("/"):
+            if n.endswith("/") or n.startswith("/") or ".." in n.split("/") or n.startswith("__MACOSX/"):
                 continue
             total += i.file_size
             if i.file_size > MAX_ONE_FILE or total > MAX_UNPACKED:
                 raise ZipProblem("Das Paket ist entpackt zu groß.")
             raw = zf.read(i)
             files[n] = hashlib.sha256(raw).hexdigest()
-            if not manifest and "/" not in n and n.lower().endswith(".xml") and len(raw) < 200_000:
-                txt = raw[:3500].decode("utf-8", "replace")
-                if re.search(r"<(extension|install)[\s>]", txt):
-                    manifest = raw.decode("utf-8", "replace")
+            low = n.lower()
+            if low.endswith(".xml") and n.count("/") <= 1 and len(raw) < 200_000 and re.search(rb"<(extension|install)[\s>]", raw[:3500]):
+                xmls[n] = raw
+            elif low.endswith(".zip") and len(raw) <= MAX_ZIP_BYTES:
+                nested[n] = raw
+    tops = {n.split("/", 1)[0] for n in files}
+    if strip_top and len(tops) == 1 and all("/" in n for n in files):     # alles in einem Oberordner
+        top = tops.pop() + "/"
+        files = {n[len(top):]: h for n, h in files.items()}
+        xmls = {n[len(top):]: v for n, v in xmls.items() if n.startswith(top)}
+        nested = {n[len(top):]: v for n, v in nested.items() if n.startswith(top)}
+    manifest = ""
+    for n in sorted(xmls):
+        if "/" not in n:
+            manifest = xmls[n].decode("utf-8", "replace")
+            break
+    return files, manifest, nested
+
+
+def read_zip(data: bytes) -> Tuple[Dict[str, str], str]:
+    """-> ({Pfad im ZIP: sha256}, Text des Manifests im Hauptordner des ZIP oder ""). Wirft ZipProblem bei defektem oder zu großem Paket."""
+    files, manifest, _ = read_zip_full(data)
     return files, manifest
+
+
+def zip_member(data: bytes, rel: str, strip_top: bool = False) -> bytes:
+    """Inhalt einer Datei aus dem Paket (für die Anzeige der Unterschiede); strip_top wie bei read_zip_full."""
+    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        names = [i.filename for i in zf.infolist() if not i.filename.endswith("/")]
+        tops = {n.split("/", 1)[0] for n in names}
+        pre = (tops.pop() + "/") if strip_top and len(tops) == 1 and all("/" in n for n in names) else ""
+        info = zf.getinfo(pre + rel)
+        if info.file_size > MAX_ONE_FILE:
+            raise ZipProblem("Datei zu groß.")
+        return zf.read(info)
+
+
+def _read_any(data: bytes) -> Tuple[Dict[str, str], str, Dict[str, bytes], bool]:
+    """Erst wie geliefert lesen; steht kein Manifest im Hauptordner, mit entferntem Oberordner."""
+    files, manifest, nested = read_zip_full(data)
+    if manifest:
+        return files, manifest, nested, False
+    f2, m2, n2 = read_zip_full(data, strip_top=True)
+    return (f2, m2, n2, True) if m2 else (files, manifest, nested, False)
+
+
+def resolve_package(data: bytes, ext: Dict[str, Any]) -> Tuple[Dict[str, str], str, bytes, bool]:
+    """Das richtige Paket für die Erweiterung finden. Viele Hersteller liefern eine Paket-Sammlung (type="package"),
+    in der die eigentliche Erweiterung als eigenes ZIP steckt (z. B. packages/plg_system_acf.zip). -> (Dateien, Manifest, ZIP-Bytes, Oberordner entfernt)."""
+    files, manifest, nested, top = _read_any(data)
+    root = parse_xml(manifest)
+    kind = str(ext.get("type") or "").lower()
+    if root is None or (root.get("type") or "").lower() == kind or not nested:
+        return files, manifest, data, top
+    element = str(ext.get("element") or "").lower()
+    group = str(ext.get("folder") or "").lower()
+    order: List[str] = []
+    if (root.get("type") or "").lower() == "package":
+        for fe in root.findall("files"):
+            folder = (fe.get("folder") or "").strip().strip("/")
+            for f in fe.findall("file"):
+                fid = (f.get("id") or "").strip().lower()
+                ftype = (f.get("type") or "").strip().lower()
+                fgroup = (f.get("group") or "").strip().lower()
+                if ftype == kind and fid in (element, element.replace("com_", "", 1), "%s_%s" % (group, element)) and (kind != "plugin" or not fgroup or fgroup == group):
+                    order.append(((folder + "/") if folder else "") + (f.text or "").strip())
+    order += sorted(n for n in nested if element and element.replace("com_", "") in n.lower().rsplit("/", 1)[-1])
+    for name in dict.fromkeys(order):
+        sub = nested.get(name)
+        if sub is None:
+            continue
+        try:
+            f2, m2, _, t2 = _read_any(sub)
+        except ZipProblem:
+            continue
+        r2 = parse_xml(m2)
+        if r2 is not None and (r2.get("type") or "").lower() == kind:
+            return f2, m2, sub, t2
+    return files, manifest, data, top
 
 
 def strip_prefix(files: Dict[str, str], prefix: str) -> Dict[str, str]:
@@ -147,6 +223,50 @@ def _files_folders(root: ET.Element, xpath: str) -> List[str]:
     for fe in root.findall(xpath):
         out.append((fe.get("folder") or "").strip().strip("/"))
     return out
+
+
+def target_entries(manifest: str, ext: Dict[str, Any]) -> Dict[Tuple[str, str], List[str]]:
+    """Wie target_dirs, zusätzlich die im Manifest aufgezählten Dateien und Ordner je Zuordnung (<filename>, <folder>, <file>).
+    Nur diese installiert Joomla; alles andere im ZIP (Installationsskripte, Unterpakete, der admin-Ordner unter dem Seitenteil) gehört nicht in den Ordner."""
+    out: Dict[Tuple[str, str], List[str]] = {}
+    root = parse_xml(manifest)
+    if root is None:
+        return out
+    pairs = target_dirs(manifest, ext)
+    kind = str(ext.get("type") or "").lower()
+    groups = {"administrator/": root.findall("administration/files")}
+    site = root.findall("files")
+    for z, s in pairs:
+        cand = groups["administrator/"] if (kind == "component" and s.startswith("administrator/")) else site
+        names: List[str] = []
+        for fe in cand:
+            if (fe.get("folder") or "").strip().strip("/") != z:
+                continue
+            for c in fe:
+                if c.tag in ("filename", "folder", "file") and (c.text or "").strip():
+                    t = (c.text or "").strip().strip("/")
+                    if SAFE_REL.match(t) and ".." not in t.split("/"):
+                        names.append(t)
+        out[(z, s)] = names
+    return out
+
+
+def only_entries(files: Dict[str, str], entries: List[str], exclude: List[str]) -> Dict[str, str]:
+    """Relative Pfade auf die Manifest-Einträge beschränken; ohne Einträge alles außer den Ordnern anderer Zuordnungen (z. B. admin/)."""
+    if entries:
+        return {p: h for p, h in files.items() if any(p == e or p.startswith(e + "/") for e in entries)}
+    return {p: h for p, h in files.items() if not any(x and (p == x or p.startswith(x + "/")) for x in exclude)}
+
+
+def normalized_equal(a: bytes, b: bytes) -> bool:
+    """Gleich bis auf Zeilenenden, Leerzeichen am Zeilenende und eine fehlende Leerzeile am Dateiende."""
+    na = [ln.rstrip() for ln in a.replace(b"\r\n", b"\n").replace(b"\r", b"\n").split(b"\n")]
+    nb = [ln.rstrip() for ln in b.replace(b"\r\n", b"\n").replace(b"\r", b"\n").split(b"\n")]
+    while na and not na[-1]:
+        na.pop()
+    while nb and not nb[-1]:
+        nb.pop()
+    return na == nb
 
 
 def target_dirs(manifest: str, ext: Dict[str, Any]) -> List[Tuple[str, str]]:

@@ -103,10 +103,10 @@ class Page(unittest.TestCase):
         self.assertNotIn('id="quit"', html)                              # "Programm beenden" entfällt, das X der Titelleiste übernimmt
         self.assertNotIn('$("#quit")', js)
         self.assertIn('id="tb-ver"', html)                               # Versionsnummer neben dem festen CLAUDIA oben
-        self.assertLess(html.index('id="uni-bar"'), html.index('<footer'))   # Deinstallieren steht über der Fußzeile
-        self.assertIn("btn danger-fill", html)
-        self.assertIn('bar.hidden = S.step !== "result"', js)               # im Ergebnis in der Leiste unten, beim Start im Verbindungsbild neben "Verbindung testen"
-        self.assertIn('class: "uni-slot"', js)
+        rail = html[html.index('<aside class="rail"'):html.index('</aside>')]
+        self.assertIn('id="uninstall"', rail)                                # Deinstallieren als Papierkorb in der Seitenleiste
+        self.assertIn("rail-btn rail-del", html)                              # Papierkorb (Deinstallieren) in der Seitenleiste
+        self.assertNotIn('class: "uni-slot"', js)                              # wird nicht mehr in den Inhalt verschoben
         docs = open(os.path.join(ROOT, "claudia", "web", "docs.js"), encoding="utf-8").read()
         self.assertIn('class: "docs-x"', docs)
         self.assertIn("api.get_rect()", js)

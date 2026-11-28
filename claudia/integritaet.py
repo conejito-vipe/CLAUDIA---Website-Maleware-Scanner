@@ -39,6 +39,11 @@ def _sha256(pfad: str) -> str:
 
 def pruefen(ordner: Optional[str] = None) -> Dict[str, Any]:
     """Ergebnis: ok (bool), liste_da (bool), gesamt, fehlend (Liste der Pfade), geaendert (Liste der Pfade)."""
+    if ordner is None and getattr(sys, "frozen", False):
+        # Einzeldatei-Fassung (CLAUDIA.exe / CLAUDIA.app): alle Programmteile stecken in der Programmdatei selbst und werden
+        # beim Start aus ihr entpackt. Fehlt etwas oder ist sie beschädigt, startet sie nicht. Eine Dateiliste gibt es hier nicht.
+        return {"ok": True, "liste_da": True, "gesamt": 0, "fehlend": [], "fehlend_anzahl": 0, "geaendert": [],
+                "geaendert_anzahl": 0, "ordner": os.path.dirname(sys.executable), "programmdatei": True}
     base = ordner or programmordner()
     liste = os.path.join(base, LISTE)
     if not os.path.isfile(liste):

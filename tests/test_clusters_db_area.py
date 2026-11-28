@@ -283,12 +283,13 @@ class TmpFolders(unittest.TestCase):
         info = {"joomla": "6.2.0", "php_candidates": [{"name": "php8.3", "version": "PHP 8.3.6"}]}
         res = [{"id": "php_in_uploads", "findings": [{"sev": "warn", "title": "x", "items": ["tmp/a.php (1 KB)"]}]}]
         a = [x for x in actions.available(res, info, "8.3", {}, sc) if x["id"] == "clean_tmp"][0]
-        self.assertEqual(a["title"], "Temp-Ordner leeren (tmp)")
+        self.assertEqual(a["title"], "Temp-Ordner leeren (tmp: 4 Datei(en), 12 KB)")         # Anzahl und Größe, damit man entscheiden kann
         self.assertNotIn("images/tmp", a["summary"])
         self.assertFalse(a["params"]["images_tmp_exists"])
         sc2 = actions.parse_scan("@@TMP\ntmp\t1\t1\t0\nimages/tmp\t2\t1\t0\n@@IMGTMP\nimages_vorhanden\nimages_tmp_vorhanden\n@@END")
         b = [x for x in actions.available(res, info, "8.3", {}, sc2) if x["id"] == "clean_tmp"][0]
-        self.assertEqual(b["title"], "Temp-Ordner leeren (tmp und images/tmp)")
+        self.assertEqual(b["title"], "Temp-Ordner leeren (tmp: 1 Datei(en), 1 KB; images/tmp: 2 Datei(en), 1 KB)")
+        self.assertEqual(actions.size_text(3584), "3,5 MB")
 
     def test_scan_script_really_checks_images(self):
         from claudia import actions
@@ -339,13 +340,14 @@ class ExtensionRetries(unittest.TestCase):
         os.makedirs(b)
         with open(os.path.join(b, "setext.py"), "w") as fh:
             fh.write(SETEXT)
-        script(os.path.join(b, "curl"), r'''case "$*" in
+        from test_actions2 import CURL_O, PHP_PATH
+        script(os.path.join(b, "curl"), CURL_O + r'''case "$*" in
  *osmap*) echo '<updates><update><element>com_osmap</element><version>5.1.11</version><downloads><downloadurl type="full" format="zip">https://deploy.example/osmap/com_osmap</downloadurl></downloads></update></updates>';;
  *dep*) echo '<updates><update><element>com_dep</element><version>2.0.0</version><downloads><downloadurl type="full" format="zip">https://example.org/dep-2.0.0.zip</downloadurl></downloads></update></updates>';;
  *) echo '<updates><update><element>com_demo2</element><version>2.0.0</version><downloads><downloadurl type="full" format="zip">https://example.org/demo-2.0.0.zip</downloadurl></downloads></update></updates>';;
 esac''')
         script(os.path.join(b, "php8.3"), r'''if [ "$1" = "-v" ]; then echo "PHP 8.3.6 (cli)"; exit 0; fi
-echo "$*" >> "$HOME/inst_calls.txt"
+''' + PHP_PATH + r'''echo "$*" >> "$HOME/inst_calls.txt"
 case "$3" in
   --url=https://example.org/demo-2.0.0.zip) python3 "$(dirname "$(command -v php8.3)")/setext.py" "$CLAUDIA_TEST_DB" 900 2.0.0; touch "$HOME/demo_done"; echo done;;
   --url=https://example.org/dep-2.0.0.zip) if [ -f "$HOME/demo_done" ]; then python3 "$(dirname "$(command -v php8.3)")/setext.py" "$CLAUDIA_TEST_DB" 902 2.0.0; echo done; else echo "Dependency missing" >&2; exit 1; fi;;

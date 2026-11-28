@@ -2,6 +2,53 @@
 
 Erzeugt aus `claudia/docs/aenderungen.de.txt` (nicht von Hand ändern).
 
+## 3.1.1 (2026-11-28) - JCE-Update, Startproblem, weniger Fehlalarme bei Erweiterungen, Oberfläche und Setup
+
+### JCE und andere Erweiterungs-Updates
+- **Was:** "Erweiterungen aktualisieren" lädt das Paket jetzt selbst auf den Server (nur https, auch bei Umleitungen), prüft, dass es ein ZIP ist, vergleicht die Prüfsumme des Herstellers und installiert dann aus der Datei. Liefert der Download-Server eine Hinweisseite statt des Pakets, wird es mit Browser-Kennung wiederholt und der Seitentitel ins Protokoll geschrieben.
+- **Warum:** JCE 3.0.6 scheiterte viermal mit "Unable to install extension". Joomla hatte bei der Adresse index.php?...&file=pkg_jce_306.zip nur eine 11,7 KB kleine Seite geladen.
+- **Wie:** actions.py nutzt für Updates denselben geprüften Weg wie die Installation von Sicherheits-Erweiterungen (extension:install --path statt --url).
+
+### Programmprotokoll und Start
+- **Was:** Die Windows- und Mac-Programmdatei schreibt ein Protokoll (Windows: %APPDATA%\CLAUDIA\protokoll\claudia.log), auch Abstürze. Bleibt das Fenster nach dem Start weiß, lädt CLAUDIA die Seite nach 15 Sekunden einmal neu. Nach dem Schließen endet der Prozess sicher. Das Support-Paket enthält die letzten Zeilen des Protokolls.
+- **Warum:** Nach dem Schließen über das X blieb beim nächsten Start das Fenster weiß, und es gab kein Protokoll zur Fehlersuche.
+- **Wie:** installer/exe_main.py (Protokoll, faulthandler, os._exit), window.py (Neuladen), support.py.
+
+### Installationsprüfung in der Programmdatei
+- **Was:** Die Meldung "PRUEFSUMMEN.txt fehlt" erscheint in der Windows-/Mac-Programmdatei nicht mehr.
+- **Warum:** Dort stecken alle Programmteile in der Programmdatei selbst; eine Dateiliste gibt es nicht.
+- **Wie:** integritaet.py erkennt die Programmdatei.
+
+### Erweiterungen gegen das Paket des Herstellers: weniger Fehlalarme, Codefenster
+- **Was:** Verglichen werden nur die Dateien, die das Manifest aufzählt (der admin-Ordner gehört nach administrator/). Paket-Sammlungen mit eingebettetem ZIP und ZIPs mit Oberordner werden geöffnet. Dateien einer gemeinsamen Bibliothek, die identisch mit der Datei aus einem anderen Paket sind (z. B. osmylicensesmanager von Joomlashack), und Dateien, die sich nur in Zeilenenden unterscheiden, gelten als in Ordnung. Echte Abweichungen zeigen ein Codefenster mit der Gegenüberstellung. Joomla-eigene Erweiterungen und Paket-Sammlungen stehen nicht mehr unter "nicht prüfbar"; Update-Adressen ohne https werden per https versucht.
+- **Warum:** Der Bericht meldete 11 geänderte, 48 zusätzliche und 301 fehlende Dateien, die größtenteils aus der falschen Zuordnung stammten.
+- **Wie:** extsums.py (resolve_package, target_entries, normalized_equal), checks/ext_integrity.py.
+
+### Bedrohungslage
+- **Was:** Zusatz-Plugins anderer Erweiterungen (z. B. das ConvertForms-Plugin für AcyMailing) werden nicht mehr mit dem Produkt verwechselt. Nennt eine Meldung die behobene Version und ist die installierte schon neuer, entfällt der Hinweis.
+- **Warum:** Das ConvertForms-Plugin "acymailing" wurde als AcyMailing mit kritischer Lücke gemeldet.
+- **Wie:** checks/threat.py (Plugin-Gruppen), intel.py (fixed_by_text).
+
+### Ergebnisse: "in Ordnung" ist in Ordnung
+- **Was:** Eine Prüfung, die nur Erläuterungen und ein "in Ordnung" enthält, steht als "In Ordnung" statt als "Hinweis".
+- **Warum:** Hinweis oben, im Detail aber alles in Ordnung war widersprüchlich.
+- **Wie:** model.py.
+
+### Temp-Ordner
+- **Was:** "Temp-Ordner leeren" zeigt Anzahl der Dateien und Größe je Ordner.
+- **Warum:** Damit man entscheiden kann, ob sich das Leeren lohnt.
+- **Wie:** actions.py.
+
+### Oberfläche
+- **Was:** Deinstallieren ist ein Papierkorb unten in der Seitenleiste. Die Symbole der Navigation behalten ihre Form (SVG statt Zeichen, die Windows als bunte Emojis zeigte). Aus Dashboard und Hilfe sind die Schritte wieder anklickbar. Die Leiste "Prüfung starten" und die Fußleiste verdecken die Bildlaufleiste nicht mehr. Die Fensterknöpfe zeigen beim Darüberfahren eine Farbe. Hinweis-Kästen (z. B. Update-Suche) sind im dunklen Design lesbar. Die Symbole im Dashboard sind normal groß. Der Radar zeigt nur gefundene Stufen in ihrer Farbe, kritische Funde nah an der Mitte, aber nie ganz darin.
+- **Warum:** Rückmeldungen nach dem Test von 3.1.0.
+- **Wie:** app.js, app.css, radar.js, index.html.
+
+### Setup
+- **Was:** Das Bild der Windows-Meldung ist kleiner und vollständig sichtbar, der Text steht bündig zur Überschrift, das kleine Logo oben rechts ist transparent, auf der letzten Seite steht das Logo mittig.
+- **Warum:** Rückmeldungen nach dem Test von 3.1.0.
+- **Wie:** claudia.iss, wizard.bmp, wizard_small.bmp (32 Bit mit Alphakanal), hinweis_smartscreen.bmp.
+
 ## 3.1.0 (2026-11-27) - Dashboard mit Diagrammen, Hilfe im Hauptfenster, Prüfung der Installation und Fehlerbehebungen
 
 ### Dashboard mit Diagrammen

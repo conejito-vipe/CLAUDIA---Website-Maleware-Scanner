@@ -33,7 +33,7 @@ const ClaudiaRadar = (() => {
     const warn = g("--warn", FALLBACK.warn);
     return {
       ok: g("--ok", FALLBACK.ok), info: g("--info", FALLBACK.info), warn, skipped: g("--skip", FALLBACK.skip), accent: g("--accent", FALLBACK.accent),
-      crit: warn.map(x => Math.round(x + (255 - x) * 0.18)),          // kritisch: das gleiche Bernstein, aber heller und mit Ring
+      crit: g("--crit", [255, 138, 128]),                               // kritisch: eigene Farbe (wie in Legende und Ergebnis), mit Ring
     };
   }
   const rgb = c => c.join(",");
@@ -53,9 +53,12 @@ const ClaudiaRadar = (() => {
       if (!raf || still.matches) draw(0, 0);
     }
     function build() {
-      dots = st.plan.map(id => ({ id, a: hash(id + "a") * TAU, d: 0.22 + hash(id + "d") * 0.68, lit: 0, shown: st.status[id] || "" }));
+      dots = st.plan.map(id => ({ id, a: hash(id + "a") * TAU, h: hash(id + "d"), lit: 0, shown: st.status[id] || "" }));
     }
-    function pos(d) { const r = d.d * R; return [cx + Math.cos(d.a) * r, cx + Math.sin(d.a) * r]; }
+    /* Abstand zur Mitte nach Schwere: kritisch im inneren Ring (frühestens auf halbem Weg zwischen Mittelpunkt und innerem Kreis, nie ganz in der Mitte),
+       "Bitte prüfen" im zweiten Ring, Hinweise außen */
+    const BAND = { crit: [0.13, 0.23], warn: [0.29, 0.48], info: [0.54, 0.92] };
+    function pos(d) { const b = BAND[st.status[d.id]] || BAND.info, r = (b[0] + d.h * (b[1] - b[0])) * R; return [cx + Math.cos(d.a) * r, cx + Math.sin(d.a) * r]; }
     function set(next) {
       if (!alive) return;
       const prev = st.status;

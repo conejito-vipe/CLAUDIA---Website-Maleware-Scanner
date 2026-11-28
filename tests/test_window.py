@@ -111,6 +111,35 @@ class Ways(Base):
             window.PING_TIMEOUT = old
 
 
+class BlankWindow(Base):
+    def test_reloads_once_when_page_stays_blank(self):
+        import io, contextlib, time
+        calls = []
+
+        class Win:
+            def load_url(self, url):
+                calls.append(url)
+        w = window.Window(self.srv, lambda: None)
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            w._reload_if_blank(Win(), wait=0.05)
+            time.sleep(0.4)
+        self.assertEqual(len(calls), 1)
+        self.assertIn("nicht geladen", err.getvalue())                 # steht im Programmprotokoll
+
+    def test_no_reload_when_page_loaded(self):
+        import time
+        calls = []
+
+        class Win:
+            def load_url(self, url):
+                calls.append(url)
+        self.srv.note_page_load()
+        window.Window(self.srv, lambda: None)._reload_if_blank(Win(), wait=0.05)
+        time.sleep(0.2)
+        self.assertEqual(calls, [])
+
+
 class Closing(Base):
     def test_closing_asks_only_while_busy(self):
         w = window.Window(self.srv, lambda: None)

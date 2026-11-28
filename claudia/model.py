@@ -53,6 +53,9 @@ class CheckResult:
         for f in self.findings:
             if SEV_RANK[f.sev] > SEV_RANK[worst]:
                 worst = f.sev
+        # Nur Informationen plus ein ausdrückliches "in Ordnung": das Ergebnis IST in Ordnung (die Infos sind Erläuterungen, keine Hinweise)
+        if worst == "info" and any(f.sev == "ok" for f in self.findings):
+            worst = "ok"
         self.status = worst
 
     def to_dict(self) -> Dict[str, Any]:

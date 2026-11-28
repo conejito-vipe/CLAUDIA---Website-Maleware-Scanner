@@ -857,9 +857,16 @@ class App:
                 log = fh.read()[-20000:]
         except OSError:
             pass
+        plog = ""
+        try:
+            with open(support.programm_protokoll(), "r", encoding="utf-8", errors="replace") as fh:
+                plog = fh.read()[-20000:]
+        except OSError:
+            pass
         key = self._site()[0]
         acts = [a for a in verlauf.load(self.dir)["actions"] if not key or a["site"] == key]
-        text = support.build(__version__, self.info or {}, res, acts, log, str(self.advisories.get("stand", "")), [str(x) for x in hide])
+        text = support.build(__version__, self.info or {}, res, acts, log, str(self.advisories.get("stand", "")), [str(x) for x in hide],
+                             prog_log=plog)
         path = os.path.join(self.reports, "support_%s.txt" % time.strftime("%Y%m%d-%H%M%S"))
         try:
             os.makedirs(self.reports, exist_ok=True)

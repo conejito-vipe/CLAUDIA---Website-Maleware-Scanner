@@ -55,17 +55,16 @@ class Ui(unittest.TestCase):
         self.assertGreaterEqual(ft["t"], sc["b"] - 1)                    # Knöpfe stehen fest unter dem Bildlauf-Bereich
         self.assertLessEqual(ft["b"], d["b"] + 1)                        # und sind auch bei niedrigem Fenster sichtbar
         self.assertEqual(pg.evaluate("innerHeight") >= ft["b"], True)
-        go = self.box(pg, ".uni-foot .danger-fill")
-        main = self.box(pg, "#uninstall")
-        self.assertAlmostEqual(go["h"], main["h"], delta=1)              # gleiche Höhe wie im Hauptfenster
         pg.close()
 
-    def test_uninstall_button_same_row_as_connect_button(self):
+    def test_uninstall_is_trash_in_sidebar(self):
+        """Seit 3.1.1: Deinstallieren als Papierkorb unten in der Seitenleiste (wie bei CLAUDIOS), nicht mehr über dem Inhalt."""
         pg = self.page(1280, 900)
-        u = self.box(pg, "#uninstall")
-        c = pg.evaluate("()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.startsWith('Verbindung'));const r=b.getBoundingClientRect();return {t:r.top,b:r.bottom,h:r.height}}")
-        self.assertAlmostEqual(u["h"], c["h"], delta=2)                  # gleiche Größe
-        self.assertAlmostEqual(u["b"], c["b"], delta=6)                  # gleiche Höhe (Unterkante)
+        u, rail = self.box(pg, "#uninstall"), self.box(pg, ".rail")
+        self.assertGreaterEqual(u["l"], rail["l"] - 1)
+        self.assertLessEqual(u["r"], rail["r"] + 1)
+        self.assertGreater(u["t"], rail["t"] + rail["h"] / 2)             # untere Hälfte der Seitenleiste
+        self.assertEqual(pg.locator("#uninstall svg").count(), 1)
         pg.close()
 
     def test_help_in_main_window_keeps_sidebar(self):

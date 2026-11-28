@@ -32,6 +32,14 @@ class InstallerTests(unittest.TestCase):
         self.assertIn("hinweis_smartscreen.bmp", code)
         self.assertIn("function ReadInstalledVersion", code)
         self.assertIn("WizardResizable=yes", s)
+        self.assertIn("WizardImageAlphaFormat=defined", s)                  # kleines Logo transparent
+        self.assertIn("procedure CurPageChanged(CurPageID: Integer);", code)   # Text bündig zur Überschrift
+        self.assertEqual(code.count("procedure CurPageChanged"), 1)
+        import struct
+        with open(os.path.join(ROOT, "installer", "wizard_small.bmp"), "rb") as f:
+            d = f.read()
+        self.assertEqual(struct.unpack("<H", d[28:30])[0], 32)               # 32 Bit mit Alphakanal
+        self.assertEqual(d[struct.unpack("<I", d[10:14])[0] + 3], 0)        # Ecke durchsichtig
 
     def test_iss_keeps_user_data(self):
         s = rd("installer", "claudia.iss")

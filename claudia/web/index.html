@@ -24,9 +24,10 @@
   <img class="rail-logo" src="/logo.png" alt="CLAUDIA" width="104" height="104">
   <nav class="steps" id="steps" aria-label="Ablauf"></nav>
   <div class="rail-tools">
-    <button class="rail-btn" id="dashbtn" type="button" title="Verlauf, Diagramme und Befunde aller geprüften Seiten"><span class="ri" aria-hidden="true">&#9638;</span><span class="rl">Dashboard</span></button>
-    <button class="rail-btn" id="updbtn" type="button" title="Nach einer neuen Programmversion suchen"><span class="ri" aria-hidden="true">&#8635;</span><span class="rl">Updates</span></button>
-    <button class="rail-btn" id="licbtn" type="button" hidden title="Lizenzschlüssel eintragen und ansehen"><span class="ri" aria-hidden="true">&#9671;</span><span class="rl">Lizenz</span></button>
+    <button class="rail-btn" id="dashbtn" type="button" title="Verlauf, Diagramme und Befunde aller geprüften Seiten"><span class="ri"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></span><span class="rl">Dashboard</span></button>
+    <button class="rail-btn" id="updbtn" type="button" title="Nach einer neuen Programmversion suchen"><span class="ri"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></span><span class="rl">Updates</span></button>
+    <button class="rail-btn" id="licbtn" type="button" hidden title="Lizenzschlüssel eintragen und ansehen"><span class="ri"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/></svg></span><span class="rl">Lizenz</span></button>
+    <button class="rail-btn rail-del" id="uninstall" type="button" title="Entfernt, was das Programm auf diesem PC angelegt hat"><span class="ri"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></svg></span><span class="rl">Deinstallieren</span></button>
   </div>
 </aside>
 <div class="stage">
@@ -42,7 +43,6 @@
     <button class="btn ghost tb-help" id="help" type="button" title="Handbuch, Prüfkatalog und Änderungsverlauf">Hilfe</button>
   </header>
   <main id="view" tabindex="-1"></main>
-  <div class="uni-row-bar" id="uni-bar"><button class="btn danger-fill" id="uninstall" type="button" title="Entfernt, was das Programm auf diesem PC angelegt hat">Deinstallieren</button></div>
   <footer class="foot">Freeware, kostenlos und ohne jegliche Gewährleistung oder Erfolgsgarantie. Quelltext offen lesbar. Prüfungen sind nur lesend. Änderungen am Server auf eigene Gefahr und nur über die selbst zu aktivierenden Buttons. <span class="vibe">vibecoded with Claude (Anthropic) by <a href="https://github.com/conejito-vipe" target="_blank" rel="noopener noreferrer">conejito-vipe</a> with love ❤️.<span id="loc" hidden> &middot; <b id="locn"></b> Zeilen reiner Python-Code</span></span></footer>
 </div>
 

@@ -424,12 +424,8 @@ class UiFlow(unittest.TestCase):
             return [a, b];
         }""")
         self.assertEqual(lab, ["Kunde · h.example.org", "andere.example.org"])
-        # Deinstallieren (seit 2.4.1): roter Button rechts, direkt über der Fußzeile, Auswahlfeld nicht weiß
-        box = pg.locator("#uninstall").bounding_box()
-        self.assertTrue(box["x"] > 640 and box["y"] > 150, box)    # ohne Maßnahmenplan ist die Seite kürzer
-        self.assertTrue(pg.locator("#uninstall").evaluate("e => e.closest('footer') === null && (e.closest('.uni-slot') !== null || e.closest('#uni-bar') !== null)"))   # beim Start neben "Verbindung testen" (außerhalb des Kastens), im Ergebnis in der Leiste über der Fußzeile
-        self.assertEqual(pg.locator("#uni-bar").evaluate("e => e.nextElementSibling.tagName"), "FOOTER")
-        self.assertIn("rgb(", pg.locator("#uninstall").evaluate("e => getComputedStyle(e).backgroundColor"))
+        # Deinstallieren (seit 3.1.1): Papierkorb unten in der linken Seitenleiste, immer erreichbar
+        self.assertTrue(pg.locator("#uninstall").evaluate("e => e.closest('#rail') !== null && e.closest('footer') === null && !!e.querySelector('svg')"))
         pg.evaluate("() => { const d = document.getElementById('unidlg'); document.getElementById('uni-body').textContent = 'x'; d.showModal(); }")
         dbg = pg.locator("#unidlg").evaluate("e => getComputedStyle(e).backgroundColor")
         mbg = pg.evaluate("() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()")

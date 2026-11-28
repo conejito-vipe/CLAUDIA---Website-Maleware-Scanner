@@ -627,6 +627,17 @@ TMP_DIRS_ALL = ("tmp", "images/tmp", "wp-content/upgrade", "wp-content/cache")
 BACKUP_KINDS = {"wartung": "Kopie der .maintenance", "options": "WordPress-Optionen (Tabelle)", "wpconfig": "Kopie der wp-config.php", "tmp": "Inhalt von tmp", "jce": "JCE-Profile (Tabelle)", "dateien": "entfernte Schadcode-Dateien", "rechte": "Protokoll der Rechte-Änderung"}
 
 
+def size_text(kb: Any) -> str:
+    """Größe für die Anzeige: unter 1 MB in KB, sonst MB mit einer Nachkommastelle (deutsches Komma)."""
+    try:
+        kb = int(kb)
+    except (TypeError, ValueError):
+        kb = 0
+    if kb < 1024:
+        return "%d KB" % kb
+    return ("%.1f MB" % (kb / 1024.0)).replace(".", ",")
+
+
 def parse_scan(text: str) -> Dict[str, Any]:
     from .util import split_sections
     sec = split_sections(text or "")
@@ -992,13 +1003,17 @@ def available(results: List[Dict[str, Any]], info: Dict[str, Any], manual: str =
                 continue
             names = [t["dir"] for t in dirs] or ["tmp"]
             d["params"] = {"dirs": names, "info": dirs}
+            sizes = [("%s: %d Datei(en), %s, davon %d PHP-Datei(en)" % (t["dir"], t["count"], size_text(t.get("kb", 0)), t["php"])) if t.get("php")
+                     else ("%s: %d Datei(en), %s" % (t["dir"], t["count"], size_text(t.get("kb", 0)))) for t in dirs]
             if scan:
                 d["params"]["images_tmp_exists"] = bool(scan.get("images_tmp_exists"))
                 d["params"]["candidates"] = [c for c in scan.get("tmp_candidates", []) if c not in ("images/tmp",)]
-            d["title"] = "Temp-Ordner leeren (%s)" % " und ".join(names)
+            d["title"] = "Temp-Ordner leeren (%s)" % ("; ".join(sizes) if sizes else " und ".join(names))
             d["summary"] = (WP_ACTION_TEXT["clean_tmp"]["summary"] % " und ".join(names)) if cms == "wordpress" else ("Die Ordner %s sind nur Zwischenlager für Installationen, Updates und Uploads. Alte Installationspakete, entpackte Erweiterungen und "
                             "eingeschleuste Dateien liegen dort oft jahrelang und sind für Angreifer ein beliebter Ablageort. Die Ordner selbst bleiben bestehen."
                             % " und ".join(names))
+            if sizes:
+                d["summary"] += " " + ("Inhalt jetzt: %s" % "; ".join(sizes)) + "."
         elif aid == "delete_old_backups":
             if not scan.get("backups") and not any(not l.get("newest") for l in scan.get("local_logs") or []):
                 continue
@@ -1174,27 +1189,40 @@ def newest_download(xml_text: str) -> Dict[str, str]:
     return best
 
 
-def _joomla_install_checked(runner, site_dir: str, php: str, best: Dict[str, str], log) -> Any:
-    """Erweiterung installieren: Paket auf dem Server in tmp/ laden, Prüfsumme aus dem Herstellermanifest vergleichen,
-    dann mit Joomlas eigenem Befehl aus der lokalen Datei installieren (nicht direkt aus dem Link, das schlägt bei Downloads mit Anmeldung oder Umleitung fehl)."""
+def _joomla_install_checked(runner, site_dir: str, php: str, best: Dict[str, str], log, require_sum: bool = True) -> Any:
+    """Erweiterung installieren: Paket auf dem Server in tmp/ laden (Umleitungen nur über https), prüfen, dass es ein ZIP ist,
+    Prüfsumme aus dem Herstellermanifest vergleichen, dann mit Joomlas eigenem Befehl aus der lokalen Datei installieren.
+    Nicht direkt aus dem Link (extension:install --url): Bei Adressen wie index.php?option=...&file=paket.zip (z. B. JCE)
+    erkennt Joomla die Datei nicht und meldet nur 'Unable to install extension'.
+    require_sum=False (Updates): gibt der Hersteller keine Prüfsumme an, wird ohne Vergleich installiert und das protokolliert."""
     cli = "timeout -k 5 600 %s cli/joomla.php " % sq(php)
     if best.get("sha256"):
         algo, want, tool = "sha256", best["sha256"], "sha256sum"
     elif best.get("sha512"):
         algo, want, tool = "sha512", best["sha512"], "sha512sum"
-    else:
+    elif require_sum:
         log("Prüfsumme im Herstellermanifest", False, "Keine SHA-256- oder SHA-512-Prüfsumme gefunden. Die Installation wird nicht gestartet.")
         return ShResult("", "", 1, False)
+    else:
+        algo, want, tool = "", "", ""
+    check = ("got=$(%(tool)s \"$f\" | cut -d' ' -f1); [ \"$got\" = %(want)s ] || { echo \"Prüfsumme stimmt nicht (%(algo)s)\"; rm -f \"$f\"; exit 44; }\n"
+             "echo 'Prüfsumme (%(algo)s) stimmt'\n" % {"tool": tool, "want": sq(want), "algo": algo}) if algo else \
+        "echo 'Der Hersteller gibt keine Prüfsumme an: Paket ohne Vergleich installiert'\n"
     script = (
-        "mkdir -p tmp && f=$(mktemp tmp/claudia-ext-XXXXXX.zip) || exit 41\n"
-        "curl -fsSL --max-time 300 --proto '=https' -o \"$f\" -- %(url)s || { echo 'Download fehlgeschlagen'; rm -f \"$f\"; exit 42; }\n"
-        "[ \"$(head -c 2 \"$f\")\" = PK ] || { echo 'Die Adresse liefert keine ZIP-Datei (vermutlich Anmeldung oder Umleitung)'; rm -f \"$f\"; exit 43; }\n"
-        "got=$(%(tool)s \"$f\" | cut -d' ' -f1); [ \"$got\" = %(want)s ] || { echo \"Prüfsumme stimmt nicht (%(algo)s)\"; rm -f \"$f\"; exit 44; }\n"
-        "echo 'Prüfsumme (%(algo)s) stimmt'\n"
+        "mkdir -p tmp && t=$(mktemp tmp/claudia-ext-XXXXXX) && f=\"$t.zip\" && mv -- \"$t\" \"$f\" || exit 41\n"
+        "dl() { curl -fsSL --max-time 300 --proto '=https' --proto-redir '=https' \"$@\" -o \"$f\" -- %(url)s; }\n"
+        "dl || { echo 'Download fehlgeschlagen'; rm -f \"$f\"; exit 42; }\n"
+        # manche Download-Server liefern Programmen wie curl eine Hinweisseite statt des Pakets: einmal mit Browser-Kennung wiederholen
+        "[ \"$(head -c 2 \"$f\")\" = PK ] || { echo 'Erster Abruf lieferte kein ZIP, zweiter Versuch mit Browser-Kennung'; dl -A 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36' || true; }\n"
+        "if [ \"$(head -c 2 \"$f\")\" != PK ]; then echo 'Die Adresse liefert keine ZIP-Datei (vermutlich Anmeldung, Download-Schlüssel, Sperre oder Umleitung)'; "
+        "t=$(head -c 6000 \"$f\" | tr -d '\\r\\n' | sed -n 's/.*<[Tt][Ii][Tt][Ll][Ee][^>]*>\\([^<]*\\)<.*/\\1/p' | head -c 150); [ -n \"$t\" ] && echo \"Antwort des Servers: $t\"; "
+        "echo \"Erhalten: $(wc -c < \"$f\" | tr -d ' ') Byte\"; rm -f \"$f\"; exit 43; fi\n"
+        "%(check)s"
         "%(cli)sextension:install --path=\"$f\" </dev/null 2>&1; rc=$?; rm -f \"$f\"; exit $rc\n"
-    ) % {"url": sq(best["url"]), "tool": tool, "want": sq(want), "algo": algo, "cli": cli}
+    ) % {"url": sq(best["url"]), "check": check, "cli": cli}
     r = runner.sh(site_dir, script, 720)
-    log("Paket laden und Prüfsumme (%s) vergleichen" % algo, r.rc not in (41, 42, 43, 44), r.out.strip()[-400:])
+    log(("Paket laden und Prüfsumme (%s) vergleichen" % algo) if algo else "Paket laden (ohne Prüfsumme des Herstellers)",
+        r.rc not in (41, 42, 43, 44), r.out.strip()[-400:])
     return r
 
 
@@ -1509,7 +1537,9 @@ def commands_preview(aid: str, params: Dict[str, Any], choices: List[Dict[str, A
             if u:
                 lines += ["# %s: %s -> %s   (Quelle: %s)" % (u["name"], u.get("old") or "?", u["new"], u.get("source", "?")),
                           "curl -fsSL --proto '=https' <Update-Manifest des Herstellers>   (liest die Download-Adresse der Version %s)" % u["new"],
-                          "%s cli/joomla.php extension:install --url=<Download-Adresse>" % php,
+                          "curl -fsSL --proto '=https' --proto-redir '=https' -o tmp/claudia-ext-XXXXXX.zip <Download-Adresse>   (Paket auf den Server laden, muss ein ZIP sein)",
+                          "sha256sum tmp/claudia-ext-XXXXXX.zip   (Vergleich mit der Prüfsumme des Herstellers, wenn er eine angibt)",
+                          "%s cli/joomla.php extension:install --path=tmp/claudia-ext-XXXXXX.zip   (danach wird die Datei gelöscht)" % php,
                           "Kontrolle: installierte Version in der Datenbank == %s" % u["new"]]
         return lines + ["%s cli/joomla.php update:extensions:check" % php, "%s cli/joomla.php cache:clean" % php]
     if aid == "remove_jce_profiles":
@@ -1547,7 +1577,9 @@ def commands_preview(aid: str, params: Dict[str, Any], choices: List[Dict[str, A
             return pre_backup() + ["%s plugin install %s --activate   (aus dem Verzeichnis wordpress.org)" % (wp, tgt["slug"]),
                                    "%s plugin is-active %s" % (wp, tgt["slug"]), "%s plugin verify-checksums %s   (Dateien gegen die Prüfsummen von wordpress.org)" % (wp, tgt["slug"])]
         return pre_backup() + ["curl -fsSL --max-time 40 --proto '=https' %s   (liest die Download-Adresse der neuesten Version)" % tgt["manifest"],
-                               "%s cli/joomla.php extension:install --url=<Download-Adresse>" % php,
+                               "curl -fsSL --proto '=https' --proto-redir '=https' -o tmp/claudia-ext-XXXXXX.zip <Download-Adresse>   (Paket auf den Server laden, muss ein ZIP sein)",
+                               "sha256sum tmp/claudia-ext-XXXXXX.zip   (muss der Prüfsumme des Herstellers entsprechen, sonst keine Installation)",
+                               "%s cli/joomla.php extension:install --path=tmp/claudia-ext-XXXXXX.zip   (danach wird die Datei gelöscht)" % php,
                                "Kontrolle: Erweiterung %s steht in der Datenbank" % tgt["element"], "%s cli/joomla.php cache:clean" % php]
     if aid in ("block_users", "revoke_tokens"):
         ids = _sql_ints(_picked_ids(params)) or "<IDs>"
@@ -1776,6 +1808,25 @@ def pick_download(xml_text: str, version: str, element: str = "") -> str:
             if re.match(r"^https://[A-Za-z0-9.-]+(:\d+)?/\S*\Z", u) and not best:
                 best = u
     return best
+
+
+def sums_for_version(xml_text: str, version: str) -> Dict[str, str]:
+    """SHA-256/SHA-512 der gewünschten Version aus dem Update-Manifest (leer, wenn der Hersteller keine angibt)."""
+    root = parse_xml(xml_text)
+    out = {"sha256": "", "sha512": ""}
+    if root is None:
+        return out
+    for up in root.iter("update"):
+        if (up.findtext("version") or "").strip() != version:
+            continue
+        s256 = (up.findtext("sha256") or "").strip().lower()
+        s512 = (up.findtext("sha512") or "").strip().lower()
+        if re.match(r"^[0-9a-f]{64}\Z", s256):
+            out["sha256"] = s256
+        if re.match(r"^[0-9a-f]{128}\Z", s512):
+            out["sha512"] = s512
+        break
+    return out
 
 
 def run_action(runner: Runner, site_dir: str, aid: str, params: Dict[str, Any], choices: List[Dict[str, Any]],
@@ -3481,6 +3532,7 @@ def _run_update_extensions(runner, site_dir: str, php: str, params: Dict[str, An
     done: List[str] = []
     manual: List[Dict[str, str]] = []
     urls: Dict[str, str] = {}
+    sums: Dict[str, Dict[str, str]] = {}
     pending = list(todo)
     for rnd in range(EXT_RETRIES + 1):
         if rnd:
@@ -3493,14 +3545,16 @@ def _run_update_extensions(runner, site_dir: str, php: str, params: Dict[str, An
             if u["name"] not in urls:
                 r = runner.sh(site_dir, "curl -fsSL --max-time 40 --proto '=https' -- %s 2>&1 | head -c 2000000" % sq(u["detailsurl"]), 60)
                 urls[u["name"]] = pick_download(r.out, u["new_version"], u.get("element", "")) or ""
+                sums[u["name"]] = sums_for_version(r.out, u["new_version"])
             url = urls[u["name"]]
             if not url:
                 log("Download-Adresse für %s" % u["name"], False, "Im Update-Manifest wurde keine https-Adresse für Version %s gefunden." % u["new_version"])
                 retry.append(u)
                 continue
             log("Download-Adresse für %s" % u["name"], True, url)
-            r = runner.sh(site_dir, cli + "extension:install --url=%s </dev/null 2>&1" % sq(url), 660)
-            good = r.rc == 0 and not r.timed_out
+            best = dict(sums.get(u["name"]) or {}, url=url, version=u["new_version"])
+            r = _joomla_install_checked(runner, site_dir, php, best, log, require_sum=False)
+            good = r.rc == 0 and not r.timed_out and "[ERROR]" not in r.out
             log("Installieren: %s%s" % (u["name"], tag), good, r.out.strip()[-800:])
             if not good:
                 if classify_install_failure(r.out) == "cli":

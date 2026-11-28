@@ -10,7 +10,7 @@
 
 #define AppShortName "CLAUDIA"
 #ifndef AppVersion
-  #define AppVersion "3.1.0"
+  #define AppVersion "3.1.1"
 #endif
 #define AuthorName "conejito-vipe"
 
@@ -33,6 +33,8 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 WizardResizable=yes
+; 32-Bit-Bilder mit Alphakanal: das kleine Logo oben rechts ist transparent
+WizardImageAlphaFormat=defined
 OutputDir=Output
 OutputBaseFilename=CLAUDIA-Setup-{#AppVersion}
 LicenseFile=..\LICENSE
@@ -164,26 +166,55 @@ begin
   end;
 end;
 
+var
+  SmartPage: TWizardPage;
+  DefNoteLeft, DefNoteWidth: Integer;
+
 procedure InitializeWizard;
-var Pg: TWizardPage; Txt: TNewStaticText; Pic: TBitmapImage; Hint: String;
+var Txt: TNewStaticText; Pic: TBitmapImage; Hint: String;
 begin
   { Hinweis zur Windows-Meldung: nach der Installation, vor der letzten Seite }
-  Pg := CreateCustomPage(wpInstalling, CustomMessage('SmartTitle'), CustomMessage('SmartSub'));
-  Pic := TBitmapImage.Create(Pg);
-  Pic.Parent := Pg.Surface;
+  SmartPage := CreateCustomPage(wpInstalling, CustomMessage('SmartTitle'), CustomMessage('SmartSub'));
+  DefNoteLeft := WizardForm.InnerNotebook.Left;
+  DefNoteWidth := WizardForm.InnerNotebook.Width;
+  Pic := TBitmapImage.Create(SmartPage);
+  Pic.Parent := SmartPage.Surface;
   Pic.Stretch := True;
-  Pic.Left := ScaleX(300); Pic.Top := ScaleY(0);
-  Pic.Width := ScaleX(250); Pic.Height := ScaleY(234);
+  Pic.Width := ScaleX(210); Pic.Height := ScaleY(196);
+  Pic.Left := SmartPage.SurfaceWidth - Pic.Width; Pic.Top := ScaleY(4);
+  Pic.Anchors := [akTop, akRight];                 { bleibt am rechten Rand, auch wenn das Fenster größer wird }
   ExtractTemporaryFile('hinweis_smartscreen.bmp');
   Pic.Bitmap.LoadFromFile(ExpandConstant('{tmp}\hinweis_smartscreen.bmp'));
-  Txt := TNewStaticText.Create(Pg);
-  Txt.Parent := Pg.Surface;
-  Txt.Left := 0; Txt.Top := 0;
-  Txt.Width := ScaleX(285); Txt.AutoSize := False; Txt.WordWrap := True;
-  Txt.Height := ScaleY(260);
+  Txt := TNewStaticText.Create(SmartPage);
+  Txt.Parent := SmartPage.Surface;
+  Txt.Left := 0; Txt.Top := ScaleY(4);
+  Txt.AutoSize := False; Txt.WordWrap := True;
+  Txt.Width := Pic.Left - ScaleX(16);
+  Txt.Height := ScaleY(240);
+  Txt.Anchors := [akLeft, akTop, akRight];
   Hint := CustomMessage('SmartText');
   StringChange(Hint, '%n', #13#10);       { StringChange verändert die Variable selbst }
   Txt.Caption := Hint;
+end;
+
+procedure CurPageChanged(CurPageID: Integer);
+var Delta: Integer;
+begin
+  { Auf der Hinweisseite beginnt der Text bündig mit der Überschrift (sonst eingerückt wie die Unterzeile) }
+  if CurPageID = SmartPage.ID then
+  begin
+    Delta := DefNoteLeft - WizardForm.PageNameLabel.Left;
+    if Delta > 0 then
+    begin
+      WizardForm.InnerNotebook.Left := DefNoteLeft - Delta;
+      WizardForm.InnerNotebook.Width := DefNoteWidth + Delta;
+    end;
+  end
+  else
+  begin
+    WizardForm.InnerNotebook.Left := DefNoteLeft;
+    WizardForm.InnerNotebook.Width := DefNoteWidth;
+  end;
 end;
 
 function InitializeSetup(): Boolean;

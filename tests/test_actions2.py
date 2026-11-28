@@ -24,6 +24,15 @@ XML = """<?xml version="1.0"?><updates>
 </updates>"""
 
 
+# curl-Ersatz: mit -o DATEI wird ein "Paket" geschrieben (PK + Adresse), sonst das Manifest ausgegeben
+CURL_O = r'''out=""; url=""; for a in "$@"; do if [ "$prev" = "-o" ]; then out="$a"; fi; case "$a" in -*) ;; *) [ "$prev" = "-o" ] || url="$a";; esac; prev="$a"; done
+if [ -n "$out" ]; then printf 'PK%s' "$url" > "$out"; exit 0; fi
+'''
+# php-Ersatz: extension:install --path=DATEI wird auf die Adresse im "Paket" zurückgeführt
+PHP_PATH = r'''case "$3" in --path=*) set -- "$1" "$2" "--url=$(tail -c +3 "${3#--path=}")";; esac
+'''
+
+
 def script(path, body):
     with open(path, "w") as fh:
         fh.write("#!/bin/bash\n" + body + "\n")
@@ -35,12 +44,13 @@ def world(infected=False):
     b = tempfile.mkdtemp(prefix="claudia_bbin_")
     db = w["db"]
     script(os.path.join(b, "mysqldump"), 'for a in "$@"; do case "$a" in --connect-timeout*|--max-allowed-packet*|--no-tablespaces-x) echo "mysqldump: [ERROR] unknown variable ${a#--}" >&2; exit 7;; --no-tablespaces) [ -n "$CLAUDIA_REJECT_NOTBS" ] && { echo "mysqldump: unknown option --no-tablespaces" >&2; exit 7; };; esac; done; cat >/dev/null; for i in $(seq 1 400); do echo "INSERT INTO x VALUES ($i,\'abcdefghijklmnopqrstuvwxyz\');"; done')
-    script(os.path.join(b, "curl"), "cat <<'EOF'\n%s\nEOF" % XML)
+    script(os.path.join(b, "curl"), CURL_O + "cat <<'EOF'\n%s\nEOF" % XML)
     with open(os.path.join(b, "setver.py"), "w") as fh:
         fh.write("import sqlite3, sys\nc = sqlite3.connect(sys.argv[1])\n"
                  "c.execute('UPDATE j_extensions SET manifest_cache=? WHERE extension_id=900', ('{\"version\":\"2.0.0\"}',))\nc.commit()\n")
     script(os.path.join(b, "php8.3"), r'''
 if [ "$1" = "-v" ]; then echo "PHP 8.3.6 (cli)"; exit 0; fi
+case "$3" in --path=*) set -- "$1" "$2" "--url=$(tail -c +3 "${3#--path=}")";; esac
 echo "php $*" >> "$HOME/php_calls.txt"
 case "$2" in
   extension:install)
@@ -257,6 +267,50 @@ class Shells(unittest.TestCase):
         self.assertTrue(res["ok"] or res.get("error"))
 
 
+class CheckedPackageInstall(unittest.TestCase):
+    """JCE 3.0.6 scheiterte mit 'Unable to install extension': Joomla erkennt bei Adressen wie index.php?...&file=pkg.zip die Datei nicht.
+    Jetzt: Paket in tmp/ laden, ZIP prüfen, Prüfsumme des Herstellers vergleichen, aus der Datei installieren."""
+    URL = "https://www.joomlacontenteditor.net/index.php?option=com_releases&task=update.download&file=pkg_jce_306.zip"
+
+    def setUp(self):
+        self.r, self.w = world()
+        os.makedirs(os.path.join(self.w["site"], "cli"), exist_ok=True)
+        open(os.path.join(self.w["site"], "cli", "joomla.php"), "w").write("<?php\n")
+        b = self.r.extra_path.split(os.pathsep)[0]
+        script(os.path.join(b, "php8.3"), PHP_PATH + 'echo "php $*" >> "$HOME/php_calls.txt"; echo "Extension installed successfully."')
+        self.steps = []
+
+    def run_install(self, sha256):
+        import hashlib
+        best = {"version": "3.0.6", "url": self.URL, "sha256": sha256, "sha512": ""}
+        return actions._joomla_install_checked(self.r, self.w["site_rel"], "php8.3", best,
+                                               lambda t, ok, out: self.steps.append((t, ok, out)), require_sum=True)
+
+    def calls(self):
+        p = os.path.join(self.w["home"], "php_calls.txt")
+        return open(p).read() if os.path.exists(p) else ""
+
+    def test_matching_checksum_installs_from_local_file(self):
+        import hashlib
+        r = self.run_install(hashlib.sha256(("PK" + self.URL).encode()).hexdigest())
+        self.assertEqual(r.rc, 0, r.out)
+        self.assertIn("Prüfsumme (sha256) stimmt", r.out)
+        self.assertIn("extension:install --url=" + self.URL, self.calls())      # Ersatz-php: --path auf die Adresse im Paket zurückgeführt
+        self.assertEqual([f for f in os.listdir(os.path.join(self.w["site"], "tmp")) if f.startswith("claudia-ext-")], [])   # Paket wieder gelöscht
+
+    def test_wrong_checksum_never_installs(self):
+        r = self.run_install("0" * 64)
+        self.assertEqual(r.rc, 44)
+        self.assertEqual(self.calls(), "")
+        self.assertFalse(self.steps[-1][1])
+
+    def test_sums_for_version(self):
+        xml = ("<updates><update><version>3.0.6</version><sha256>%s</sha256></update>"
+               "<update><version>2.9.99.15</version><sha256>%s</sha256></update></updates>") % ("a" * 64, "b" * 64)
+        self.assertEqual(actions.sums_for_version(xml, "3.0.6")["sha256"], "a" * 64)
+        self.assertEqual(actions.sums_for_version(xml, "9.9.9"), {"sha256": "", "sha512": ""})
+
+
 class UpdateExtensions(unittest.TestCase):
     def setUp(self):
         self.r, self.w = world()
@@ -294,7 +348,7 @@ class UpdateExtensions(unittest.TestCase):
         self.assertLess(titles.index("Sicherung prüfen"), titles.index("Installieren: Demo"))
         self.assertIn("Version kontrollieren: Demo", titles)
         calls = open(os.path.join(self.w["home"], "php_calls.txt")).read()
-        self.assertIn("extension:install --url=https://example.org/demo-2.0.0.zip", calls)
+        self.assertIn("extension:install --url=https://example.org/demo-2.0.0.zip", calls)     # Paket von dieser Adresse, installiert per --path
         self.assertNotIn("paid", calls)                              # Erweiterung mit Download-Schlüssel wird nie angefasst
         self.assertEqual(rows(self.w, "SELECT json_extract(manifest_cache,'$.version') FROM j_extensions WHERE extension_id=900")[0][0], "2.0.0")
         kinds = [k for k, _ in events]

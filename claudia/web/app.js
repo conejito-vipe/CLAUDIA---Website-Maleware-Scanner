@@ -376,13 +376,19 @@ function viewTitle() {
   const i = STEPS.findIndex(s => s[0] === S.step);
   return i >= 0 ? tr("Schritt %s von %s (%s)").replace("%s", i + 1).replace("%s", STEPS.length).replace("%s", tr(STEPS[i][1])) : "CLAUDIA";
 }
-const STEP_ICON = { connect: "⇄", tests: "☑", run: "▶", result: "⚑" };
+/* Symbole als SVG: Unicode-Zeichen wie ☑ oder ✓ zeigt Windows als bunte Emojis, dann wechseln die Knöpfe ihre Form */
+const svgIcon = (d) => { const t = document.createElement("template");
+  t.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + "</svg>";
+  return t.content.firstChild; };
+const STEP_ICON = {
+  connect: '<path d="M4 8h15l-4-4"/><path d="M20 16H5l4 4"/>',
+  tests: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12.5l2.8 2.8L16.5 9"/>',
+  run: '<path d="M8 5.5l11 6.5-11 6.5z"/>',
+  result: '<path d="M6 21V4"/><path d="M6 4h11l-2.5 4 2.5 4H6"/>',
+};
 function renderFrame() {
   renderLangs();
   $("#tb-ver").textContent = S.init.version;
-  const ub = $("#uninstall"), bar = $("#uni-bar");
-  if (ub.parentElement !== bar) bar.append(ub);                     // aus der Verbindungsansicht zurückholen, bevor diese abgebaut wird
-  bar.hidden = S.step !== "result";
   const c = $("#conn");
   if (S.conn) { c.hidden = false; $("#conn-text").textContent = connLabel(); } else c.hidden = true;
   $("#foot-off").textContent = S.conn ? connLabel() + " · " + tr("nur lesend") : tr("Nicht verbunden");
@@ -394,16 +400,27 @@ function renderFrame() {
   const cur = order.indexOf(S.step);
   const reach = { connect: true, tests: !!S.conn, run: S.running || S.results.length > 0, result: !S.running && S.results.length > 0 };
   const nav = $("#steps"); nav.replaceChildren();
+  const away = cur < 0;                                              // Dashboard oder Hilfe: jeder erreichbare Schritt ist anklickbar
   STEPS.forEach(([id, label], i) => {
-    const done = i < cur && reach[id];
+    const done = away ? reach[id] : (i < cur && reach[id]);
     const b = h("button", {
       class: "step" + (i === cur ? " on" : "") + (done ? " done" : ""), type: "button",
       "aria-current": i === cur ? "step" : false, disabled: !(done || i === cur),
       onclick: () => { if (done) go(id); },
-    }, h("span", { class: "n", "aria-hidden": "true", text: done ? "✓" : STEP_ICON[id] }), label);
+    }, h("span", { class: "n" }, svgIcon(STEP_ICON[id])), label);
     nav.append(b);
   });
+  requestAnimationFrame(syncScrollbarWidth);                          // nach dem Aufbau des Inhalts messen
 }
+/* Breite der Bildlaufleiste des Seitenbereichs: feste Leisten (Prüfung starten) enden davor und verdecken sie nicht */
+function syncScrollbarWidth() {
+  const el = scroller();
+  const w = el === document.body ? Math.max(0, el.offsetWidth - el.clientWidth) : 0;
+  document.documentElement.style.setProperty("--sbw", w + "px");
+}
+window.addEventListener("resize", () => syncScrollbarWidth());
+if (window.ResizeObserver) new ResizeObserver(() => syncScrollbarWidth()).observe(document.documentElement);
+document.addEventListener("DOMContentLoaded", () => { const v = document.getElementById("view"); if (v && window.ResizeObserver) new ResizeObserver(() => syncScrollbarWidth()).observe(v); });
 
 /* Im Programmfenster (eigene Titelleiste) scrollt der Seitenkörper, sonst das Dokument. */
 function scroller() { return document.documentElement.classList.contains("has-titlebar") ? document.body : (document.scrollingElement || document.documentElement); }
@@ -506,10 +523,6 @@ function viewConnect() {
       h("li", {}, h("b", { text: "Server wird geprüft" }), "Beim ersten Mal bestätigst du den Fingerabdruck des Servers. Ändert er sich später, warnt das Programm."))));
   if (S.conn && S.conn.mode !== "none") side.append(connectionCard());
 
-  /* Deinstallieren steht rechts neben dem Kasten, auf der Höhe von "Verbindung testen" */
-  const slot = h("div", { class: "uni-slot" });
-  slot.append($("#uninstall"));
-  side.append(slot);
   root.append(h("div", { class: "grid2 stretch" }, card, side));
   return root;
 }
@@ -992,15 +1005,18 @@ function viewRun() {
   return root;
 }
 
+/* Legende: nur die Stufen, die in diesem Lauf tatsächlich vorkommen */
 function legend() {
   const items = [["ok", "In Ordnung"], ["info", "Hinweis"], ["warn", "Bitte prüfen"], ["crit", "Kritisch"], ["skipped", "Übersprungen / fehlgeschlagen"]];
   const col = { ok: "var(--ok)", info: "var(--info)", warn: "var(--warn)", crit: "var(--crit)", skipped: "var(--skip)" };
-  return h("div", { class: "legend" }, items.map(([k, t]) => h("span", {}, h("i", { style: "background:" + col[k] }), t)));
+  const seen = new Set(S.results.map(r => (r.status === "error" ? "skipped" : r.status)));
+  return h("div", { class: "legend", id: S.step === "run" ? "run-legend" : null }, items.filter(([k]) => seen.has(k)).map(([k, t]) => h("span", {}, h("i", { style: "background:" + col[k] }), t)));
 }
 
 function updateRun() {
   const s = $("#run-strip"); if (!s) return;
   s.replaceChildren(strip());
+  const lg = $("#run-legend"); if (lg) lg.replaceWith(legend());
   const cur = S.current && S.current.id ? checkById(S.current.id) : null;
   $("#now-t").textContent = cur ? cur.title : (S.running ? "Wird vorbereitet ..." : "Fertig");
   $("#now-m").textContent = cur ? (S.current.msg || cur.summary) : "";
@@ -1261,10 +1277,13 @@ function codeBox(lines, title) {
 }
 /* Codefenster: schwarz mit grünem Code (wie das Fenster bei Serverbefehlen), eingeklappt, mit Kopierfunktion; die Treffer-Stelle ist rot markiert */
 function codeWindow(ev, opened) {
-  const head = ev.line ? ev.file + ", Zeile " + ev.line : ev.file;
+  const head = ev.kind === "diff" ? ev.file + " (Unterschied zum Paket des Herstellers)" : ev.line ? ev.file + ", Zeile " + ev.line : ev.file;
   const pre = h("pre", { class: "cw-pre" });
+  const isDiff = ev.kind === "diff";
   for (const c of ev.code) {
-    const row = h("div", { class: "cw-row" + (c.hit ? " cw-hit" : "") });
+    const t0 = c.t || "";
+    const row = h("div", { class: "cw-row" + (isDiff ? (t0.startsWith("+") ? " cw-add" : t0.startsWith("-") ? " cw-del" : t0.startsWith("@@") ? " cw-hunk" : "") : (c.hit ? " cw-hit" : "")) });
+    if (isDiff) { row.append(h("span", { class: "cw-ln", text: "" }), h("span", { text: t0 })); pre.append(row); continue; }
     row.append(h("span", { class: "cw-ln", text: ev.kind === "db" ? "" : String(c.n) }));
     const t = c.t || "";
     if (c.hit) row.append(h("span", { text: t.slice(0, c.hit[0]) }), h("mark", { text: t.slice(c.hit[0], c.hit[1]) }), h("span", { text: t.slice(c.hit[1]) }));
@@ -1275,7 +1294,8 @@ function codeWindow(ev, opened) {
   return h("details", { class: "cw", open: !!opened },
     h("summary", {}, h("span", { class: "cw-sum", text: "Code anzeigen: " + head }), ev.note ? h("span", { class: "cw-note", text: ev.note }) : null),
     h("div", { class: "cw-body" }, pre,
-      h("div", { class: "cw-foot" }, h("span", { class: "cw-legend" }, h("mark", { text: "rot" }), " = die gefundene Stelle. Den Code nur lesen, nie ausführen."),
+      h("div", { class: "cw-foot" }, isDiff ? h("span", { class: "cw-legend", text: "Rot (-) = so im Paket des Herstellers, grün (+) = so auf dem Server. Den Code nur lesen, nie ausführen." })
+        : h("span", { class: "cw-legend" }, h("mark", { text: "rot" }), " = die gefundene Stelle. Den Code nur lesen, nie ausführen."),
         h("button", { class: "btn mini", type: "button", onclick: () => copyText(plain) }, "Kopieren"))));
 }
 const TOP_IDS = ["core_update", "update_extensions", "wp_update"];
@@ -1989,7 +2009,7 @@ function dashLineChart(history) {
   const max = Math.max(1, ...history.map(p => Math.max(p.crit, p.warn)));
   const x = i => n === 1 ? pl + (W - pl - pr) / 2 : pl + i * (W - pl - pr) / (n - 1);
   const y = v => pt + (H - pt - pb) * (1 - v / max);
-  const svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Verlauf der kritischen Funde und Hinweise" });
+  const svg = svgEl("svg", { class: "dchart", viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Verlauf der kritischen Funde und Hinweise" });
   for (const v of [0, max / 2, max]) {
     svg.append(svgEl("line", { x1: pl, x2: W - pr, y1: y(v), y2: y(v), class: "dash-grid" }));
     const t = svgEl("text", { x: pl - 8, y: y(v) + 4, "text-anchor": "end", class: "dash-axis" }); t.textContent = String(Math.round(v)); svg.append(t);

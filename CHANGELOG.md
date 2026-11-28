@@ -2,6 +2,53 @@
 
 Generated from `claudia/docs/aenderungen.en.txt` (do not edit by hand).
 
+## 3.1.1 (2026-11-28) - JCE update, start problem, fewer false alarms for extensions, interface and setup
+
+### JCE and other extension updates
+- **What:** "Update extensions" now loads the package onto the server itself (https only, also across redirects), checks that it is a ZIP, compares the vendor checksum and then installs from the file. If the download server returns a notice page instead of the package, it retries with a browser identification and writes the page title to the log.
+- **Why:** JCE 3.0.6 failed four times with "Unable to install extension". For the address index.php?...&file=pkg_jce_306.zip Joomla had only loaded an 11.7 KB page.
+- **How:** actions.py uses the same checked path for updates as the installation of security extensions (extension:install --path instead of --url).
+
+### Program log and start
+- **What:** The Windows and Mac program file writes a log (Windows: %APPDATA%\CLAUDIA\protokoll\claudia.log), including crashes. If the window stays white after the start, CLAUDIA reloads the page once after 15 seconds. After closing, the process ends reliably. The support package contains the last lines of the log.
+- **Why:** After closing with the X, the window stayed white at the next start, and there was no log for troubleshooting.
+- **How:** installer/exe_main.py (log, faulthandler, os._exit), window.py (reload), support.py.
+
+### Installation check in the program file
+- **What:** The message "PRUEFSUMMEN.txt is missing" no longer appears in the Windows/Mac program file.
+- **Why:** There all program parts are inside the program file itself; there is no file list.
+- **How:** integritaet.py recognises the program file.
+
+### Extensions against the vendor package: fewer false alarms, code window
+- **What:** Only the files listed in the manifest are compared (the admin folder belongs in administrator/). Package collections with an embedded ZIP and ZIPs with a top folder are opened. Files of a shared library that are identical to the file from another package (e.g. osmylicensesmanager from Joomlashack) and files that differ only in line endings count as fine. Real differences show a code window with the comparison. Joomla's own extensions and package collections are no longer listed as "not checkable"; update addresses without https are tried via https.
+- **Why:** The report listed 11 changed, 48 additional and 301 missing files, most of which came from the wrong mapping.
+- **How:** extsums.py (resolve_package, target_entries, normalized_equal), checks/ext_integrity.py.
+
+### Threat situation
+- **What:** Add-on plugins of other extensions (e.g. the ConvertForms plugin for AcyMailing) are no longer confused with the product. If a report names the fixed version and the installed one is newer, the notice is dropped.
+- **Why:** The ConvertForms plugin "acymailing" was reported as AcyMailing with a critical vulnerability.
+- **How:** checks/threat.py (plugin groups), intel.py (fixed_by_text).
+
+### Results: "fine" means fine
+- **What:** A check that only contains explanations and a "fine" is shown as "Fine" instead of "Notice".
+- **Why:** A notice at the top while everything was fine in the details was contradictory.
+- **How:** model.py.
+
+### Temp folders
+- **What:** "Empty temp folder" shows the number of files and the size per folder.
+- **Why:** So you can decide whether emptying is worthwhile.
+- **How:** actions.py.
+
+### Interface
+- **What:** Uninstall is a trash can at the bottom of the sidebar. The navigation icons keep their shape (SVG instead of characters that Windows showed as coloured emojis). The steps can be clicked again from the dashboard and the help. The "Start check" bar and the footer no longer cover the scroll bar. The window buttons show a colour on hover. Notice boxes (e.g. update search) are readable in the dark design. The icons in the dashboard have normal size. The radar shows only the levels found, in their colour, critical findings close to the centre but never in it.
+- **Why:** Feedback after testing 3.1.0.
+- **How:** app.js, app.css, radar.js, index.html.
+
+### Setup
+- **What:** The picture of the Windows message is smaller and fully visible, the text is aligned with the heading, the small logo at the top right is transparent, and the logo on the last page is centred.
+- **Why:** Feedback after testing 3.1.0.
+- **How:** claudia.iss, wizard.bmp, wizard_small.bmp (32 bit with alpha channel), hinweis_smartscreen.bmp.
+
 ## 3.1.0 (2026-11-27) - Dashboard with charts, help in the main window, installation check and fixes
 
 ### Dashboard with charts

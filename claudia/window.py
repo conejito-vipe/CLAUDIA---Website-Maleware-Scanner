@@ -240,6 +240,20 @@ class Window:
                 self.announce()
         threading.Thread(target=run, daemon=True).start()
 
+    def _reload_if_blank(self, win: Any, wait: float = 15.0) -> None:
+        """Bleibt das Fenster weiß (Seite nach 15 s nicht geladen), die Seite einmal neu laden; Verlauf ins Protokoll."""
+        def run() -> None:
+            if self.srv.page_loaded.wait(wait) or self._stopping.is_set():
+                return
+            print("Seite nach %d s nicht geladen, lade neu: %s" % (wait, self.srv.entry_url()), file=sys.stderr)
+            try:
+                win.load_url(self.srv.entry_url())
+            except Exception as e:
+                print("Neu laden ging nicht: %s" % e, file=sys.stderr)
+            if not self.srv.page_loaded.wait(wait) and not self._stopping.is_set():
+                print("Seite auch nach dem Neuladen nicht geladen (WebView2 prüfen)", file=sys.stderr)
+        threading.Thread(target=run, daemon=True).start()
+
     # ------------------------------------------------------------------ Wege
     def _try_webview(self) -> bool:
         wv = self._webview
@@ -284,9 +298,13 @@ class Window:
                 except Exception:
                     pass
             self._watch_loaded()
+            self._reload_if_blank(win)
             started = time.monotonic()
             wv.start(debug=False)
         except Exception:
+            import traceback
+            print("Programmfenster (pywebview) ging nicht:", file=sys.stderr)
+            traceback.print_exc()                                  # landet im Programmprotokoll der Programmdatei
             self._win = None
             return False
         # Kehrt start() sofort ohne geladene Seite zurück, hat das Fenster nicht funktioniert: nächster Weg

@@ -1,21 +1,25 @@
 """Erweiterungen: Dateien gegen das Paket des Herstellers vergleichen (2.4.1). Eigenes Modul, weil es die Datenbank-Hilfen braucht."""
 from __future__ import annotations
 
+import difflib
 import os
 import re
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from .. import coreref, extsums, joomla, secure, updcheck, wpsums
 from ..model import CheckSkipped, Option
 from ..registry import check
-from ..util import clean_line
+from ..util import clean_line, sq
 from .database import fetch, need_db
 
 G = "erweiterungen"
 
 
-INSTALL_ONLY = re.compile(r"(^|/)(packages/|script\.install[^/]*\.php$|[^/]*installer[^/]*\.php$|install\.[^/]*$|uninstall\.[^/]*$)", re.I)
+INSTALL_ONLY = re.compile(r"(^|/)(packages/|script\.install[^/]*\.php$|[^/]*installer[^/]*\.php$|install\.[^/]*$|uninstall\.[^/]*$)"
+                          r"|\.j3(_[a-z]+)?\.php$|(^|/)j3/", re.I)      # .j3.php: Joomla-3-Fassung, die das Installationsskript unter Joomla 4+ entfernt
+MAX_DIFFS = 12           # so viele geänderte Dateien bekommen eine Gegenüberstellung (Codefenster)
+DIFF_LINES = 160
 
 
 def split_missing(missing):
@@ -75,9 +79,16 @@ def ext_integrity(ctx, res):
         if x["eid"] in seen_eid:
             continue
         label = "%s %s" % (clean_line(x["name"]), x["version"])
+        if re.match(r"^https?://([a-z0-9-]+\.)*joomla\.org/", x["location"], re.I):
+            continue                                       # Joomla-eigene Erweiterung: gehört zum Kern, den der Kernvergleich prüft
         if x["needs_key"]:
             no_ref.append("%s (braucht einen Lizenzschlüssel)" % label)
             continue
+        if x["location"].startswith("http://"):
+            x = dict(x, location="https://" + x["location"][7:])         # viele Hersteller liefern dieselbe Adresse auch per https
+            if not secure.is_secure_url(x["location"]) or updcheck._get(x["location"]) is None:
+                no_ref.append("%s (Update-Adresse nur ohne https erreichbar)" % label)
+                continue
         if not x["location"].startswith("https://") or not secure.is_secure_url(x["location"]):
             no_ref.append("%s (Update-Adresse ohne https)" % label)
             continue
@@ -109,39 +120,97 @@ def ext_integrity(ctx, res):
         try:
             time.sleep(updcheck.PAUSE)
             raw = coreref.fetch_bytes(hit[0]["urls"][0], extsums.MAX_ZIP_BYTES, timeout=40)
-            files, manifest = extsums.read_zip(raw)
+            files, manifest, zbytes, top = extsums.resolve_package(raw, x)     # auch Paket-Sammlungen mit eingebettetem ZIP
         except (coreref.RefError, extsums.ZipProblem) as e:
             err.append("%s (%s)" % (label, str(e)[:120]))
             continue
-        tdirs = extsums.target_dirs(manifest, x)
+        tdirs = extsums.target_entries(manifest, x)
         if not tdirs:
             no_ref.append("%s (Paketaufbau nicht unterstützt)" % label)
             continue
-        jobs.append((x, label, tdirs, files))
+        jobs.append((x, label, tdirs, files, zbytes, top))
     changed, extra, missing, ok = [], [], [], []
+    cand: List[Tuple[Any, str, str, str]] = []          # (Auftrag, Erweiterung, Serverpfad, Paketpfad) geänderter Dateien
     if jobs:
-        dirs = sorted({s for _, _, td, _ in jobs for _, s in td})
+        dirs = sorted({s for _, _, td, _, _, _ in jobs for _, s in td})
         ctx.progress("Prüfsummen auf dem Server berechnen")
         local = extsums.parse_local(ctx.sh(extsums.find_script(dirs), timeout=600).out, dirs)
-        for x, label, tdirs, files in jobs:
+        for job in jobs:
+            x, label, tdirs, files, _, _ = job
             bad = 0
-            for zdir, sdir in tdirs:
-                ref = extsums.as_reference(extsums.strip_prefix(files, zdir))
+            zdirs = [z for z, _ in tdirs]
+            for (zdir, sdir), entries in tdirs.items():
+                rel = extsums.only_entries(extsums.strip_prefix(files, zdir), entries,
+                                           [z[len(zdir) + 1:] if zdir else z for z in zdirs if z != zdir and (not zdir or z.startswith(zdir + "/"))])
+                ref = extsums.as_reference(rel)
                 if not ref or sdir not in local:
                     continue
                 d = wpsums.compare(local[sdir], ref)
                 tag = x["element"]
-                changed += ["%s: %s/%s" % (tag, sdir, f) for f in d["changed"] if wpsums.CODE_RE.search(f)] if x["type"] != "template" else []
-                tchg = ["%s: %s/%s" % (tag, sdir, f) for f in d["changed"] if wpsums.CODE_RE.search(f)] if x["type"] == "template" else []
-                extra += ["%s: %s/%s" % (tag, sdir, f) for f in d["extra"]] + tchg
+                code_chg = [f for f in d["changed"] if wpsums.CODE_RE.search(f)]
+                if x["type"] != "template":
+                    cand += [(job, tag, "%s/%s" % (sdir, f), ("%s/%s" % (zdir, f)) if zdir else f) for f in code_chg]
+                else:
+                    extra += ["%s: %s/%s" % (tag, sdir, f) for f in code_chg]
+                extra += ["%s: %s/%s" % (tag, sdir, f) for f in d["extra"]]
                 missing += ["%s: %s/%s" % (tag, sdir, f) for f in d["missing"]]
-                bad += len([f for f in d["changed"] if wpsums.CODE_RE.search(f)]) + len(d["extra"]) + len(d["missing"])
+                bad += len(code_chg) + len(d["extra"]) + len(d["missing"])
             if not bad:
                 ok.append(label)
+        # Gemeinsame Bibliotheken: Manche Hersteller (z. B. Joomlashack: OSMap, OSMeta, osmylicensesmanager) bringen dieselbe Bibliothek in mehreren
+        # Paketen mit; bei jeder Installation wird sie mit der neuesten Fassung überschrieben. Ist die Datei identisch mit der aus einem anderen geprüften Paket, ist sie echt.
+        known: Dict[str, str] = {}
+        for job in jobs:
+            for _p, h in job[3].items():
+                known.setdefault(h, job[0]["element"])
+        shared, harmless, real = [], [], []
+        for job, tag, spath, zpath in cand:
+            sdir = next((d for d in sorted(local, key=len, reverse=True) if spath.startswith(d + "/")), "")
+            h = local.get(sdir, {}).get(spath[len(sdir) + 1:], "")
+            src = known.get(h)
+            if h and src and src != tag:
+                shared.append("%s: %s (identisch mit der Datei aus dem Paket von %s)" % (tag, spath, src))
+            else:
+                real.append((job, tag, spath, zpath))
+        diffs: Dict[str, Dict[str, Any]] = {}
+        if real:
+            ctx.progress("Geänderte Dateien gegenüberstellen")
+            todo = [r for r in real if extsums.SAFE_REL.match(r[2])][:MAX_DIFFS]
+            script = "".join("printf '@@DATEI %%s\\n' %s; head -c 120000 -- %s 2>/dev/null; printf '\\n@@ENDE\\n'; " % (sq(r[2]), sq(r[2])) for r in todo)
+            out = ctx.sh(script, timeout=120).out if todo else ""
+            texts = dict(re.findall(r"@@DATEI ([^\n]+)\n(.*?)\n@@ENDE", out, re.S))
+            for job, tag, spath, zpath in todo:
+                if spath not in texts:
+                    continue
+                try:
+                    pkg = extsums.zip_member(job[4], zpath, strip_top=job[5])
+                except Exception:
+                    continue
+                srv = texts[spath].encode("utf-8", "surrogateescape") if isinstance(texts[spath], str) else texts[spath]
+                if extsums.normalized_equal(pkg, srv):
+                    harmless.append("%s: %s" % (tag, spath))
+                    continue
+                a = pkg.decode("utf-8", "replace").splitlines()
+                b = texts[spath].splitlines()
+                rows = list(difflib.unified_diff(a, b, "Paket des Herstellers", "Datei auf dem Server", n=2, lineterm=""))[2:DIFF_LINES + 2]
+                diffs[spath] = {"file": spath, "kind": "diff", "note": "- = Paket des Herstellers, + = Datei auf dem Server",
+                                "code": [{"n": k + 1, "t": t[:300], **({"hit": [0, min(len(t), 300)]} if t[:1] in "+-" else {})} for k, t in enumerate(rows)]}
+        harmless_set = set(harmless)
+        changed = ["%s: %s" % (tag, spath) for _job, tag, spath, _z in real if "%s: %s" % (tag, spath) not in harmless_set]
+        evidence = [diffs[c.split(": ", 1)[1]] for c in changed if c.split(": ", 1)[1] in diffs]
+        if shared:
+            res.add("ok", "%d Datei(en) aus einer gemeinsamen Bibliothek (identisch mit einem anderen Paket)" % len(shared),
+                    "Diese Dateien weichen vom eigenen Paket ab, sind aber Byte für Byte identisch mit derselben Datei im Paket einer anderen geprüften Erweiterung. "
+                    "Das ist bei gemeinsam genutzten Bibliotheken normal (die zuletzt installierte Erweiterung bringt die neueste Fassung mit). Kein Handlungsbedarf.", shared[:60])
+        if harmless:
+            res.add("ok", "%d Datei(en) unterscheiden sich nur in Zeilenenden oder Leerzeichen" % len(harmless),
+                    "Der Code ist identisch mit dem Paket des Herstellers; nur Zeilenumbrüche (Windows/Linux) oder Leerzeichen am Zeilenende sind anders. Kein Handlungsbedarf.", harmless[:60])
     if changed:
         res.add("crit", "%d Erweiterungs-Datei(en) weichen vom Paket des Herstellers ab" % len(changed),
-                "Der Inhalt unterscheidet sich vom Paket, das der Update-Server für genau diese Version ausliefert. Entweder wurde die Datei manipuliert, oder jemand hat sie von Hand geändert.",
-                changed[:60], "Erweiterung über Joomla neu installieren (Erweiterungen -> Verwalten -> Update bzw. gleiches Paket erneut installieren). Eigene Änderungen vorher sichern.")
+                "Der Inhalt unterscheidet sich vom Paket, das der Update-Server für genau diese Version ausliefert. Entweder wurde die Datei manipuliert, oder jemand hat sie von Hand geändert. "
+                "Was genau anders ist, zeigt das Codefenster je Datei (- = Paket des Herstellers, + = Datei auf dem Server).",
+                changed[:60], "Erweiterung über Joomla neu installieren (Erweiterungen -> Verwalten -> Update bzw. gleiches Paket erneut installieren). Eigene Änderungen vorher sichern.",
+                evidence=evidence[:MAX_DIFFS])
     if extra:
         res.add("warn", "%d zusätzliche oder (bei Templates) geänderte PHP-Datei(en) in Erweiterungs-Ordnern" % len(extra),
                 "Diese Dateien gehören nicht zum Paket des Herstellers oder wurden an einem Template geändert (Anpassungen sind dort üblich). Ein Versteck für Hintertüren ist möglich.",
@@ -158,9 +227,8 @@ def ext_integrity(ctx, res):
                     "Ursachen: ein abgebrochenes Update, ein Virenscanner des Hosters, der Dateien entfernt hat, oder jemand hat sie gelöscht.",
                     count_by_ext(normal) + normal[:30],
                     "Erweiterung über Joomla neu installieren (Erweiterungen -> Verwalten -> Aktualisieren, oder das gleiche Paket noch einmal installieren). Das stellt die fehlenden Dateien wieder her; Einstellungen und Daten bleiben erhalten.")
-    if no_ref or skipped_other:
-        items = no_ref[:60] + ["%s (Paket-Sammlung, Inhalt wird einzeln geprüft)" % clean_line(x["name"]) for x in skipped_other[:10]]
-        res.add("info", "%d Erweiterung(en) nicht prüfbar" % len(no_ref), "Ohne öffentliche Update-Adresse, mit Lizenzschlüssel oder wenn der Update-Server die installierte Version nicht mehr anbietet, gibt es nichts zum Vergleichen.", items)
+    if no_ref:                     # Paket-Sammlungen sind nicht "nicht prüfbar": ihr Inhalt wird einzeln geprüft
+        res.add("info", "%d Erweiterung(en) nicht prüfbar" % len(no_ref), "Ohne öffentliche Update-Adresse, mit Lizenzschlüssel oder wenn der Update-Server die installierte Version nicht mehr anbietet, gibt es nichts zum Vergleichen.", no_ref[:60])
     if err:
         res.add("info", "Nicht alles konnte geprüft werden", "", err[:20])
     if ok and not (changed or extra):

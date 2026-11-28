@@ -68,6 +68,26 @@ class Parse(unittest.TestCase):
         self.assertEqual(intel.extension_hits(data, ["JCE"], "2.9.99.7"), {})           # behobene Version: kein Treffer
         e = intel.extension_hits(data, ["Convert Forms"], "4.4.1")
         self.assertEqual(e["Convert Forms"][0]["match"], "name")
+        self.assertEqual(intel.extension_hits(data, ["Convert Forms"], "5.2.7"), {})     # Text nennt "before 5.0", installiert ist 5.2.7: keine Meldung
+
+    def test_fixed_by_text(self):
+        self.assertTrue(intel.fixed_by_text("Flaw in X before 9.1.2 allows ...", "9.1.2"))
+        self.assertFalse(intel.fixed_by_text("Flaw in X before 9.1.2 allows ...", "9.1.1"))
+        self.assertTrue(intel.fixed_by_text("X through 8.4.1 is affected", "8.5"))
+        self.assertFalse(intel.fixed_by_text("X through 8.4.1 is affected", "8.4.1"))
+        self.assertFalse(intel.fixed_by_text("X is affected", "1.0"))                  # ohne Versionsangabe bleibt der Hinweis
+
+    def test_addon_plugin_is_not_the_product(self):
+        """ConvertForms-Plugin 'acymailing' (Gruppe convertforms) ist nicht AcyMailing: keine AcyMailing-Lücke melden."""
+        from claudia.checks import threat
+        data = {"cves": [intel.compact_cve(nvd_item("CVE-2026-94132", "RCE in AcyMailing Enterprise.", 9.5, [cpe("acymailing", "acyba", versionEndExcluding="10.6")]))]}
+        ctx = mock.MagicMock(cms="joomla")
+        with mock.patch("claudia.checks.ext.get_ext_fs", return_value={"manifests": [
+                {"type": "plugin", "group": "convertforms", "element": "acymailing", "name": "PLG_CONVERTFORMS_ACYMAILING", "version": "1.0", "author": "Tassos Marinos"},
+                {"type": "component", "group": "", "element": "com_acym", "name": "AcyMailing", "version": "9.0", "author": "Acyba"}]}):
+            inv = threat.inventory(ctx)
+        hits = threat.evaluate(data, "", inv, "joomla")["ext"]
+        self.assertEqual([h["inv"]["label"] for h in hits], ["AcyMailing"])         # nur das echte Produkt
 
 
 class Load(unittest.TestCase):

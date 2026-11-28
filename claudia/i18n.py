@@ -110,9 +110,30 @@ class Catalog:
                 return _fill(v, [self._group(g) for g in m.groups()])
         return None
 
-    def _group(self, g: str) -> str:
-        """Eingesetzte Textteile (z. B. 'gespeicherten Prozeduren') werden mitübersetzt, Zahlen und Namen bleiben."""
-        return self.exact.get(g, g) if g and len(g) <= 120 else g
+    def _group(self, g: str, depth: int = 0) -> str:
+        """Eingesetzte Textteile (z. B. 'gespeicherten Prozeduren') werden mitübersetzt, Zahlen und Namen bleiben.
+        Auch eingesetzte Teile, die selbst einer Vorlage folgen ('tmp: 4 Datei(en), 12 KB'), mehrere davon mit '; ' getrennt."""
+        if not g or len(g) > 200:
+            return g
+        if g in self.exact:
+            return self.exact[g]
+        if depth >= 2:
+            return g
+        parts = g.split("; ")
+        out = []
+        for part in parts:
+            r = None
+            for rx, n, v, _ in self.templates:
+                m = rx.match(part)
+                if m:
+                    r = _fill(v, [self._group(x, depth + 1) for x in m.groups()])
+                    break
+            if r is None and ": " in part:                  # "tmp: 4 Datei(en), 12 KB": Name bleibt, der Wert wird übersetzt
+                head, rest = part.split(": ", 1)
+                r2 = self._group(rest, depth + 1)
+                r = head + ": " + r2 if r2 != rest else None
+            out.append(r if r is not None else part)
+        return "; ".join(out)
 
     def _one(self, s: str) -> str:
         r = self._match(s)
@@ -132,6 +153,9 @@ class Catalog:
                 lab = self._match(m.group(1)[:-1]) + ":"
             if lab is not None:
                 return lab + m.group(2) + self._one(m.group(3))
+            val = self._match(m.group(3))                 # Beschriftung ist ein Name (z. B. Ordner "tmp"), der Wert eine bekannte Vorlage
+            if val is not None:
+                return m.group(1) + m.group(2) + val
         for end in (".", ":"):                    # Satzzeichen am Ende gehört nicht zum Schlüssel
             if s.endswith(end) and len(s) > 2:
                 r = self._match(s[:-1])

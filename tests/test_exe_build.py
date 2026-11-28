@@ -133,13 +133,28 @@ class Selbsttest(unittest.TestCase):
 
 class EinstiegUndBuild(unittest.TestCase):
     def test_entry_replaces_missing_streams(self):
-        with mock.patch.object(sys, "stdout", None), mock.patch.object(sys, "stderr", None):
+        d = tempfile.mkdtemp(prefix="claudia-log-")
+        with mock.patch.dict(os.environ, {"CLAUDIA_LOG_DIR": d}), \
+                mock.patch.object(sys, "stdout", None), mock.patch.object(sys, "stderr", None), \
+                mock.patch("faulthandler.enable"), mock.patch("logging.basicConfig"):
             exe_main._streams()
             self.assertIsNotNone(sys.stdout)
-            sys.stdout.write("x")                                    # darf nicht abstürzen
+            sys.stdout.write("x-ausgabe")                            # darf nicht abstürzen
             self.assertIsNotNone(sys.stderr)
             sys.stdout.close()
-            sys.stderr.close()
+        with open(os.path.join(d, "claudia.log"), encoding="utf-8") as f:
+            text = f.read()
+        self.assertIn("===== Start", text)                           # Programmprotokoll für die Fehlersuche
+        self.assertIn("x-ausgabe", text)
+
+    def test_log_rotates_when_large(self):
+        d = tempfile.mkdtemp(prefix="claudia-log-")
+        with open(os.path.join(d, "claudia.log"), "w") as f:
+            f.write("a" * (exe_main.MAX_LOG + 10))
+        with mock.patch.dict(os.environ, {"CLAUDIA_LOG_DIR": d}):
+            exe_main._log_oeffnen().close()
+        self.assertTrue(os.path.isfile(os.path.join(d, "claudia.alt.log")))
+        self.assertLess(os.path.getsize(os.path.join(d, "claudia.log")), 1000)
 
     def test_entry_keeps_existing_streams(self):
         out = io.StringIO()

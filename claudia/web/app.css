@@ -174,9 +174,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); backgro
 .grid2.stretch { align-items: stretch; }
 .side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .side > .card + .card { margin-top: 0; }
-.uni-slot { margin-top: auto; padding: 0 22px 22px; display: flex; justify-content: flex-end; }
-.uni-row-bar { max-width: 980px; margin: 28px auto 0; padding: 0 16px; display: flex; justify-content: flex-end; }
-.uni-row-bar[hidden] { display: none; }
 .btn[disabled] { opacity: .5; cursor: not-allowed; filter: none; }
 .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 8px; }
 
@@ -563,11 +560,18 @@ details.cw > summary:focus-visible { outline: 3px solid #9fe3b3; outline-offset:
   --accent: #4aa3ff; --accent-ink: #06182b; --accent-soft: #14304d;
   --side: #0a121b; --side-ink: #e3edf7; --side-muted: #aebfce; --side-line: #254058; --side-on: rgba(255,255,255,.10); --side-accent: #4aa3ff;
   --ok: #7bd88f; --crit: #ff8a80; --warn: #ffc566; --info: #7fb8ff;
-  --foot-h: 32px; --side-w: 150px; color-scheme: dark;
+  /* Hinweis-Kästen im dunklen Design: dunkler Grund, heller Text (sonst greifen die hellen Werte und der Text ist kaum lesbar) */
+  --ok-soft: #15301f; --ok-ink: #aef0bf; --info-soft: #14304d; --info-ink: #c4defd; --warn-soft: #33280f; --warn-ink: #ffdc9a;
+  --crit-soft: #3d1c1a; --crit-ink: #ffc0b8; --skip-soft: #1b2d3e; --skip-ink: #b9c9d6;
+  --code-bg: #2b1613; --code-head: #3b1d19; --code-ink: #ff9d92; --code-line: #5a2b25;
+  --foot-h: 32px; --side-w: 150px; --sbw: 0px; color-scheme: dark;
 }
 :root[data-theme="light"] {
   --bg: #edf2f7; --panel: #ffffff; --sunk: #f3f6fa; --log: #f7f9fb; --ink: #14212e; --muted: #475b70; --line: #cbd7e3; --track: #d5dfe9;
   --accent: #1f6fd1; --accent-ink: #ffffff; --accent-soft: #dce9f9;
+  --ok-soft: #dff2e7; --ok-ink: #17623a; --info-soft: #e1ebf8; --info-ink: #264f86; --warn-soft: #fbefd2; --warn-ink: #7d5200;
+  --crit-soft: #fbe2de; --crit-ink: #8f2418; --skip-soft: #e9eef1; --skip-ink: #4e5d6a;
+  --code-bg: #fff3f1; --code-head: #fbdcd7; --code-ink: #a3231a; --code-line: #efb9b1;
   --side: #1d2b3a; --side-ink: #e3edf7; --side-muted: #c9d6e3; --side-line: #2c4258; --side-on: rgba(255,255,255,.16); --side-accent: #9cc7ff;
   --ok: #1f7a3d; --crit: #b3261e; --warn: #8a5a00; --info: #1f5fa8; color-scheme: light;
 }
@@ -615,7 +619,6 @@ main > * { max-width: 1180px; margin-left: auto; margin-right: auto; }
 .vibe { display: block; margin-top: 4px; }
 .bar { left: var(--side-w); bottom: var(--foot-h); }
 .bar-in { max-width: 1180px; }
-.uni-row-bar { position: fixed; left: var(--side-w); bottom: calc(var(--foot-h) + 8px); }
 
 /* Fußleiste: nur Status und Hinweis, die Version steht in der Titelleiste */
 .sbar { position: fixed; left: 0; right: 0; bottom: 0; height: var(--foot-h); z-index: 25; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 0 16px;
@@ -650,7 +653,7 @@ html.has-titlebar .bar { bottom: var(--foot-h); }
 .dcard { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 0; overflow: hidden; }
 .dcard > h3 { margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 14px; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
 .dcard > .dbody { padding: 12px 14px; }
-.dcard svg { display: block; width: 100%; height: auto; }
+.dcard svg.dchart { display: block; width: 100%; height: auto; }     /* nur das Diagramm volle Breite, nicht die kleinen Symbole */
 .dash-axis { font-size: 11px; fill: var(--muted); font-family: Consolas, monospace; }
 .dash-grid { stroke: var(--line); stroke-width: 1; }
 .hbar { display: grid; grid-template-columns: 130px 1fr 56px; gap: 10px; align-items: center; padding: 6px 0; cursor: pointer; background: none; border: 0; width: 100%; color: var(--ink); font: inherit; text-align: left; }
@@ -699,6 +702,30 @@ html.has-titlebar .bar { bottom: var(--foot-h); }
   .topbar { flex-wrap: wrap; height: auto; padding: 8px 12px; }
   main#view { padding: 14px 12px 0; }
   .bar { left: 0; }
-  .uni-row-bar { left: 0; }
   html.has-titlebar .rail { top: 40px; }
 }
+
+/* ---------- 3.1.1: Symbole, Papierkorb, Bildlaufleiste, Fensterknöpfe, Codefenster mit Gegenüberstellung */
+.step .n svg, .rail-btn .ri svg { width: 20px; height: 20px; display: block; }
+/* Form bleibt in jedem Zustand gleich (alte Regeln gaben erledigten/aktiven Schritten einen gefüllten Kreis): nur die Farbe zeigt den Zustand */
+.step .n, .step.done .n, .step.on .n { background: transparent; border: 0; border-radius: 0; width: auto; height: auto; }
+.step.done .n { color: var(--ok); }
+.step.on .n { color: var(--side-accent); }
+.rail-del:hover { color: var(--crit); }
+.rail-del:hover .ri svg { stroke: var(--crit); }
+.tb-btn { cursor: pointer; transition: background .12s; }
+.tb-btn:hover { background: rgba(255,255,255,.14); }
+.tb-btn:active { background: rgba(255,255,255,.22); }
+:root[data-theme="light"] .tb-btn:hover { background: rgba(0,0,0,.08); }
+:root[data-theme="light"] .tb-btn:active { background: rgba(0,0,0,.14); }
+.tb-close:hover, :root[data-theme="light"] .tb-close:hover { background: #e81123; color: #fff; }
+/* Im Programmfenster endet der Seitenbereich über der Fußleiste: die Bildlaufleiste läuft nicht darunter */
+html.has-titlebar body { bottom: var(--foot-h); }
+html.has-titlebar.maxed body { bottom: var(--foot-h); }
+/* "Prüfung starten"-Leiste endet vor der Bildlaufleiste */
+html.has-titlebar .bar { right: calc(8px + var(--sbw)); bottom: var(--foot-h); }
+html.has-titlebar.maxed .bar { right: var(--sbw); }
+.cw-row.cw-add { background: rgba(61,220,132,.14); color: #8ff0b7; }
+.cw-row.cw-del { background: rgba(255,90,80,.16); color: #ffa39c; }
+.cw-row.cw-hunk { color: #7fb8ff; }
+.notice .btn, .notice .btn.mini { color: var(--ink); border-color: currentColor; }

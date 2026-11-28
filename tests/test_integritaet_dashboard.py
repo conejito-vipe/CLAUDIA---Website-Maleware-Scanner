@@ -28,6 +28,14 @@ class Integritaet(unittest.TestCase):
         with open(os.path.join(self.dir, "PRUEFSUMMEN.txt"), "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
 
+    def test_programmdatei_meldet_nichts(self):
+        """Windows-/Mac-Programmdatei: keine Dateiliste nötig, kein Hinweis 'PRUEFSUMMEN.txt fehlt'."""
+        from unittest import mock
+        with mock.patch.object(sys, "frozen", True, create=True):
+            r = integritaet.pruefen()
+        self.assertTrue(r["ok"])
+        self.assertTrue(r.get("programmdatei"))
+
     def test_alles_da(self):
         r = integritaet.pruefen(self.dir)
         self.assertTrue(r["ok"])

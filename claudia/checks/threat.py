@@ -11,6 +11,10 @@ from ..registry import check
 from ..util import clean_line, trunc
 
 G = "grundlagen"
+# Plugin-Gruppen von Joomla selbst; andere Gruppen gehören zu einer Erweiterung (z. B. convertforms, acf, j2store)
+JOOMLA_PLUGIN_GROUPS = {"actionlog", "api-authentication", "authentication", "behaviour", "captcha", "content", "editors", "editors-xtd", "extension", "fields",
+                        "filesystem", "finder", "installer", "media-action", "multifactorauth", "privacy", "quickicon", "sampledata", "schemaorg", "system", "task",
+                        "twofactorauth", "user", "webservices", "workflow", "search", "console"}
 
 
 def load_intel(ctx) -> Dict[str, Any]:
@@ -36,6 +40,11 @@ def inventory(ctx) -> List[Dict[str, str]]:
         if "joomla" in (m.get("author") or "").lower() and "project" in (m.get("author") or "").lower():
             continue
         el = re.sub(r"^(plg|com|mod|tpl)_", "", m.get("element", ""), flags=re.I)
+        group = (m.get("group") or "").lower()
+        if m["type"] == "plugin" and group and group not in JOOMLA_PLUGIN_GROUPS:
+            # Zusatz-Plugin einer anderen Erweiterung (z. B. convertforms/acymailing = ConvertForms-Anbindung AN AcyMailing): das Element nennt das Ziel,
+            # nicht das Produkt. Allein würde "acymailing" fälschlich Lücken in AcyMailing selbst zuordnen.
+            el = "%s_%s" % (group, el)
         names = [m.get("name", ""), el]
         out.append({"key": m.get("element") or m.get("name"), "names": [n for n in names if n and not re.match(r"^(COM|MOD|PLG|TPL)_", n) and intelmod._norm(n) not in intelmod.GENERIC_NAMES], "version": m["version"],
                     "kind": m["type"], "label": m.get("name") or m.get("element")})

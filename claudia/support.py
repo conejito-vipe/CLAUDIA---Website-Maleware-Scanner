@@ -23,8 +23,23 @@ def scrub(text: str, hide: List[str]) -> str:
     return t[:MAX_TEXT]
 
 
+def programm_protokoll() -> str:
+    """Programmprotokoll der Programmdatei (schreibt installer/exe_main.py): Windows %APPDATA%\\CLAUDIA\\protokoll\\claudia.log,
+    Mac ~/Library/Logs/CLAUDIA/claudia.log."""
+    import os
+    base = os.environ.get("CLAUDIA_LOG_DIR")
+    if not base:
+        if os.name == "nt":
+            base = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), "CLAUDIA", "protokoll")
+        elif sys.platform == "darwin":
+            base = os.path.join(os.path.expanduser("~"), "Library", "Logs", "CLAUDIA")
+        else:
+            base = os.path.join(os.path.expanduser("~"), ".claudia", "protokoll")
+    return os.path.join(base, "claudia.log")
+
+
 def build(version: str, info: Dict[str, Any], results: List[Dict[str, Any]], actions: List[Dict[str, Any]], update_log: str, wissen_stand: str,
-          hide: List[str], now: float = 0.0) -> str:
+          hide: List[str], now: float = 0.0, prog_log: str = "") -> str:
     """Setzt das Paket zusammen. hide: Texte, die nie erscheinen dürfen (Passwort, Host, Benutzer, Ordner)."""
     cms = str((info or {}).get("cms") or "?")
     out = ["CLAUDIA Support-Paket", "Erstellt: %s" % time.strftime("%Y-%m-%d %H:%M", time.localtime(now or time.time())), "",
@@ -53,5 +68,7 @@ def build(version: str, info: Dict[str, Any], results: List[Dict[str, Any]], act
         out.append("- keine")
     lines = [scrub(x, hide) for x in (update_log or "").splitlines()[-MAX_LINES:] if x.strip()]
     out += ["", "Update-Protokoll (letzte Zeilen):"] + (["  " + x for x in lines] or ["  (leer)"])
+    plines = [scrub(x, hide) for x in (prog_log or "").splitlines()[-MAX_LINES:] if x.strip()]
+    out += ["", "Programmprotokoll (letzte Zeilen):"] + (["  " + x for x in plines] or ["  (leer)"])
     out += ["", "Hinweis: Dieses Paket enthält keine Passwörter, keine Serveradresse und keine Dateiinhalte. Bitte trotzdem kurz durchsehen, bevor du es weitergibst."]
     return "\n".join(out) + "\n"
