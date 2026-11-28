@@ -160,7 +160,7 @@ def render_txt(b: Dict[str, Any]) -> str:
         if r.get("message"):
             add("    %s: %s" % (T("Hinweis zum Test"), r["message"]))
         for f in r["findings"]:
-            add("  * [%s] %s" % (T(SEV_LABEL[f["sev"]]), f["title"]))
+            add("  * [%s] %s" % (T("Erläuterung" if f.get("context") else SEV_LABEL[f["sev"]]), f["title"]))
             if f.get("detail"):
                 add("      %s" % f["detail"])
             for it in f.get("items", []):
@@ -274,7 +274,7 @@ def render_html(b: Dict[str, Any]) -> str:
         if r.get("message"):
             add("<p><b>%s:</b> %s</p>" % (e(T("Zum Test")), e(r["message"])))
         for f in r["findings"]:
-            add("<div class='f %s'><h3><span class='badge %s'>%s%s</span>%s</h3>" % (e(f["sev"]), e(f["sev"]), icon_svg(f["sev"]), e(T(SEV_LABEL[f["sev"]])), e(f["title"])))
+            add("<div class='f %s'><h3><span class='badge %s'>%s%s</span>%s</h3>" % (e(f["sev"]), e(f["sev"]), icon_svg(f["sev"]), e(T("Erläuterung" if f.get("context") else SEV_LABEL[f["sev"]])), e(f["title"])))
             if f.get("detail"):
                 add("<p>%s</p>" % e(f["detail"]))
             if f.get("items"):

@@ -224,7 +224,7 @@ def root_files(ctx, res):
         res.add("info", "Entwickler-Dateien aus dem Joomla-Paket", "Gehören nicht auf einen Live-Server, sind aber harmlos.", dev, "Kann nach einem Backup gelöscht werden.")
     if unknown_other:
         res.add("info", "Weitere Einträge, die nicht zum Joomla-Kern gehören",
-                "Das sind oft eigene Ordner (z. B. files, Backups). Bitte kurz prüfen, ob du sie kennst.", unknown_other)
+                "Das sind oft eigene Ordner (z. B. files, Backups). Bitte kurz prüfen, ob du sie kennst.", unknown_other, context=True)
     if not (knownbad or unknown_php or nodemod or hidden_risk):
         res.add("ok", "Keine auffälligen Einträge im Hauptverzeichnis", "%d Einträge geprüft." % n)
 

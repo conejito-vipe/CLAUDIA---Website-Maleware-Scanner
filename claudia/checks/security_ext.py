@@ -210,7 +210,7 @@ def security_ext(ctx, res):
     if not main_present:
         res.add("info", ctx.prof["no_sec_title"],
                 "Auf dieser %s-Seite läuft keine bekannte Web-Firewall und kein Schadcode-Scanner. Angriffe auf Lücken werden dann nicht abgefangen." % name,
-                why_lines, ctx.prof["install_hint"] + " (Empfehlungen und Bewertungen siehe nächster Befund).")
+                why_lines, ctx.prof["install_hint"] + " (Empfehlungen und Bewertungen siehe nächster Befund).", context=True)
     items = comparison()
     head = (data.get("hinweis_joomla", "") if cms != "wordpress" else
             "Bewertungen von wordpress.org werden bei der Prüfung live abgefragt (nur online). Ohne Verbindung fehlen die Zahlen.")

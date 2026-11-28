@@ -24,9 +24,13 @@ class Finding:
     items: List[str] = field(default_factory=list)
     hint: str = ""                # Handlungsempfehlung
     evidence: List[Dict[str, Any]] = field(default_factory=list)   # Fundstellen mit Code: {file, line, note, code:[{n, t, hit:[von,bis]|None}]}
+    context: bool = False         # reine Erläuterung (z. B. "25 .htaccess-Dateien gefunden"): zählt nicht für den Status der Prüfung
 
     def to_dict(self) -> Dict[str, Any]:
-        return dataclasses.asdict(self)
+        d = dataclasses.asdict(self)
+        if not self.context:
+            d.pop("context", None)
+        return d
 
 
 @dataclass
@@ -41,8 +45,8 @@ class CheckResult:
     message: str = ""             # Fehler- oder Überspring-Grund
 
     def add(self, sev: str, title: str, detail: str = "", items: Optional[List[str]] = None, hint: str = "",
-            evidence: Optional[List[Dict[str, Any]]] = None) -> Finding:
-        f = Finding(sev, title, detail, list(items or []), hint, list(evidence or []))
+            evidence: Optional[List[Dict[str, Any]]] = None, context: bool = False) -> Finding:
+        f = Finding(sev, title, detail, list(items or []), hint, list(evidence or []), bool(context) and sev == "info")
         self.findings.append(f)
         return f
 
@@ -51,11 +55,10 @@ class CheckResult:
             return
         worst = "ok"
         for f in self.findings:
+            if f.context:                 # Erläuterungen machen aus "in Ordnung" keinen Hinweis
+                continue
             if SEV_RANK[f.sev] > SEV_RANK[worst]:
                 worst = f.sev
-        # Nur Informationen plus ein ausdrückliches "in Ordnung": das Ergebnis IST in Ordnung (die Infos sind Erläuterungen, keine Hinweise)
-        if worst == "info" and any(f.sev == "ok" for f in self.findings):
-            worst = "ok"
         self.status = worst
 
     def to_dict(self) -> Dict[str, Any]:

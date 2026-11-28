@@ -489,12 +489,12 @@ echo '@@NOW'; date +%s
         res.add("info", "%d Erweiterung(en) mit base64/eval-Dateien wurden zusammen mit ihrer Beschreibungsdatei geändert (Update)" % len(ext_updates),
                 "Wird eine Erweiterung aktualisiert, ändern sich ihre Dateien und die Beschreibungsdatei (xml) gleichzeitig. Das spricht für ein normales Update. "
                 "Ein Angreifer ändert meist nur eine einzelne Datei und lässt die Beschreibungsdatei unberührt.",
-                ["%s: %d Datei(en), Update am %s" % (r, len(f), time.strftime("%Y-%m-%d", time.localtime(manifest_mt[r]))) for r, f in sorted(ext_updates.items())][:25])
+                ["%s: %d Datei(en), Update am %s" % (r, len(f), time.strftime("%Y-%m-%d", time.localtime(manifest_mt[r]))) for r, f in sorted(ext_updates.items())][:25], context=True)
     if wave_items:
         res.add("info", "%d Datei(en) mit base64/eval wurden gemeinsam mit vielen anderen geändert (vermutlich Update)" % len(wave_items),
                 "Mindestens 10 Dateien wurden innerhalb derselben Stunde geändert. Das passiert bei Joomla- und Erweiterungs-Updates. "
                 "Falls du zu dem Zeitpunkt nichts aktualisiert hast, bitte genauer prüfen (Test 'Kürzlich geänderte Dateien').",
-                wave_items[:15])
+                wave_items[:15], context=True)
     if old2:
         res.add("info", "%d ältere Datei(en) mit base64/eval (außerhalb von vendor/libraries)" % old2,
                 "Meist legitim (Erweiterungen). Wird nur zur Vollständigkeit gezählt.")
@@ -552,7 +552,7 @@ echo '@@NOW'; date +%s
     if long_data:
         res.add("info", "%d PHP-Datei(en) mit langen Zeilen, aber ohne Befehle (Datentabellen)" % len(long_data),
                 "Lange Zeilen allein sind kein Hinweis auf Schadcode. Hier fehlen eval, base64_decode, $_POST usw. Üblich bei Icon-Listen und Geräte-Erkennung.",
-                long_data[:15])
+                long_data[:15], context=True)
     if not (real or recent2 or long_recent or a8_head or a8_img or a8_txt):
         res.add("ok", "Keine Hintertür-Muster in PHP-Dateien gefunden",
                 "Hinweis: Eine saubere Suche beweist nicht, dass nichts da ist - gut versteckter Code kann durch Muster rutschen.")
@@ -617,7 +617,7 @@ find . \( @PRUNE2@ \) -prune -o \( -name .git -o -name .svn -o -name .env -o -na
     if common:
         res.add("info", "%d Datei(en) mit Namen, die in Joomla und Erweiterungen üblich sind" % len(common),
                 "Namen wie radio.php stehen auch in Joomlas Formularfeldern und Layouts; Entwicklerdateien wie .php-cs-fixer.dist.php gehören zum Joomla-Paket. "
-                "Verdächtig wären sie nur in images, media, tmp oder im Hauptverzeichnis.", common[:20])
+                "Verdächtig wären sie nur in images, media, tmp oder im Hauptverzeichnis.", common[:20], context=True)
     dev = []
     for ln in sec.get("DEV", "").splitlines():
         p = ln.split("\t")

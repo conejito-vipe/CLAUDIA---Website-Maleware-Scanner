@@ -22,8 +22,8 @@ WEB = os.path.join(ROOT, "claudia", "web")
 RADAR_JS = open(os.path.join(WEB, "radar.js"), encoding="utf-8").read()
 
 PAGE = """<!doctype html><html><head><style>
-:root{--ok:#2b8a58;--info:#3a6db0;--warn:#d28a00;--skip:#8896a3;--accent:#0b6e7f}
-:root[data-theme=dark]{--ok:#4fb581;--info:#78a6e6;--warn:#e6a526;--skip:#78899a;--accent:#4cc3d4}
+:root{--ok:#2b8a58;--info:#3a6db0;--warn:#d28a00;--crit:#c53a2b;--skip:#8896a3;--accent:#0b6e7f}
+:root[data-theme=dark]{--ok:#4fb581;--info:#78a6e6;--warn:#e6a526;--crit:#ff8a80;--skip:#78899a;--accent:#4cc3d4}
 body{margin:0;background:#fff}.radar{width:300px;height:300px;padding:4px;box-sizing:border-box}canvas{width:100%;height:100%;display:block}
 </style></head><body><div class="radar"><canvas id="c"></canvas></div><script>""" + RADAR_JS + """</script></body></html>"""
 
@@ -66,14 +66,14 @@ class RadarDrawing(unittest.TestCase):
         pos = pg.evaluate(SET_JS, [PLAN, STATUS, "f_wait", True])
         return {p["id"]: pg.evaluate(PIX_JS, [p["x"], p["y"]]) for p in pos}
 
-    def test_critical_is_amber_ok_is_calm_never_red(self):
+    def test_critical_is_red_ok_is_calm(self):
+        """Seit 3.1.1: kritisch in Rot wie in Legende und Ergebnis (vorher Bernstein)."""
         for theme in ("", "dark"):
             with self.subTest(theme=theme or "hell"):
                 pg = self.page(theme=theme)
                 col = self.colors(pg)
                 r, g, b = col["d_crit"]
-                self.assertTrue(r > 190 and 110 < g < 235 and b < 140, "kritisch muss bernsteinfarben sein: %s" % col["d_crit"])
-                self.assertEqual(pg.evaluate(RED_JS), 0, "es darf kein rot gezeichnet werden")
+                self.assertTrue(r > 150 and r > g + 40 and r > b + 40, "kritisch muss rot sein: %s" % col["d_crit"])
                 ok, crit = col["a_ok"], col["d_crit"]
                 self.assertLess(sum(ok), 200, "In Ordnung wird nicht als Punkt gezeigt (nur Funde)")
                 self.assertLess(sum(col["e_skip"]), 200, "Uebersprungen wird nicht als Punkt gezeigt")

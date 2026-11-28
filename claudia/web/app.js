@@ -1847,7 +1847,7 @@ function resultCard(r) {
   if (r.message) body.append(h("div", { class: "notice " + (r.status === "error" ? "err" : "warn") }, h("div", {}, h("strong", { text: r.status === "error" ? "Der Test ist fehlgeschlagen" : "Der Test wurde übersprungen" }), r.message)));
   for (const f of r.findings) {
     body.append(h("div", { class: "finding", "data-s": f.sev },
-      h("h4", {}, badge(f.sev, SEV_LABEL[f.sev], "margin-right:8px"), f.title),
+      h("h4", {}, badge(f.context ? "skipped" : f.sev, f.context ? "Erläuterung" : SEV_LABEL[f.sev], "margin-right:8px"), f.title),
       f.detail ? h("p", { text: f.detail }) : null,
       f.items && f.items.length ? h("ul", { class: "items" }, f.items.map(t => ratingLine(t))) : null,
       f.evidence && f.evidence.length ? h("div", { class: "cw-list" }, f.evidence.map(ev => codeWindow(ev, false))) : null,

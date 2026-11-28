@@ -213,7 +213,7 @@ def php_settings(ctx, res):
     for sev, title, detail, items, hint in rows:
         res.add(sev, title, detail, items, hint)
         shown = shown or sev in ("warn", "crit")
-    res.add("info", "Quelle der Einstellungen", note, [x.strip() for x in lines_of(sec.get("INIFILES", ""))][:6])
+    res.add("info", "Quelle der Einstellungen", note, [x.strip() for x in lines_of(sec.get("INIFILES", ""))][:6], context=True)
 
 
 # ============================================================================ configuration.php

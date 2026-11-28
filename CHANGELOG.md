@@ -40,7 +40,7 @@ Generated from `claudia/docs/aenderungen.en.txt` (do not edit by hand).
 - **How:** actions.py.
 
 ### Interface
-- **What:** Uninstall is a trash can at the bottom of the sidebar. The navigation icons keep their shape (SVG instead of characters that Windows showed as coloured emojis). The steps can be clicked again from the dashboard and the help. The "Start check" bar and the footer no longer cover the scroll bar. The window buttons show a colour on hover. Notice boxes (e.g. update search) are readable in the dark design. The icons in the dashboard have normal size. The radar shows only the levels found, in their colour, critical findings close to the centre but never in it.
+- **What:** Uninstall is a trash can at the bottom of the sidebar. The navigation icons keep their shape (SVG instead of characters that Windows showed as coloured emojis). The steps can be clicked again from the dashboard and the help. The "Start check" bar and the footer no longer cover the scroll bar. The window buttons show a colour on hover. Notice boxes (e.g. update search) are readable in the dark design. The icons in the dashboard have normal size. The radar shows only the levels found, in their colour, critical findings in red (previously amber) close to the centre but never in it.
 - **Why:** Feedback after testing 3.1.0.
 - **How:** app.js, app.css, radar.js, index.html.
 

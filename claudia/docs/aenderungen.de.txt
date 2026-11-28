@@ -28,7 +28,7 @@ Was: "Temp-Ordner leeren" zeigt Anzahl der Dateien und Größe je Ordner.
 Warum: Damit man entscheiden kann, ob sich das Leeren lohnt.
 Wie: actions.py.
 ### Oberfläche
-Was: Deinstallieren ist ein Papierkorb unten in der Seitenleiste. Die Symbole der Navigation behalten ihre Form (SVG statt Zeichen, die Windows als bunte Emojis zeigte). Aus Dashboard und Hilfe sind die Schritte wieder anklickbar. Die Leiste "Prüfung starten" und die Fußleiste verdecken die Bildlaufleiste nicht mehr. Die Fensterknöpfe zeigen beim Darüberfahren eine Farbe. Hinweis-Kästen (z. B. Update-Suche) sind im dunklen Design lesbar. Die Symbole im Dashboard sind normal groß. Der Radar zeigt nur gefundene Stufen in ihrer Farbe, kritische Funde nah an der Mitte, aber nie ganz darin.
+Was: Deinstallieren ist ein Papierkorb unten in der Seitenleiste. Die Symbole der Navigation behalten ihre Form (SVG statt Zeichen, die Windows als bunte Emojis zeigte). Aus Dashboard und Hilfe sind die Schritte wieder anklickbar. Die Leiste "Prüfung starten" und die Fußleiste verdecken die Bildlaufleiste nicht mehr. Die Fensterknöpfe zeigen beim Darüberfahren eine Farbe. Hinweis-Kästen (z. B. Update-Suche) sind im dunklen Design lesbar. Die Symbole im Dashboard sind normal groß. Der Radar zeigt nur gefundene Stufen in ihrer Farbe, kritische Funde in Rot (vorher Bernstein) nah an der Mitte, aber nie ganz darin.
 Warum: Rückmeldungen nach dem Test von 3.1.0.
 Wie: app.js, app.css, radar.js, index.html.
 ### Setup

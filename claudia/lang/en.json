@@ -7938,6 +7938,7 @@
 "Rot (-) = so im Paket des Herstellers, grün (+) = so auf dem Server.": "Red (-) = as in the vendor package, green (+) = as on the server.",
 "Seite auch nach dem Neuladen nicht geladen (WebView2 prüfen)": "Page still not loaded after reloading (check WebView2)",
 "Seite nach %d s nicht geladen, lade neu:": "Page not loaded after %d s, reloading:",
-"Was genau anders ist, zeigt das Codefenster je Datei (- = Paket des Herstellers, + = Datei auf dem Server).": "The code window per file shows exactly what is different (- = vendor package, + = file on the server)."
+"Was genau anders ist, zeigt das Codefenster je Datei (- = Paket des Herstellers, + = Datei auf dem Server).": "The code window per file shows exactly what is different (- = vendor package, + = file on the server).",
+"Erläuterung": "Explanation"
 }
 }

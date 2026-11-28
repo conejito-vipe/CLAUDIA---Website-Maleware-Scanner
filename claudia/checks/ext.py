@@ -131,7 +131,7 @@ def extensions_fs(ctx, res):
         res.add("ok" if not vulnerable else "info", "Erweiterungen auf bekannt sicherem Stand", "Laut der Vergleichsliste vom %s." % ctx.adv.get("stand", "?"), current)
     if sub_info:
         res.add("info", "Zugehörige Plugins und Module wurden nicht einzeln verglichen",
-                "Untererweiterungen tragen oft eine eigene, niedrige Versionsnummer (z. B. 1.0), die nichts über die Sicherheit aussagt.", sub_info)
+                "Untererweiterungen tragen oft eine eigene, niedrige Versionsnummer (z. B. 1.0), die nichts über die Sicherheit aussagt.", sub_info, context=True)
     if not vulnerable and not current:
         res.add("ok", "Keine der bekannten verwundbaren Erweiterungen installiert",
                 "Geprüft gegen: %s." % ", ".join(a["title"] for a in adv))
@@ -143,7 +143,7 @@ def extensions_fs(ctx, res):
         authors[m["author"] or "(kein Autor)"] = authors.get(m["author"] or "(kein Autor)", 0) + 1
     res.add("info", "%d Erweiterungen insgesamt, davon %d nicht vom Joomla-Projekt" % (len(ms), len(third)),
             "Die vollständige Liste liegt im Bericht (erweiterungen.csv). Prüfe, ob du alle Hersteller kennst.",
-            ["%s: %d" % (k, v) for k, v in sorted(authors.items(), key=lambda kv: (-kv[1], kv[0]))][:40])
+            ["%s: %d" % (k, v) for k, v in sorted(authors.items(), key=lambda kv: (-kv[1], kv[0]))][:40], context=True)
     unnamed = [m for m in third if not m["author"] or not m["version"]]
     if unnamed:
         res.add("warn", "%d Erweiterung(en) ohne Autor oder Version" % len(unnamed),

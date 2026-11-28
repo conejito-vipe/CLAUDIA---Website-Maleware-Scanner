@@ -186,7 +186,7 @@ echo '@@NOW'; date +%s
     recent = [f for f in files if _recent(f[1], 45)]
     res.add("info", "%d .htaccess-Datei(en) gefunden" % len(files),
             "Jüngst geänderte (letzte 45 Tage) sind mit * markiert.",
-            ["%s%s  (%s, %d Byte)" % ("* " if f in recent else "", clean_line(f[0]), f[1], f[2]) for f in files][:80])
+            ["%s%s  (%s, %d Byte)" % ("* " if f in recent else "", clean_line(f[0]), f[1], f[2]) for f in files][:80], context=True)
     known = [(p, b) for p, bl in blocks.items() for b in bl if _ht_block_name(b[2])]
     unknown = [(p, b) for p, bl in blocks.items() for b in bl if not _ht_block_name(b[2])]
     if known:
@@ -200,7 +200,7 @@ echo '@@NOW'; date +%s
                 ["%s Zeilen %d-%d: %s" % (clean_line(p), b[0], b[1], clean_line(b[2])) for p, b in unknown][:40],
                 "Prüfen, ob du das zugehörige Plugin/Programm kennst. Wenn nicht, den Inhalt des Blocks genau lesen.")
     if buckets["info"]:
-        res.add("info", "%d harmlose/übliche Regel(n) erkannt" % len(buckets["info"]), "Zur Vollständigkeit.", buckets["info"][:25])
+        res.add("info", "%d harmlose/übliche Regel(n) erkannt" % len(buckets["info"]), "Zur Vollständigkeit.", buckets["info"][:25], context=True)
     if not (buckets["crit"] or buckets["warn"] or combo):
         res.add("ok", "Keine verdächtigen Regeln in den .htaccess-Dateien gefunden")
 
@@ -317,7 +317,7 @@ def configuration(ctx, res):
     dbhost = str(v.get("host", "localhost"))
     res.add("info", "Datenbank-Einstellungen", "Zugangsdaten werden nicht angezeigt.",
             ["Typ: %s" % v.get("dbtype", "?"), "Host: %s" % dbhost, "Datenbank: %s" % v.get("db", "?"), "Tabellenpräfix: %s" % v.get("dbprefix", "?"),
-             "Sitzungsverwaltung: %s" % v.get("session_handler", "?"), "Mailer: %s" % v.get("mailer", "?")])
+             "Sitzungsverwaltung: %s" % v.get("session_handler", "?"), "Mailer: %s" % v.get("mailer", "?")], context=True)
 
 
 # ----------------------------------------------------------------------------- Einstiegsdateien
