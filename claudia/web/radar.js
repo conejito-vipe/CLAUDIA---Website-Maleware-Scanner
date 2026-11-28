@@ -38,9 +38,11 @@ const ClaudiaRadar = (() => {
   }
   const rgb = c => c.join(",");
 
-  function mount(canvas) {
+  function mount(canvas, opts) {
     const ctx = canvas.getContext("2d");
-    const still = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : { matches: false };
+    /* opts.motion: Strahl dreht sich immer, auch wenn Windows "Animationseffekte" ausgeschaltet hat (Wunsch für die Prüfungsansicht).
+       Ohne die Option richtet sich das Radar nach "Bewegung reduzieren" und bleibt ruhig. */
+    const still = (opts && opts.motion) ? { matches: false } : (window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : { matches: false });
     const dark = window.matchMedia ? matchMedia("(prefers-color-scheme: dark)") : null;
     let W = 0, cx = 0, R = 0, raf = 0, last = 0, sweep = -Math.PI / 2, alive = true;
     let st = { plan: [], status: {}, current: null, running: false };

@@ -91,6 +91,18 @@ class RadarDrawing(unittest.TestCase):
         pg.evaluate("window.__r.destroy()")
         pg.evaluate("window.__r.set({plan:[], status:{}, current:null, running:false})")   # nach destroy folgenlos
 
+    def test_motion_option_moves_even_with_reduced_motion(self):
+        """Seit 3.1.3: In der Prüfungsansicht dreht sich der Strahl auch bei ausgeschalteten Windows-Animationseffekten."""
+        pg = self.page(reduced=True)
+        pg.evaluate("""([plan, status]) => { if (window.__r) window.__r.destroy(); window.__r = ClaudiaRadar.mount(document.getElementById('c'), { motion: true });
+            window.__r.set({ plan, status, current: null, running: true }); }""", [PLAN, STATUS])
+        pg.wait_for_timeout(150)
+        a = pg.evaluate(SNAP_JS)
+        pg.wait_for_timeout(300)
+        self.assertNotEqual(a, pg.evaluate(SNAP_JS), "der Strahl dreht sich trotz 'Animationen reduzieren'")
+        app = open(os.path.join(ROOT, "claudia", "web", "app.js"), encoding="utf-8").read()
+        self.assertIn("ClaudiaRadar.mount(cv, { motion: true })", app)
+
     def test_animated_mode_moves_and_stops_after_destroy(self):
         pg = self.page(reduced=False)
         self.colors(pg)

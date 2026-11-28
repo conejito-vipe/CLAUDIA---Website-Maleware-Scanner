@@ -732,3 +732,18 @@ html.has-titlebar.maxed .bar { right: var(--sbw); }
 /* Abstand zwischen den Voreinstellungen und "Protokolle auf deinen PC sichern" wie zwischen allen anderen Kacheln */
 #logsave { margin-top: 18px; }
 #web-hint { margin-top: 18px; }
+/* Statusleiste unten: "nur lesend" grün; rechts der Hinweis auf die Entstehung (vorher im Seitenfuß) */
+.sbar .ro b { color: var(--ok); font-weight: 600; }
+.sbar .vibe { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.sbar .vibe a { color: inherit; }
+/* Prüfungsansicht ohne Bildlauf: engere Abstände, Radar nach Fensterhöhe */
+.run-view h1 { margin-bottom: 6px; }
+.run-view .lead { margin-top: 0; }
+.run-view > .card { margin-top: 14px !important; padding-top: 16px; padding-bottom: 16px; }
+.run-view .runwrap { margin-top: 12px; grid-template-columns: minmax(200px, min(300px, 34vh)) 1fr; }
+.run-view .found { margin-top: 10px; }
+.run-view .actions { margin-top: 12px !important; }
+/* Im Programmfenster ist der Bildlaufbereich kleiner als das Fenster (Titel- und Statusleiste): Mindesthöhe ist dessen Höhe, nicht 100vh,
+   sonst gibt es immer 72 px Bildlauf, auch wenn alles hineinpasst */
+html.has-titlebar .stage { min-height: 100%; box-sizing: border-box; }
+.site-sub { margin: -4px 0 8px; font-size: 12px; overflow-wrap: anywhere; }

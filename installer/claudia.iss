@@ -10,7 +10,7 @@
 
 #define AppShortName "CLAUDIA"
 #ifndef AppVersion
-  #define AppVersion "3.1.2"
+  #define AppVersion "3.1.3"
 #endif
 #define AuthorName "conejito-vipe"
 
@@ -191,6 +191,7 @@ procedure InitializeWizard;
 var Txt: TNewStaticText; Pic: TBitmapImage; Hint: String;
 begin
   AlignWithHeading;
+  WizardForm.ReadyMemo.ScrollBars := ssNone;          { "Bereit zur Installation": keine Bildlaufleisten (der Inhalt ist kurz) }
   { Hinweis zur Windows-Meldung: nach der Installation, vor der letzten Seite }
   SmartPage := CreateCustomPage(wpInstalling, CustomMessage('SmartTitle'), CustomMessage('SmartSub'));
   Pic := TBitmapImage.Create(SmartPage);

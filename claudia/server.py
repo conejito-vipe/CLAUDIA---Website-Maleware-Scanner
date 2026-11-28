@@ -809,6 +809,17 @@ class App:
     # ------------------------------------------------------------ Dashboard (Verlauf, siehe verlauf.py)
     def dashboard(self) -> Dict[str, Any]:
         out = verlauf.dashboard(self.dir)
+        # Name des Verbindungsprofils (z. B. "Kinderperspektive") als Überschrift; Server und Ordner bleiben als kleine Zusatzangabe
+        names: Dict[str, str] = {}
+        try:
+            for name, p in (self.profiles.load() or {}).items():
+                if isinstance(p, dict) and p.get("host"):
+                    names[baseline.make_key(str(p.get("host", "")), str(p.get("user", "")), (str(p.get("site_dir") or "").strip() or "."))] = str(name)[:80]
+        except Exception:                                  # noqa: BLE001  (Anzeige-Zusatz)
+            pass
+        for st in out.get("sites") or []:
+            if names.get(st.get("site")):
+                st["name"] = names[st["site"]]
         out["current"] = self._site()[0]
         out["connected"] = bool(self.runner)
         return out

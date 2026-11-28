@@ -215,7 +215,7 @@ def evaluate_joomla_files(sec: Dict[str, str]) -> List[Row]:
         rows.append(("crit", "cox.json gefunden (Spur eines Angriffs)", "Diese Datei legen Angreifer bei der Helix3-Angriffswelle 2026 zur Erkundung ab. Normale Seiten haben sie nicht.", cox,
                      "Zugriffsprotokolle auf Aufrufe von com_ajax mit plugin=helix3 prüfen, Template-Einstellungen und Administratoren kontrollieren."))
     if ok and not (crit or cox):
-        rows.append(("info", "Bekannte Erweiterungen mit sicherer Version", "", ok, ""))
+        rows.append(("ok", "Bekannte Erweiterungen mit sicherer Version", "", ok, ""))      # positive Aussage, kein Hinweis
     return rows
 
 

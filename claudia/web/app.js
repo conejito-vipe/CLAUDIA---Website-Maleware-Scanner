@@ -391,7 +391,8 @@ function renderFrame() {
   $("#tb-ver").textContent = S.init.version;
   const c = $("#conn");
   if (S.conn) { c.hidden = false; $("#conn-text").textContent = connLabel(); } else c.hidden = true;
-  $("#foot-off").textContent = S.conn ? connLabel() + " · " + tr("nur lesend") : tr("Nicht verbunden");
+  $("#foot-off").textContent = S.conn ? connLabel() : tr("Nicht verbunden");
+  $("#foot-ro").hidden = !S.conn;                                     // "nur lesend" grün hinter der Verbindung
   document.querySelector("#sbar .sdot").classList.toggle("on", !!S.conn);
   $("#tb-title").textContent = viewTitle();
   $("#dashbtn").classList.toggle("on", S.step === "dash");
@@ -1000,7 +1001,7 @@ function strip(opts) {
 }
 
 function viewRun() {
-  const root = h("div", {});
+  const root = h("div", { class: "run-view" });
   root.append(h("h1", { text: "Die Prüfung läuft" }),
     h("p", { class: "lead", text: "Jedes Feld steht für einen Test und färbt sich, sobald sein Ergebnis da ist. Du kannst das Fenster offen lassen und etwas anderes tun." }));
   root.append(h("div", { class: "card", style: "margin-top:22px" }, h("div", { id: "run-strip" }, strip()),
@@ -1038,7 +1039,7 @@ function updateRun() {
   $("#m-p").replaceChildren(h("b", { text: crit + " / " + warn }), "kritisch / prüfen");
   const fl = $("#found");
   if (fl) {                                                                  // ganz kurze Liste der Funde (neueste oben), damit man nicht auf das Ergebnis warten muss
-    const hits = S.results.filter(r => r.status === "crit" || r.status === "warn").slice(-5).reverse();
+    const hits = S.results.filter(r => r.status === "crit" || r.status === "warn").slice(-4).reverse();     // die neuesten vier: passt ohne Bildlauf
     fl.replaceChildren(...(hits.length ? hits.map(r => {
       const f = (r.findings || []).find(x => x.sev === r.status) || (r.findings || [])[0];
       return h("div", { class: "found-i", "data-s": r.status, title: r.title }, h("i"), h("span", { text: r.title + (f && f.title ? ": " + f.title : "") }));
@@ -1054,7 +1055,7 @@ function radarSync() {
     const cv = $("#radar");
     if (radarInst && radarInst.canvas !== cv) { radarInst.destroy(); radarInst = null; }
     if (!cv) return;
-    if (!radarInst && typeof ClaudiaRadar !== "undefined") radarInst = ClaudiaRadar.mount(cv);
+    if (!radarInst && typeof ClaudiaRadar !== "undefined") radarInst = ClaudiaRadar.mount(cv, { motion: true });   // dreht sich immer (wie gewünscht)
     if (!radarInst) return;
     const status = {};
     S.results.forEach(r => { status[r.id] = (r.status === "error" ? "skipped" : r.status); });
@@ -2009,6 +2010,7 @@ async function openDashboard() {
   S.step = "dash"; S.dashErr = ""; render();
   try {
     S.dash = await api("/api/dashboard");
+    (S.dash.sites || []).forEach(x => { x.title = x.name || x.label; });       // Profilname als Überschrift, Server und Ordner klein darunter
     if (S.dashPick && !S.dash.sites.some(s => s.site === S.dashPick)) S.dashPick = "";
   } catch (e) { S.dash = null; S.dashErr = e.error || "Nicht möglich."; }
   render();
@@ -2051,15 +2053,15 @@ function topFindingTitle(s) { const f = (s.findings || []).find(x => x.sev === "
 function dashAnalysis(d) {
   const out = [];
   for (const s of d.sites) {
-    if (s.counts.crit) out.push({ lvl: "crit", site: s.site, text: s.label + ": " + plural(s.counts.crit, "kritischer Fund", "kritische Funde") + "." + (topFindingTitle(s) ? " Zuerst prüfen: " + topFindingTitle(s) + "." : "") });
+    if (s.counts.crit) out.push({ lvl: "crit", site: s.site, text: s.title + ": " + plural(s.counts.crit, "kritischer Fund", "kritische Funde") + "." + (topFindingTitle(s) ? " Zuerst prüfen: " + topFindingTitle(s) + "." : "") });
     if (s.history.length >= 2) {
       const a = s.history[0], b = s.history[s.history.length - 1];
-      if (b.crit < a.crit) out.push({ lvl: "ok", site: s.site, text: s.label + ": kritische Funde von " + a.crit + " auf " + b.crit + " gesunken." });
-      else if (b.crit > a.crit) out.push({ lvl: "crit", site: s.site, text: s.label + ": kritische Funde von " + a.crit + " auf " + b.crit + " gestiegen." });
-      else if (b.warn < a.warn) out.push({ lvl: "ok", site: s.site, text: s.label + ": Hinweise von " + a.warn + " auf " + b.warn + " gesunken." });
+      if (b.crit < a.crit) out.push({ lvl: "ok", site: s.site, text: s.title + ": kritische Funde von " + a.crit + " auf " + b.crit + " gesunken." });
+      else if (b.crit > a.crit) out.push({ lvl: "crit", site: s.site, text: s.title + ": kritische Funde von " + a.crit + " auf " + b.crit + " gestiegen." });
+      else if (b.warn < a.warn) out.push({ lvl: "ok", site: s.site, text: s.title + ": Hinweise von " + a.warn + " auf " + b.warn + " gesunken." });
     }
-    if (s.compare && (s.compare.new || []).length) out.push({ lvl: "warn", site: s.site, text: s.label + ": " + plural(s.compare.new.length, "neuer Fund", "neue Funde") + " seit der Prüfung davor." });
-    for (const t of s.hints) out.push({ lvl: "warn", site: s.site, text: s.label + ": " + t });
+    if (s.compare && (s.compare.new || []).length) out.push({ lvl: "warn", site: s.site, text: s.title + ": " + plural(s.compare.new.length, "neuer Fund", "neue Funde") + " seit der Prüfung davor." });
+    for (const t of s.hints) out.push({ lvl: "warn", site: s.site, text: s.title + ": " + t });
   }
   if (d.totals.fixed) out.push({ lvl: "ok", text: plural(d.totals.fixed, "Fund wurde", "Funde wurden") + " behoben: in einer späteren Prüfung nicht mehr gemeldet." });
   if (!out.length) out.push({ lvl: "ok", text: "Keine auffälligen Punkte in den bisherigen Prüfungen." });
@@ -2068,7 +2070,7 @@ function dashAnalysis(d) {
 function findingDetail(s, f) {
   const c = (S.init.checks || []).find(x => x.id === f.id);
   const box = h("div", { class: "fdetail" }, h("h4", {}, badge(f.sev === "crit" ? "crit" : f.sev === "warn" ? "warn" : "info", SEV_LABEL[f.sev] || f.sev, "margin-right:8px"), f.title));
-  box.append(h("div", { class: "small muted", text: "Seite: " + s.label + "  ·  Prüfung vom " + fmtDate(s.last_ts) + "  ·  Prüf-ID: " + f.id }));
+  box.append(h("div", { class: "small muted", text: "Seite: " + s.title + "  ·  Prüfung vom " + fmtDate(s.last_ts) + "  ·  Prüf-ID: " + f.id }));
   if (c) {
     box.append(h("p", {}, h("strong", { text: "Prüfung: " }), c.title));
     if (c.what) box.append(h("p", {}, h("strong", { text: "Was geprüft wird: " }), c.what));
@@ -2086,7 +2088,8 @@ function dashSiteCard(s) {
   const card = h("div", { class: "sitecard", id: "site-" + String(s.site).replace(/[^a-zA-Z0-9_-]/g, "_") });
   card.style.setProperty("--sc", LVL[s.level] || "var(--line)");
   const c = s.compare;
-  card.append(h("h3", {}, badge(lvl[0], lvl[1], "margin-right:4px"), s.label),
+  card.append(h("h3", {}, badge(lvl[0], lvl[1], "margin-right:4px"), s.title),
+    ...(s.name ? [h("div", { class: "small muted site-sub", text: s.label })] : []),     // DOM-append würde null als Text einfügen
     h("div", { class: "meta" }, h("span", { text: (cmsNames()[s.cms] || s.cms || "?") + (s.version ? " " + s.version : "") }),
       h("span", { text: "Letzte Prüfung: " + fmtDate(s.last_ts) + " (" + ageText(s.age_days) + ")" }),
       h("span", { text: s.counts.crit + " kritisch, " + s.counts.warn + " Hinweise" }), h("span", { text: s.runs + " Prüfung" + (s.runs === 1 ? "" : "en") }),
@@ -2167,7 +2170,7 @@ function viewDashboard() {
     S.dashPick = pick;
     const bars = d.sites.map(s => h("button", { class: "hbar" + (s.site === pick ? " on" : ""), type: "button", title: "Verlauf dieser Seite anzeigen",
       onclick: () => { S.dashPick = s.site; S.dashFind = null; render(); } },
-      h("span", { class: "hname", text: s.label }), dashStackBar(s.counts), h("span", { class: "hnum", text: s.counts.crit + " / " + s.counts.warn }))); 
+      h("span", { class: "hname", text: s.title, title: s.label }), dashStackBar(s.counts), h("span", { class: "hnum", text: s.counts.crit + " / " + s.counts.warn }))); 
     const legend = h("div", { class: "legend" }, ["crit", "warn", "info", "ok"].map(k => h("span", {}, h("i", { style: "background:" + LVL[k] }), LVL_NAME[k])));
     const items = dashAnalysis(d);
     const ana = h("ul", { class: "analysis" }, items.slice(0, 14).map(it => h("li", {}, badge(it.lvl, it.lvl === "crit" ? "Kritisch" : it.lvl === "warn" ? "Prüfen" : "Gut", "margin-right:8px"),
@@ -2180,7 +2183,7 @@ function viewDashboard() {
     /* Verlauf der gewählten Seite */
     const cur = d.sites.find(s => s.site === pick);
     const sel = h("select", { class: "dash-sel", onchange: e => { S.dashPick = e.target.value; S.dashFind = null; render(); } },
-      d.sites.map(s => h("option", { value: s.site, selected: s.site === pick, text: s.label })));
+      d.sites.map(s => h("option", { value: s.site, selected: s.site === pick, text: s.name ? s.name + "  (" + s.label + ")" : s.label })));
     wrap.append(h("div", { class: "dcard", style: "margin-bottom:14px" },
       h("h3", {}, h("span", { text: "Verlauf" }), sel),
       h("div", { class: "dbody" },

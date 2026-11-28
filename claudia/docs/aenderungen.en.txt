@@ -1,3 +1,25 @@
+## 3.1.3 | 2026-11-28 | Radar rotates, check view without scrolling, status bar, dashboard with profile names, "fine" is green
+### Radar
+What: The beam always rotates in the check view and lights up the findings, even if Windows animation effects are switched off.
+Why: With animation effects switched off the radar stood still.
+How: radar.js (option motion), app.js.
+### Check view and status bar
+What: In the program window there is no scrolling any more when everything fits; the check view is more compact. The line "vibecoded with Claude ..." with the number of program lines is at the bottom right of the status bar. "read only" is green after the connection; the duplicate on the right is gone.
+Why: The page was always 72 pixels taller than the visible area, and a lot of space at the bottom stayed unused.
+How: app.css (minimum height in the program window), index.html, app.js.
+### Dashboard
+What: Each site shows the name of its connection profile as heading (e.g. "Kinderperspektive"); server and folder are shown small below.
+Why: The long server addresses were hard to read.
+How: server.py (profile name per site), app.js.
+### "Fine" is green
+What: Lists such as log files, scheduled tasks, known embeds, server settings, JCE profiles or log coverage count as explanation. Checks that otherwise only report "fine" are green. A wrong marking for "no security extension" is fixed; that stays a notice.
+Why: Several checks were blue although everything was fine in the details.
+How: checks/logs.py, database.py, dbarea.py, online.py, zusatz.py, security_ext.py.
+### Setup
+What: The page "Ready to install" no longer shows scroll bars.
+Why: The content is short; the bars were distracting.
+How: claudia.iss.
+
 ## 3.1.2 | 2026-11-28 | White window at start, cancel and disconnect, external requests, setup alignment
 ### White window at start
 What: The window icon is now set by pywebview itself on the window thread. If the start still hangs, CLAUDIA writes the position of every program part to the log after 25 seconds and additionally opens the interface in the default browser after 40 seconds.

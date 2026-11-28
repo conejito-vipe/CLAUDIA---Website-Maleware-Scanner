@@ -204,7 +204,7 @@ def db_jce(ctx, res):
     bad = [r for r in rows if r.get("enthaelt_php") == "1" or r.get("enthaelt_phtml") == "1"]
     names = ["#%s %s (%s)%s" % (r.get("id"), clean_line(r.get("name") or ""), "aktiv" if r.get("published") == "1" else "inaktiv",
                                "  <- enthält 'php'" if r in bad else "") for r in rows]
-    res.add("info", "%d JCE-Profile" % len(rows), "Üblich sind 'Default' und 'Front End' plus eigene Profile.", names)
+    res.add("info", "%d JCE-Profile" % len(rows), "Üblich sind 'Default' und 'Front End' plus eigene Profile.", names, context=True)
     if bad:
         snippets = fetch(db, Q_JCE[1][1]) or []
         items = ["#%s %s: ...%s" % (s.get("id"), clean_line(s.get("name") or ""), trunc(clean_line(s.get("ausschnitt") or ""), 150)) for s in snippets]
@@ -307,7 +307,7 @@ def inject_scan(ctx, res, db, queries, hints):
                 "Adressen, die nicht in deiner Liste bekannter Dienste stehen, oder Skripte direkt in Artikeln/Modulen.", warn[:40],
                 "Kennst du die Einbindung? Falls nicht, entfernen. Bekannte Dienste kannst du in den Einstellungen zur Liste hinzufügen.")
     if info:
-        res.add("info", "%d bekannte Einbindung(en)" % len(info), "Z. B. Google Tag Manager, Elfsight, YouTube.", info[:25])
+        res.add("info", "%d bekannte Einbindung(en)" % len(info), "Z. B. Google Tag Manager, Elfsight, YouTube.", info[:25], context=True)
     if ids:
         res.add("info", "Tag-Manager-/Analytics-IDs in den Einstellungen",
                 "Prüfe im jeweiligen Konto (tagmanager.google.com), dass der Container dir gehört, keine unbekannten benutzerdefinierten HTML-Tags enthält und nur bekannte Nutzer Zugriff haben.",
@@ -397,7 +397,7 @@ def db_extensions(ctx, res):
         res.add("ok", "Datenbank und Ordner stimmen überein", "%d registrierte Erweiterungen verglichen." % len(rows))
     third_enabled = [r for r in rows if r.get("enabled") == "1" and "joomla! project" not in (r.get("autor") or "").lower() and r.get("type") in ("plugin", "component", "module", "template")]
     res.add("info", "%d aktive Erweiterungen nicht vom Joomla-Projekt" % len(third_enabled), "Zur Übersicht (Name, Version, Autor).",
-            ["%s %s - %s" % (clean_line(r.get("name") or ""), r.get("version") or "?", clean_line(r.get("autor") or "?")) for r in third_enabled][:80])
+            ["%s %s - %s" % (clean_line(r.get("name") or ""), r.get("version") or "?", clean_line(r.get("autor") or "?")) for r in third_enabled][:80], context=True)
 
 
 # ------------------------------------------------------------------ Aktivitätsprotokoll
@@ -525,6 +525,6 @@ def db_redirects(ctx, res):
     tasks = fetch(db, Q_REDIR[2][1])
     if tasks:
         res.add("info", "%d geplante Aufgaben" % len(tasks), "Prüfe, ob du alle kennst.",
-                ["#%s %s (%s) - %s" % (t.get("id"), clean_line(t.get("title") or ""), t.get("type"), "aktiv" if t.get("state") == "1" else "inaktiv") for t in tasks[:30]])
+                ["#%s %s (%s) - %s" % (t.get("id"), clean_line(t.get("title") or ""), t.get("type"), "aktiv" if t.get("state") == "1" else "inaktiv") for t in tasks[:30]], context=True)
     if not bad:
         res.add("ok", "Keine Weiterleitungen oder externen Links auf unbekannte Domains")

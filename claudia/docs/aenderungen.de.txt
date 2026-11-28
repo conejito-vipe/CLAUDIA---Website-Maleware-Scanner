@@ -1,3 +1,25 @@
+## 3.1.3 | 2026-11-28 | Radar dreht sich, Prüfungsansicht ohne Bildlauf, Statusleiste, Dashboard mit Profilnamen, "in Ordnung" ist grün
+### Radar
+Was: Der Strahl dreht sich in der Prüfungsansicht immer und lässt die Funde aufleuchten, auch wenn in Windows die Animationseffekte ausgeschaltet sind.
+Warum: Bei ausgeschalteten Animationseffekten stand das Radar still.
+Wie: radar.js (Option motion), app.js.
+### Prüfungsansicht und Statusleiste
+Was: Im Programmfenster gibt es keinen Bildlauf mehr, wenn alles hineinpasst; die Prüfungsansicht ist kompakter. Die Zeile "vibecoded with Claude ..." mit der Zahl der Programmzeilen steht unten rechts in der Statusleiste. "nur lesend" steht grün hinter der Verbindung, die doppelte Angabe rechts entfällt.
+Warum: Die Seite war immer 72 Pixel höher als der sichtbare Bereich, und unten blieb viel Platz ungenutzt.
+Wie: app.css (Mindesthöhe im Programmfenster), index.html, app.js.
+### Dashboard
+Was: Jede Seite trägt den Namen ihres Verbindungsprofils als Überschrift (z. B. "Kinderperspektive"); Server und Ordner stehen klein darunter.
+Warum: Die langen Serveradressen waren unübersichtlich.
+Wie: server.py (Profilname je Seite), app.js.
+### "In Ordnung" ist grün
+Was: Auflistungen wie Protokolldateien, geplante Aufgaben, bekannte Einbindungen, Servereinstellungen, JCE-Profile oder die Abdeckung der Protokolle gelten als Erläuterung. Prüfungen, die sonst nur "in Ordnung" melden, sind grün. Eine falsche Markierung bei "keine Sicherheits-Erweiterung" ist behoben; das bleibt ein Hinweis.
+Warum: Mehrere Prüfungen standen blau, obwohl im Detail alles in Ordnung war.
+Wie: checks/logs.py, database.py, dbarea.py, online.py, zusatz.py, security_ext.py.
+### Setup
+Was: Die Seite "Bereit zur Installation" zeigt keine Bildlaufleisten mehr.
+Warum: Der Inhalt ist kurz, die Leisten störten.
+Wie: claudia.iss.
+
 ## 3.1.2 | 2026-11-28 | Weißes Fenster beim Start, Abbrechen und Trennen, Abruf von außen, Setup bündig
 ### Weißes Fenster beim Start
 Was: Das Fenstersymbol setzt jetzt pywebview selbst im Fenster-Thread. Hängt der Start trotzdem, schreibt CLAUDIA nach 25 Sekunden die Stelle jedes Programmteils ins Protokoll und öffnet die Oberfläche nach 40 Sekunden zusätzlich im Standardbrowser.

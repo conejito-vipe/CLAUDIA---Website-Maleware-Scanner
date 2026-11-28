@@ -141,7 +141,7 @@ def vel_feed(ctx, res):
     if schema:
         res.add("info", "%d mögliche Verwechslung(en) wegen Platzhalter-Version nicht gewertet" % len(schema),
                 "Zusatz-Plugins haben oft die Version 1.0 und tragen den Namen einer anderen Erweiterung (z. B. AcyMailing). Der Versionsvergleich wäre sinnlos; "
-                "maßgeblich ist die Hauptkomponente (Convert Forms o. ä.).", [line(h) for h in schema][:20])
+                "maßgeblich ist die Hauptkomponente (Convert Forms o. ä.).", [line(h) for h in schema][:20], context=True)
     if not (live or old):
         res.add("ok", "Keine deiner Erweiterungen steht (mit passender Version) auf der Joomla-Liste",
                 "%d Einträge der Liste geprüft (Quelle: %s). Der Abgleich läuft über Namen und Versionen, kleine Abweichungen in der Schreibweise können Treffer verpassen." % (len(items), used))

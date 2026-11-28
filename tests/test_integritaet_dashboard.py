@@ -94,3 +94,22 @@ class Verlauf31(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DashboardName(unittest.TestCase):
+    def test_profile_name_is_title_and_server_stays_as_label(self):
+        """3.1.3: Im Dashboard steht der Profilname (z. B. "Kinderperspektive"), Server und Ordner klein darunter."""
+        from claudia import baseline
+        from claudia.server import make_server
+        srv = make_server(directory=tempfile.mkdtemp(prefix="claudia_dashname_"))
+        try:
+            app = srv.app
+            app.profiles.save("Kinderperspektive", {"host": "webgaqku4.wh.hosting.zone", "user": "u1", "site_dir": "/home/w/html/kinder"})
+            key = baseline.make_key("webgaqku4.wh.hosting.zone", "u1", "/home/w/html/kinder")
+            verlauf.record_run(app.dir, verlauf.run_entry(key, "webgaqku4.wh.hosting.zone : /home/w/html/kinder", "joomla", "6.2.1",
+                                                     [{"id": "joomla_info", "title": "Joomla", "status": "ok", "findings": [{"sev": "ok", "title": "gut"}]}]))
+            sites = app.dashboard()["sites"]
+            self.assertEqual(sites[0]["name"], "Kinderperspektive")
+            self.assertIn("/home/w/html/kinder", sites[0]["label"])
+        finally:
+            srv.server_close()

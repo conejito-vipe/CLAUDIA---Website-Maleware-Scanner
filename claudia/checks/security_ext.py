@@ -210,13 +210,13 @@ def security_ext(ctx, res):
     if not main_present:
         res.add("info", ctx.prof["no_sec_title"],
                 "Auf dieser %s-Seite läuft keine bekannte Web-Firewall und kein Schadcode-Scanner. Angriffe auf Lücken werden dann nicht abgefangen." % name,
-                why_lines, ctx.prof["install_hint"] + " (Empfehlungen und Bewertungen siehe nächster Befund).", context=True)
+                why_lines, ctx.prof["install_hint"] + " (Empfehlungen und Bewertungen siehe nächster Befund).")
     items = comparison()
     head = (data.get("hinweis_joomla", "") if cms != "wordpress" else
             "Bewertungen von wordpress.org werden bei der Prüfung live abgefragt (nur online). Ohne Verbindung fehlen die Zahlen.")
     res.add("info", "Empfehlungen und Bewertungen%s" % (" (Stand %s)" % stand if cms != "wordpress" and stand else ""), head, items,
             "So wählst du: Für den Einstieg reicht eine kostenlose Version. Kostenpflichtige haben meist festen Support und schnellere Regel-Updates. "
-            "Achte auf Pflege (letztes Update), Verbreitung (Zahl der Bewertungen) und darauf, dass sie zu deiner %s-Version passt." % name)
+            "Achte auf Pflege (letztes Update), Verbreitung (Zahl der Bewertungen) und darauf, dass sie zu deiner %s-Version passt." % name, context=True)
 
 
 # ============================================================================ Sicherungs-Erweiterung

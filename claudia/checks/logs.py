@@ -140,7 +140,7 @@ def _render(ctx, res, stats: List[Stat], source: str, files_info: List[str], tot
         res.add("ok", "Keine bekannten Angriffsmuster im Zugriffsprotokoll gefunden",
                 "Geprüft wurde auf: " + "; ".join(s.pat["title"] for s in stats if s.pat.get("severity") in ("crit", "warn")) + ".")
     if files_info:
-        res.add("info", "Ausgewertete Protokolldateien (%s)" % source, "" if total_lines is None else "%d Zeilen insgesamt." % total_lines, files_info[:40])
+        res.add("info", "Ausgewertete Protokolldateien (%s)" % source, "" if total_lines is None else "%d Zeilen insgesamt." % total_lines, files_info[:40], context=True)
 
 
 # ----------------------------------------------------------------------------- Zugriffsprotokoll auf dem Server
@@ -201,7 +201,7 @@ find @DIRS@ -maxdepth 3 -type f \( -iname '*access*' -o -iname '*.log' -o -iname
     info = ["%s  (%d KB, geändert %s)" % (clean_line(f[0]), f[1] // 1024, f[2]) for f in sorted(files, key=lambda x: x[2])]
     _render(ctx, res, stats, "Server", info)
     res.add("info", "Abdeckung der Protokolle", "Die ältesten gefundenen Dateien stammen von %s, die neuesten von %s. "
-            "Liegt der vermutete Einbruch davor, enthält das Protokoll ihn nicht mehr - dann beim Hoster ältere Protokolle anfragen." % (oldest, newest))
+            "Liegt der vermutete Einbruch davor, enthält das Protokoll ihn nicht mehr - dann beim Hoster ältere Protokolle anfragen." % (oldest, newest), context=True)
     if hits.truncated or len(hits.out.splitlines()) >= 6000:
         res.add("warn", "Sehr viele Treffer - Ausgabe gekürzt", "Es wurden nur die ersten 6000 Trefferzeilen ausgewertet.")
 
@@ -383,4 +383,4 @@ done
     if not (strong_crit or strong_warn or perr):
         res.add("ok", "Keine Angriffsspuren in Joomla- und PHP-Protokollen gefunden", "%d Protokolldatei(en) geprüft." % len(files))
     if files:
-        res.add("info", "Protokolldateien", "", files[:30])
+        res.add("info", "Protokolldateien", "", files[:30], context=True)

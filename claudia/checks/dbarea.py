@@ -136,7 +136,7 @@ def dbx_server(ctx, res):
         if s.get("sfp") in ("", None) and any("FILE" in g.upper() for g in grants):
             notes.append("secure_file_priv ist leer und der Zugang hat das FILE-Recht: Dateien könnten an beliebigen Orten geschrieben werden")
         if notes:
-            res.add("info", "Servereinstellungen, die du kennen solltest", "Das ist beim Hoster oft Standard und nicht zwingend ein Fehler.", notes)
+            res.add("info", "Servereinstellungen, die du kennen solltest", "Das ist beim Hoster oft Standard und nicht zwingend ein Fehler.", notes, context=True)
     except DbError:
         pass
 
@@ -306,7 +306,7 @@ def dbx_anomalies(ctx, res):
     other = [t for t in tabs if not (t["t"] or "").startswith(pre)]
     views = [t for t in tabs if (t.get("typ") or "") == "VIEW"]
     res.add("info", "%d Tabellen in der Datenbank '%s'" % (len(tabs), db.name), "Davon %d mit dem Joomla-Präfix '%s'." % (len(mine), pre),
-            ["Größte Tabellen: " + ", ".join("%s (%s MB)" % (t["t"], round(_int(t["bytes"]) / 1048576, 1)) for t in sorted(tabs, key=lambda x: -_int(x["bytes"]))[:5])])
+            ["Größte Tabellen: " + ", ".join("%s (%s MB)" % (t["t"], round(_int(t["bytes"]) / 1048576, 1)) for t in sorted(tabs, key=lambda x: -_int(x["bytes"]))[:5])], context=True)
     if other:
         odd = [t for t in other if ODD_TABLE_RE.search(t["t"] or "")]
         if odd:
