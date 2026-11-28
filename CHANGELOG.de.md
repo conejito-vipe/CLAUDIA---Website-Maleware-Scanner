@@ -2,6 +2,28 @@
 
 Erzeugt aus `claudia/docs/aenderungen.de.txt` (nicht von Hand ändern).
 
+## 3.1.2 (2026-11-28) - Weißes Fenster beim Start, Abbrechen und Trennen, Abruf von außen, Setup bündig
+
+### Weißes Fenster beim Start
+- **Was:** Das Fenstersymbol setzt jetzt pywebview selbst im Fenster-Thread. Hängt der Start trotzdem, schreibt CLAUDIA nach 25 Sekunden die Stelle jedes Programmteils ins Protokoll und öffnet die Oberfläche nach 40 Sekunden zusätzlich im Standardbrowser.
+- **Warum:** Nach dem ersten Start blieb das Fenster weiß und Windows meldete "reagiert nicht". Das Symbol wurde aus einem Hintergrund-Thread direkt am Fenster gesetzt; dabei konnten sich Fenster und Programm gegenseitig blockieren.
+- **Wie:** window.py (start(icon=...), faulthandler.dump_traceback_later, Ausweg Browser).
+
+### Abbrechen und Trennen
+- **Was:** Abbrechen gibt die Prüfung nach spätestens vier Sekunden frei, auch wenn ein Test gerade auf eine Antwort wartet; ein neuer Lauf ist sofort möglich. Trennen beendet eine laufende Prüfung und schließt die Verbindung wirklich.
+- **Warum:** Nach dem Abbrechen hieß es "Es läuft bereits eine Prüfung", und nach dem Trennen blieb die alte Verbindung im Hintergrund bestehen.
+- **Wie:** server.py (cancel_run; ein abgelöster Lauf schreibt keine Ergebnisse mehr).
+
+### Abruf von außen (Startseite und Standardadressen)
+- **Was:** Ist die Startseite von diesem PC aus nicht erreichbar, werden die externen Tests sofort mit Begründung übersprungen. Sonst zeigt der Fortschritt jede Adresse, die Zeitgrenzen sind kürzer, und nach drei Fehlversuchen oder 45 Sekunden wird der Rest ausgelassen. Auch langsam tröpfelnde Antworten enden spätestens zur Frist.
+- **Warum:** "Von außen: System und Version erkennen" stand über drei Minuten still (zwölf Adressen nacheinander bis zur Zeitgrenze) und reagierte kaum auf Abbrechen.
+- **Wie:** checks/extern.py, checks/web.py.
+
+### Kleinigkeiten
+- **Was:** Versionsangaben (z. B. "Joomla 6.2.1") gelten als Erläuterung, nicht als Hinweis. Zwischen den Voreinstellungen und "Protokolle auf deinen PC sichern" steht derselbe Abstand wie zwischen den anderen Kacheln. Im Setup beginnen Unterzeile und Inhalt auf jeder Seite bündig mit der Überschrift.
+- **Warum:** Rückmeldungen nach dem Test von 3.1.1.
+- **Wie:** checks/system.py, checks/wp.py, app.css, claudia.iss.
+
 ## 3.1.1 (2026-11-28) - JCE-Update, Startproblem, weniger Fehlalarme bei Erweiterungen, Oberfläche und Setup
 
 ### JCE und andere Erweiterungs-Updates

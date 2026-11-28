@@ -627,7 +627,23 @@ class App:
             job.done = True
             job.error = {"error": "Der Verbindungstest wurde abgebrochen.", "kind": "cancelled", "status": 499}
 
+    def cancel_run(self, wait: float = 4.0) -> None:
+        """Prüfung abbrechen. Hängt der laufende Test in einem Netzwerkaufruf, gilt der Lauf nach 'wait' Sekunden trotzdem als beendet:
+        Der alte Faden läuft im Hintergrund aus und ändert nichts mehr (siehe _emit/_work), ein neuer Lauf ist sofort möglich."""
+        ev = self.cancel
+        ev.set()
+        t = getattr(self, "thread", None)
+        if t is not None and t.is_alive() and t is not threading.current_thread():
+            t.join(max(0.0, wait))
+        if self.running and (t is None or t.is_alive()):
+            self.cancelled = True
+            self.finished_at = time.time()
+            self.current = {}
+            self.running = False
+
     def disconnect(self) -> None:
+        if self.running:                                   # Trennen beendet auch eine laufende Prüfung
+            self.cancel_run(wait=2.0)
         if self.runner is not None:
             try:
                 self.runner.close()
@@ -720,7 +736,7 @@ class App:
             self.running = True
             engine = Engine(self.runner, settings, self.advisories)
             cancel = self.cancel
-            self.thread = threading.Thread(target=self._work, args=(engine, ids, cancel), daemon=True)
+            self.thread = threading.Thread(target=self._work, args=(engine, ids, cancel), daemon=True, name="claudia-pruefung")
             self.thread.start()
 
     def _emit(self, ev: Dict[str, Any]) -> None:
@@ -735,12 +751,18 @@ class App:
             self.current = {}
 
     def _work(self, engine: Engine, ids: List[str], cancel: threading.Event) -> None:
+        def emit(ev: Dict[str, Any]) -> None:
+            if cancel is self.cancel and not (cancel.is_set() and not self.running):   # abgelöster Lauf schreibt nichts mehr
+                self._emit(ev)
         try:
-            engine.run(ids, self._emit, cancel)
+            engine.run(ids, emit, cancel)
         except Exception as e:  # pragma: no cover - Engine fängt Testfehler selbst ab
-            self.run_error = "%s: %s" % (type(e).__name__, e)
+            if cancel is self.cancel:
+                self.run_error = "%s: %s" % (type(e).__name__, e)
             sys.stderr.write(traceback.format_exc())
         finally:
+            if cancel is not self.cancel or (cancel.is_set() and not self.running):
+                return                                   # nach dem Abbrechen bereits als beendet markiert oder neuer Lauf gestartet
             self.cancelled = cancel.is_set()
             self.finished_at = time.time()
             self.current = {}
@@ -1844,7 +1866,7 @@ class Handler(BaseHTTPRequestHandler):
             if method == "POST" and path == "/api/baseline-delete":
                 return self._json(app.baseline_delete(body.get("site_dir")))
             if method == "POST" and path == "/api/cancel":
-                app.cancel.set()
+                app.cancel_run()
                 return self._json({"ok": True})
             if method == "POST" and path == "/api/profile/save":
                 name = (body.get("name") or "").strip()

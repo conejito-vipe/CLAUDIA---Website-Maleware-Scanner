@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 import ssl
+import time
 import urllib.error
 import urllib.request
 
@@ -151,6 +152,20 @@ def _cookies_of(msg) -> List[str]:
         return []
 
 
+def _read_until(r: Any, max_bytes: int, deadline: float) -> bytes:
+    """Antwort stückweise lesen und spätestens zur Frist aufhören: Die Zeitgrenze des Sockets gilt je Lesevorgang;
+    ein Server, der alle paar Sekunden ein Byte schickt, würde sonst beliebig lange festhalten."""
+    out = bytearray()
+    while len(out) < max_bytes:
+        if time.monotonic() > deadline:
+            break
+        chunk = r.read(min(65536, max_bytes - len(out)))
+        if not chunk:
+            break
+        out += chunk
+    return bytes(out)
+
+
 def fetch(url: str, ua: str, referer: str = "", max_bytes: int = 3_000_000, timeout: float = 25.0, binary: bool = False) -> Fetched:
     f = Fetched()
     f.url = url
@@ -167,7 +182,7 @@ def fetch(url: str, ua: str, referer: str = "", max_bytes: int = 3_000_000, time
             f.final = r.geturl()
             f.headers = _headers_of(r.headers)
             f.set_cookies = _cookies_of(r.headers)
-            raw = r.read(max_bytes)
+            raw = _read_until(r, max_bytes, time.monotonic() + max(5.0, timeout * 2))
             f.size = len(raw)
             if binary:
                 f.raw = raw

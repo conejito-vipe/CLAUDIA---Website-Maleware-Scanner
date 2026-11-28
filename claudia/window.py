@@ -75,16 +75,12 @@ def _win_app_id() -> None:
         pass
 
 
-def _win_icon(win: Any) -> None:
-    """Windows: CLAUDIA-Symbol als Fenstersymbol (Taskleiste, Alt+Tab). Nur ein Versuch, Fehler sind unkritisch."""
-    if os.name != "nt":
-        return
-    try:
-        from System.Drawing import Icon                    # type: ignore  # kommt mit pywebview (pythonnet)
-        ico = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "claudia.ico")
-        win.native.Icon = Icon(ico)
-    except Exception:
-        pass
+def window_icon() -> Optional[str]:
+    """Pfad zum CLAUDIA-Symbol für pywebview (setzt es im Fenster-Thread). In der Programmdatei None: dort nimmt pywebview das Symbol der EXE."""
+    if getattr(sys, "frozen", False):
+        return None
+    ico = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "claudia.ico")
+    return ico if os.path.isfile(ico) else None
 
 
 def start_geometry(screens: Any) -> dict:
@@ -237,30 +233,59 @@ class Window:
         """Meldet dem Startfenster, sobald die Seite im Programmfenster wirklich geladen wurde (dann darf es sich schließen)."""
         def run() -> None:
             if self.srv.page_loaded.wait(40):
+                self._stack_dump_cancel()
                 self.announce()
         threading.Thread(target=run, daemon=True).start()
 
-    def _reload_if_blank(self, win: Any, wait: float = 15.0) -> None:
-        """Bleibt das Fenster weiß (Seite nach 15 s nicht geladen), die Seite einmal neu laden; Verlauf ins Protokoll."""
+    def _reload_if_blank(self, win: Any, wait: float = 15.0, fallback: float = 25.0) -> None:
+        """Bleibt das Fenster weiß (Seite nach 15 s nicht geladen), die Seite einmal neu laden; nach weiteren 25 s die Oberfläche
+        zusätzlich im Standardbrowser öffnen, damit man trotzdem arbeiten kann. Verlauf ins Protokoll."""
         def run() -> None:
             if self.srv.page_loaded.wait(wait) or self._stopping.is_set():
                 return
-            print("Seite nach %d s nicht geladen, lade neu: %s" % (wait, self.srv.entry_url()), file=sys.stderr)
+            print("Seite nach %d s nicht geladen, lade neu" % wait, file=sys.stderr, flush=True)
             try:
                 win.load_url(self.srv.entry_url())
             except Exception as e:
-                print("Neu laden ging nicht: %s" % e, file=sys.stderr)
-            if not self.srv.page_loaded.wait(wait) and not self._stopping.is_set():
-                print("Seite auch nach dem Neuladen nicht geladen (WebView2 prüfen)", file=sys.stderr)
-        threading.Thread(target=run, daemon=True).start()
+                print("Neu laden ging nicht: %s" % e, file=sys.stderr, flush=True)
+            if self.srv.page_loaded.wait(fallback) or self._stopping.is_set():
+                return
+            print("Seite auch nach dem Neuladen nicht geladen (WebView2 hängt). Öffne die Oberfläche im Standardbrowser.", file=sys.stderr, flush=True)
+            try:
+                self.opener(self.srv.entry_url())
+            except Exception as e:
+                print("Browser ließ sich nicht öffnen: %s" % e, file=sys.stderr, flush=True)
+        threading.Thread(target=run, daemon=True, name="claudia-fenster-waechter").start()
+
+    @staticmethod
+    def _stack_dump_later(seconds: float = 25.0) -> None:
+        """Hängt der Start, schreibt faulthandler nach 'seconds' die Stelle jedes Fadens ins Programmprotokoll.
+        Läuft in einem eigenen C-Faden und funktioniert deshalb auch, wenn Python selbst blockiert ist."""
+        try:
+            import faulthandler
+            sys.stderr.fileno()
+            faulthandler.dump_traceback_later(seconds, repeat=False, file=sys.stderr)
+        except Exception:
+            pass
+
+    @staticmethod
+    def _stack_dump_cancel() -> None:
+        try:
+            import faulthandler
+            faulthandler.cancel_dump_traceback_later()
+        except Exception:
+            pass
 
     # ------------------------------------------------------------------ Wege
     def _try_webview(self) -> bool:
         wv = self._webview
         if wv is None:
+            print("Lade den Fensterbaustein (pywebview)", file=sys.stderr, flush=True)
             try:
                 import webview as wv  # type: ignore
             except Exception:
+                import traceback
+                traceback.print_exc()
                 return False
         try:
             try:
@@ -283,10 +308,9 @@ class Window:
             self._win = win
             _mac_dock_icon()
             _win_app_id()
-            try:
-                win.events.shown += lambda: _win_icon(win)
-            except Exception:
-                pass
+            # Kein Fenstersymbol aus dem "shown"-Ereignis setzen: das lief in einem Hintergrund-Thread direkt auf dem WinForms-Fenster und
+            # konnte Fenster und Python gegenseitig blockieren (weißes Fenster, "reagiert nicht"). Das Symbol setzt pywebview selbst
+            # im Fenster-Thread (start(icon=...); in der Programmdatei automatisch das Symbol der EXE).
             try:
                 win.events.closing += self._on_closing
             except Exception:
@@ -299,8 +323,13 @@ class Window:
                     pass
             self._watch_loaded()
             self._reload_if_blank(win)
+            self._stack_dump_later()
+            print("Programmfenster (pywebview %s) wird geöffnet" % getattr(wv, "__version__", "?"), file=sys.stderr, flush=True)
             started = time.monotonic()
-            wv.start(debug=False)
+            try:
+                wv.start(debug=False, icon=window_icon())
+            except TypeError:                              # ältere pywebview-Version ohne icon
+                wv.start(debug=False)
         except Exception:
             import traceback
             print("Programmfenster (pywebview) ging nicht:", file=sys.stderr)

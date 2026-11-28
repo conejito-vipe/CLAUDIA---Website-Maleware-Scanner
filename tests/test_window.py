@@ -120,12 +120,16 @@ class BlankWindow(Base):
             def load_url(self, url):
                 calls.append(url)
         w = window.Window(self.srv, lambda: None)
+        opened = []
+        w.opener = opened.append
         err = io.StringIO()
         with contextlib.redirect_stderr(err):
-            w._reload_if_blank(Win(), wait=0.05)
-            time.sleep(0.4)
+            w._reload_if_blank(Win(), wait=0.05, fallback=0.05)
+            time.sleep(0.5)
         self.assertEqual(len(calls), 1)
         self.assertIn("nicht geladen", err.getvalue())                 # steht im Programmprotokoll
+        self.assertEqual(len(opened), 1)                                # Ausweg: Oberfläche im Standardbrowser
+        self.assertIn("?k=", opened[0])
 
     def test_no_reload_when_page_loaded(self):
         import time

@@ -11,6 +11,7 @@ import json
 import os
 import re
 import secrets
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..model import CheckResult, CheckSkipped
@@ -423,6 +424,7 @@ def judge_version(cms: str, version: str, ctx: Any = None) -> Tuple[str, str]:
 
 
 # ---------------------------------------------------------------- Abruf (gemeinsam, einmal je Lauf)
+PROBE_BUDGET = 45.0      # Sekunden für alle Standardadressen zusammen
 PROBES = ["/administrator/", "/administrator/manifests/files/joomla.xml", "/language/en-GB/en-GB.xml", "/language/en-GB/langmetadata.xml",
           "/feed/", "/readme.html", "/core/CHANGELOG.txt", "/CHANGELOG.txt", "/typo3/", "/contao", "/admin", "/api/_info/version"]
 
@@ -440,16 +442,31 @@ def gather(ctx) -> Dict[str, Any]:
     """Ruft Startseite und einige Standardadressen einmal ab (zwischengespeichert für alle externen Tests)."""
     if "extern" in ctx.shared:
         return ctx.shared["extern"]
+    if ctx.shared.get("extern_error"):
+        raise CheckSkipped(ctx.shared["extern_error"])
     base = _base(ctx)
     ctx.progress("Rufe die Startseite ab")
-    home = webmod.fetch(base + "/", webmod.UA_BROWSER, max_bytes=1_500_000, timeout=25)
+    home = webmod.fetch(base + "/", webmod.UA_BROWSER, max_bytes=1_500_000, timeout=20)
+    if home.error and not home.status:
+        # Von diesem PC aus nicht erreichbar (Zeitüberschreitung, Sperre durch eine Firewall-Erweiterung, DNS): die Standardadressen
+        # gar nicht erst einzeln abwarten (das waren sonst bis zu 12 x 15 Sekunden ohne Rückmeldung)
+        ctx.shared["extern_error"] = ("Die Startseite war von diesem PC aus nicht erreichbar (%s). Mögliche Ursachen: Die Seite ist offline, "
+                                      "oder eine Firewall-Erweiterung bzw. der Hoster sperrt Abrufe von deiner Adresse." % home.error[:160])
+        raise CheckSkipped(ctx.shared["extern_error"])
     probes: Dict[str, Tuple[int, str]] = {}
     html = home.body or ""
     pre = detect(html, home.headers, home.set_cookies, {})
-    bf = webmod.fetch(base + "/claudia-" + secrets.token_hex(6) + ".txt", webmod.UA_BROWSER, max_bytes=60_000, timeout=15)
+    ctx.progress("Prüfe eine nicht vorhandene Adresse (Vergleichswert)")
+    bf = webmod.fetch(base + "/claudia-" + secrets.token_hex(6) + ".txt", webmod.UA_BROWSER, max_bytes=60_000, timeout=10)
     soft: Optional[Tuple[int, str]] = (bf.status, bf.body) if (not bf.error and bf.status == 200) else None
-    for p in PROBES:
-        f = webmod.fetch(base + p, webmod.UA_BROWSER, max_bytes=60_000, timeout=15)
+    budget = time.monotonic() + PROBE_BUDGET
+    misses = 0
+    for i, p in enumerate(PROBES, 1):
+        if time.monotonic() > budget or misses >= 3:
+            break                                   # Seite antwortet zu langsam: Rest auslassen statt minutenlang zu warten
+        ctx.progress("Standardadresse %d von %d: %s" % (i, len(PROBES), p))      # prüft dabei auch auf "Abbrechen"
+        f = webmod.fetch(base + p, webmod.UA_BROWSER, max_bytes=60_000, timeout=8)
+        misses = misses + 1 if (f.error and not f.status) else 0
         if not f.error and not (soft and f.status == 200 and _same_page(f.body, soft[1])):
             probes[p] = (f.status, f.body)
     d = detect(html, home.headers, home.set_cookies, probes)

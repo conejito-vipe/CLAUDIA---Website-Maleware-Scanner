@@ -33,8 +33,9 @@ class InstallerTests(unittest.TestCase):
         self.assertIn("function ReadInstalledVersion", code)
         self.assertIn("WizardResizable=yes", s)
         self.assertIn("WizardImageAlphaFormat=defined", s)                  # kleines Logo transparent
-        self.assertIn("procedure CurPageChanged(CurPageID: Integer);", code)   # Text bündig zur Überschrift
-        self.assertEqual(code.count("procedure CurPageChanged"), 1)
+        self.assertIn("WizardForm.PageDescriptionLabel.Left := WizardForm.PageNameLabel.Left;", code)   # auf allen Seiten bündig zur Überschrift
+        self.assertIn("WizardForm.InnerNotebook.Left := WizardForm.PageNameLabel.Left;", code)
+        self.assertLess(code.index("AlignWithHeading;"), code.index("CreateCustomPage"))
         import struct
         with open(os.path.join(ROOT, "installer", "wizard_small.bmp"), "rb") as f:
             d = f.read()

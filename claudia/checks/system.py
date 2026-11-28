@@ -126,7 +126,7 @@ echo '@@CONFIG'; test -f configuration.php && echo ja || echo nein
     else:
         ctx.shared["joomla_version"] = version
         latest = ctx.adv.get("joomla", {}).get("latest_known", "")
-        res.add("info", "Joomla %s" % version, "Gefundene Version laut libraries/src/Version.php.", items)
+        res.add("info", "Joomla %s" % version, "Gefundene Version laut libraries/src/Version.php.", items, context=True)    # Angabe, kein Hinweis
         if latest and vcmp(version, latest) < 0:
             res.add("warn", "Joomla ist älter als die neueste bekannte Version (%s)" % latest,
                     "Die Vergleichsliste stammt vom %s - neuere Versionen können inzwischen erschienen sein." % ctx.adv.get("stand", "?"),

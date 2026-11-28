@@ -7936,9 +7936,18 @@
 "Programmfenster (pywebview) ging nicht:": "Program window (pywebview) failed:",
 "Programmprotokoll (letzte Zeilen):": "Program log (last lines):",
 "Rot (-) = so im Paket des Herstellers, grün (+) = so auf dem Server.": "Red (-) = as in the vendor package, green (+) = as on the server.",
-"Seite auch nach dem Neuladen nicht geladen (WebView2 prüfen)": "Page still not loaded after reloading (check WebView2)",
-"Seite nach %d s nicht geladen, lade neu:": "Page not loaded after %d s, reloading:",
 "Was genau anders ist, zeigt das Codefenster je Datei (- = Paket des Herstellers, + = Datei auf dem Server).": "The code window per file shows exactly what is different (- = vendor package, + = file on the server).",
-"Erläuterung": "Explanation"
+"Erläuterung": "Explanation",
+"Browser ließ sich nicht öffnen:": "Browser could not be opened:",
+"Die Seite ist offline, oder eine Firewall-Erweiterung bzw. der Hoster sperrt Abrufe von deiner Adresse.": "The site is offline, or a firewall extension or the host blocks requests from your address.",
+"Die Startseite war von diesem PC aus nicht erreichbar (%s).": "The homepage could not be reached from this PC (%s).",
+"Lade den Fensterbaustein (pywebview)": "Loading the window component (pywebview)",
+"Mögliche Ursachen:": "Possible causes:",
+"Programmfenster (pywebview %s) wird geöffnet": "Opening program window (pywebview %s)",
+"Prüfe eine nicht vorhandene Adresse (Vergleichswert)": "Checking a non-existent address (reference value)",
+"Seite auch nach dem Neuladen nicht geladen (WebView2 hängt).": "Page still not loaded after reloading (WebView2 hangs).",
+"Seite nach %d s nicht geladen, lade neu": "Page not loaded after %d s, reloading",
+"Standardadresse %d von %d:": "Standard address %d of %d:",
+"Öffne die Oberfläche im Standardbrowser.": "Opening the interface in the default browser."
 }
 }

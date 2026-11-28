@@ -10,7 +10,7 @@
 
 #define AppShortName "CLAUDIA"
 #ifndef AppVersion
-  #define AppVersion "3.1.1"
+  #define AppVersion "3.1.2"
 #endif
 #define AuthorName "conejito-vipe"
 
@@ -168,15 +168,31 @@ end;
 
 var
   SmartPage: TWizardPage;
-  DefNoteLeft, DefNoteWidth: Integer;
+
+procedure AlignWithHeading;
+var D: Integer;
+begin
+  { Unterzeile und Seiteninhalt beginnen bündig mit der Überschrift (Inno rückt sie sonst ein) }
+  D := WizardForm.PageDescriptionLabel.Left - WizardForm.PageNameLabel.Left;
+  if D > 0 then
+  begin
+    WizardForm.PageDescriptionLabel.Left := WizardForm.PageNameLabel.Left;
+    WizardForm.PageDescriptionLabel.Width := WizardForm.PageDescriptionLabel.Width + D;
+  end;
+  D := WizardForm.InnerNotebook.Left - WizardForm.PageNameLabel.Left;
+  if D > 0 then
+  begin
+    WizardForm.InnerNotebook.Left := WizardForm.PageNameLabel.Left;
+    WizardForm.InnerNotebook.Width := WizardForm.InnerNotebook.Width + D;
+  end;
+end;
 
 procedure InitializeWizard;
 var Txt: TNewStaticText; Pic: TBitmapImage; Hint: String;
 begin
+  AlignWithHeading;
   { Hinweis zur Windows-Meldung: nach der Installation, vor der letzten Seite }
   SmartPage := CreateCustomPage(wpInstalling, CustomMessage('SmartTitle'), CustomMessage('SmartSub'));
-  DefNoteLeft := WizardForm.InnerNotebook.Left;
-  DefNoteWidth := WizardForm.InnerNotebook.Width;
   Pic := TBitmapImage.Create(SmartPage);
   Pic.Parent := SmartPage.Surface;
   Pic.Stretch := True;
@@ -195,26 +211,6 @@ begin
   Hint := CustomMessage('SmartText');
   StringChange(Hint, '%n', #13#10);       { StringChange verändert die Variable selbst }
   Txt.Caption := Hint;
-end;
-
-procedure CurPageChanged(CurPageID: Integer);
-var Delta: Integer;
-begin
-  { Auf der Hinweisseite beginnt der Text bündig mit der Überschrift (sonst eingerückt wie die Unterzeile) }
-  if CurPageID = SmartPage.ID then
-  begin
-    Delta := DefNoteLeft - WizardForm.PageNameLabel.Left;
-    if Delta > 0 then
-    begin
-      WizardForm.InnerNotebook.Left := DefNoteLeft - Delta;
-      WizardForm.InnerNotebook.Width := DefNoteWidth + Delta;
-    end;
-  end
-  else
-  begin
-    WizardForm.InnerNotebook.Left := DefNoteLeft;
-    WizardForm.InnerNotebook.Width := DefNoteWidth;
-  end;
 end;
 
 function InitializeSetup(): Boolean;

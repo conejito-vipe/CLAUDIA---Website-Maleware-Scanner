@@ -58,7 +58,7 @@ echo '@@MULTI'; grep -c "MULTISITE'" wp-config.php 2>/dev/null
         items.append("Diese WordPress-Version verlangt mindestens PHP %s" % ver["required_php"])
     if "ja-oben" in sec.get("CONFIG", ""):
         items.append("Die wp-config.php liegt eine Ebene über dem Webordner (gute Praxis)")
-    res.add("info", "WordPress %s" % ver["version"], "Gefundene Version laut wp-includes/version.php.", items)
+    res.add("info", "WordPress %s" % ver["version"], "Gefundene Version laut wp-includes/version.php.", items, context=True)
     latest = ctx.adv.get("wordpress", {}).get("latest_known", "")
     if latest and vcmp(ver["version"], latest) < 0:
         res.add("warn", "WordPress ist älter als die neueste bekannte Version (%s)" % latest,

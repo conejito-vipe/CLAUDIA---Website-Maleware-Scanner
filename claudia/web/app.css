@@ -729,3 +729,5 @@ html.has-titlebar.maxed .bar { right: var(--sbw); }
 .cw-row.cw-del { background: rgba(255,90,80,.16); color: #ffa39c; }
 .cw-row.cw-hunk { color: #7fb8ff; }
 .notice .btn, .notice .btn.mini { color: var(--ink); border-color: currentColor; }
+/* Abstand zwischen den Voreinstellungen und "Protokolle auf deinen PC sichern" wie zwischen allen anderen Kacheln */
+#logsave { margin-top: 18px; }
